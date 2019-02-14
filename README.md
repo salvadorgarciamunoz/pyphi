@@ -1,5 +1,5 @@
 # pyphi
-phi toolbox for multivariate analysis
+phi toolbox for multivariate analysis by Sal Garcia (salvadorgarciamunoz@gmail.com , sgarciam@ic.ac.uk )
 version 1.0 includes: 
 pca   : Principal Components Analysis
 pls   : Projection to Latent Structures
@@ -7,8 +7,6 @@ savgol: Savitzy-Golay derivative transform
 snv   : Standard Normal Variate transform
 
 sample script usage:
-
-
 ===========================================
 import pandas as pd
 import numpy as np
