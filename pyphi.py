@@ -273,8 +273,8 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
             r2Xpv[:,a] = r2Xpv[:,a]-r2Xpv[:,a-1]
             r2Y[a]     = r2Y[a]-r2Y[a-1]
             r2Ypv[:,a] = r2Ypv[:,a]-r2Ypv[:,a-1]
-        
-        pls_obj={'T':T,'P':P,'Q':Q,'W':W,'U':U,'r2x':r2X,'r2xpv':r2Xpv,'mx':x_mean,'sx':x_std,'r2y':r2Y,'r2ypv':r2Ypv,'my':y_mean,'sy':y_std}  
+        Ws=W @ np.linalg.pinv(P.T @ W)
+        pls_obj={'T':T,'P':P,'Q':Q,'W':W,'Ws':Ws,'U':U,'r2x':r2X,'r2xpv':r2Xpv,'mx':x_mean,'sx':x_std,'r2y':r2Y,'r2ypv':r2Ypv,'my':y_mean,'sy':y_std}  
         return pls_obj
     else:
         if md_algorithm=='nipals':
@@ -382,8 +382,10 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
                  r2Xpv[:,a] = r2Xpv[:,a]-r2Xpv[:,a-1]
                  r2Y[a]     = r2Y[a]-r2Y[a-1]
                  r2Ypv[:,a] = r2Ypv[:,a]-r2Ypv[:,a-1]
-        
-             pls_obj={'T':T,'P':P,'Q':Q,'W':W,'U':U,'r2x':r2X,'r2xpv':r2Xpv,'mx':x_mean,'sx':x_std,'r2y':r2Y,'r2ypv':r2Ypv,'my':y_mean,'sy':y_std}  
+             
+             Ws=W @ np.linalg.pinv(P.T @ W)
+                     
+             pls_obj={'T':T,'P':P,'Q':Q,'W':W,'Ws':Ws,'U':U,'r2x':r2X,'r2xpv':r2Xpv,'mx':x_mean,'sx':x_std,'r2y':r2Y,'r2ypv':r2Ypv,'my':y_mean,'sy':y_std}  
              return pls_obj   
                          
         elif md_algorithm=='nlp':
