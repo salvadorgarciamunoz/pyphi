@@ -1,4 +1,5 @@
 import numpy as np
+import datetime
 from scipy.special import factorial
 
 def z2n(X,X_nan_map):
@@ -110,6 +111,14 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
              r2[a]     = r2[a]-r2[a-1]
              r2pv[:,a] = r2pv[:,a]-r2pv[:,a-1]
         pca_obj={'T':T,'P':P,'r2x':r2,'r2xpv':r2pv,'mx':x_mean,'sx':x_std}
+        eigs = np.var(T,axis=0);
+        r2xc = np.cumsum(r2)
+        print('phi.pca using SVD executed on: '+ str(datetime.datetime.now()) )
+        print('--------------------------------------------------------------')
+        print('PC #     Eig      R2X       sum(R2X) ')
+        for a in list(range(A)):
+            print("PC #"+str(a+1)+":   {:.3f}    {:.3f}     {:.3f}".format(eigs[a], r2[a], r2xc[a]))
+        print('--------------------------------------------------------------')      
         return pca_obj
     else:
         if md_algorithm=='nipals':
@@ -176,6 +185,16 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
              for a in list(range(A-1,0,-1)):
                  r2[a]     = r2[a]-r2[a-1]
                  r2pv[:,a] = r2pv[:,a]-r2pv[:,a-1]
+                 
+             eigs = np.var(T,axis=0);
+             r2xc = np.cumsum(r2)
+             print('phi.pca using NIPALS executed on: '+ str(datetime.datetime.now()) )
+             print('--------------------------------------------------------------')
+             print('PC #     Eig      R2X       sum(R2X) ')
+             for a in list(range(A)):
+                 print("PC #"+str(a+1)+":   {:.3f}    {:.3f}     {:.3f}".format(eigs[a], r2[a], r2xc[a]))
+             print('--------------------------------------------------------------')    
+        
              pca_obj={'T':T,'P':P,'r2x':r2,'r2xpv':r2pv,'mx':x_mean,'sx':x_std}    
              return pca_obj                            
         elif md_algorithm=='nlp':
@@ -274,6 +293,16 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
             r2Y[a]     = r2Y[a]-r2Y[a-1]
             r2Ypv[:,a] = r2Ypv[:,a]-r2Ypv[:,a-1]
         Ws=W @ np.linalg.pinv(P.T @ W)
+        eigs = np.var(T,axis=0);
+        r2xc = np.cumsum(r2X)
+        r2yc = np.cumsum(r2Y)
+        print('phi.pls using SVD executed on: '+ str(datetime.datetime.now()) )
+        print('--------------------------------------------------------------')
+        print('LV #     Eig      R2X       sum(R2X)   R2Y       sum(R2Y)')
+        for a in list(range(A)):
+            print("LV #"+str(a+1)+":   {:.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a],r2Y[a],r2yc[a]))
+        print('--------------------------------------------------------------')   
+        
         pls_obj={'T':T,'P':P,'Q':Q,'W':W,'Ws':Ws,'U':U,'r2x':r2X,'r2xpv':r2Xpv,'mx':x_mean,'sx':x_std,'r2y':r2Y,'r2ypv':r2Ypv,'my':y_mean,'sy':y_std}  
         return pls_obj
     else:
@@ -384,7 +413,16 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
                  r2Ypv[:,a] = r2Ypv[:,a]-r2Ypv[:,a-1]
              
              Ws=W @ np.linalg.pinv(P.T @ W)
-                     
+             eigs = np.var(T,axis=0);
+             r2xc = np.cumsum(r2X)
+             r2yc = np.cumsum(r2Y)
+             print('phi.pls using NIPALS executed on: '+ str(datetime.datetime.now()) )
+             print('--------------------------------------------------------------')
+             print('LV #     Eig      R2X       sum(R2X)   R2Y       sum(R2Y)')
+             for a in list(range(A)):
+                 print("LV #"+str(a+1)+":   {:.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a],r2Y[a],r2yc[a]))
+             print('--------------------------------------------------------------')   
+                       
              pls_obj={'T':T,'P':P,'Q':Q,'W':W,'Ws':Ws,'U':U,'r2x':r2X,'r2xpv':r2Xpv,'mx':x_mean,'sx':x_std,'r2y':r2Y,'r2ypv':r2Ypv,'my':y_mean,'sy':y_std}  
              return pls_obj   
                          
