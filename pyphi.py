@@ -82,7 +82,7 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
     
     if not(X_nan_map.any()) and not(force_nipals):
         #no missing elements
-        print('phi.pca is using SVD')
+        print('phi.pca using SVD executed on: '+ str(datetime.datetime.now()) )
         TSS   = np.sum(X_**2)
         TSSpv = np.sum(X_**2,axis=0)
         if X_.shape[1]>X_.shape[0]:
@@ -113,17 +113,16 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
         pca_obj={'T':T,'P':P,'r2x':r2,'r2xpv':r2pv,'mx':x_mean,'sx':x_std}
         eigs = np.var(T,axis=0);
         r2xc = np.cumsum(r2)
-        print('phi.pca using SVD executed on: '+ str(datetime.datetime.now()) )
         print('--------------------------------------------------------------')
-        print('PC #     Eig      R2X       sum(R2X) ')
+        print('PC #      Eig        R2X       sum(R2X) ')
         for a in list(range(A)):
-            print("PC #"+str(a+1)+":   {:.3f}    {:.3f}     {:.3f}".format(eigs[a], r2[a], r2xc[a]))
+            print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}".format(eigs[a], r2[a], r2xc[a]))
         print('--------------------------------------------------------------')      
         return pca_obj
     else:
         if md_algorithm=='nipals':
              #use nipals
-             print('phi.pca is using NIPALS')
+             print('phi.pca using NIPALS executed on: '+ str(datetime.datetime.now()) )
              X_,dummy=n2z(X_)
              epsilon=1E-10
              maxit=10000
@@ -188,11 +187,10 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
                  
              eigs = np.var(T,axis=0);
              r2xc = np.cumsum(r2)
-             print('phi.pca using NIPALS executed on: '+ str(datetime.datetime.now()) )
              print('--------------------------------------------------------------')
-             print('PC #     Eig      R2X       sum(R2X) ')
+             print('PC #      Eig        R2X       sum(R2X) ')
              for a in list(range(A)):
-                 print("PC #"+str(a+1)+":   {:.3f}    {:.3f}     {:.3f}".format(eigs[a], r2[a], r2xc[a]))
+                 print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}".format(eigs[a], r2[a], r2xc[a]))
              print('--------------------------------------------------------------')    
         
              pca_obj={'T':T,'P':P,'r2x':r2,'r2xpv':r2pv,'mx':x_mean,'sx':x_std}    
@@ -237,7 +235,7 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
     
     if (not(X_nan_map.any()) and not(Y_nan_map.any())) and not(force_nipals):
         #no missing elements
-        print('phi.pls is using SVD')
+        print('phi.pls using SVD executed on: '+ str(datetime.datetime.now()) )
         TSSX   = np.sum(X_**2)
         TSSXpv = np.sum(X_**2,axis=0)
         TSSY   = np.sum(Y_**2)
@@ -296,11 +294,10 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
         eigs = np.var(T,axis=0);
         r2xc = np.cumsum(r2X)
         r2yc = np.cumsum(r2Y)
-        print('phi.pls using SVD executed on: '+ str(datetime.datetime.now()) )
         print('--------------------------------------------------------------')
-        print('LV #     Eig      R2X       sum(R2X)   R2Y       sum(R2Y)')
+        print('LV #     Eig       R2X       sum(R2X)   R2Y       sum(R2Y)')
         for a in list(range(A)):
-            print("LV #"+str(a+1)+":   {:.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a],r2Y[a],r2yc[a]))
+            print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a],r2Y[a],r2yc[a]))
         print('--------------------------------------------------------------')   
         
         pls_obj={'T':T,'P':P,'Q':Q,'W':W,'Ws':Ws,'U':U,'r2x':r2X,'r2xpv':r2Xpv,'mx':x_mean,'sx':x_std,'r2y':r2Y,'r2ypv':r2Ypv,'my':y_mean,'sy':y_std}  
@@ -308,7 +305,7 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
     else:
         if md_algorithm=='nipals':
              #use nipals
-             print('phi.pls is using NIPALS')
+             print('phi.pls using NIPALS executed on: '+ str(datetime.datetime.now()) )
              X_,dummy=n2z(X_)
              Y_,dummy=n2z(Y_)
              epsilon=1E-10
@@ -416,11 +413,10 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
              eigs = np.var(T,axis=0);
              r2xc = np.cumsum(r2X)
              r2yc = np.cumsum(r2Y)
-             print('phi.pls using NIPALS executed on: '+ str(datetime.datetime.now()) )
              print('--------------------------------------------------------------')
-             print('LV #     Eig      R2X       sum(R2X)   R2Y       sum(R2Y)')
+             print('LV #     Eig       R2X       sum(R2X)   R2Y       sum(R2Y)')
              for a in list(range(A)):
-                 print("LV #"+str(a+1)+":   {:.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a],r2Y[a],r2yc[a]))
+                 print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a],r2Y[a],r2yc[a]))
              print('--------------------------------------------------------------')   
                        
              pls_obj={'T':T,'P':P,'Q':Q,'W':W,'Ws':Ws,'U':U,'r2x':r2X,'r2xpv':r2Xpv,'mx':x_mean,'sx':x_std,'r2y':r2Y,'r2ypv':r2Ypv,'my':y_mean,'sy':y_std}  
@@ -482,4 +478,73 @@ def savgol(ws,od,op,Dm):
             else:
                 Dm_sg=np.vstack((Dm_sg,dm_))
     return Dm_sg,M
+
+def np2D2pyomo(arr):
+    output=dict(((i+1,j+1), arr[i][j]) for i in range(arr.shape[0]) for j in range(arr.shape[1]))
+    return output
+
+def np1D2pyomo(arr,*,indexes=False):
+    if arr.ndim==2:
+        arr=arr[0]
+    if isinstance(indexes,bool):
+        output=dict(((j+1), arr[j]) for j in range(len(arr)))
+    elif isinstance(indexes,list):
+        output=dict((indexes[j], arr[j]) for j in range(len(arr)))
+    return output
        
+def conv_eiot(plsobj,*,r_length=False):
+    plsobj_ = plsobj.copy()
+    
+    A = plsobj['T'].shape[1]
+    N = plsobj['P'].shape[0]
+    M = plsobj['Q'].shape[0]
+    
+    
+    pyo_A = np.arange(1,A+1)  #index for LV's
+    pyo_N = np.arange(1,N+1)  #index for columns of X
+    pyo_M = np.arange(1,M+1)  #index for columns of Y
+    pyo_A = pyo_A.tolist()
+    pyo_N = pyo_N.tolist()
+    pyo_M = pyo_M.tolist()
+    
+    pyo_Ws = np2D2pyomo(plsobj['Ws'])
+    pyo_Q  = np2D2pyomo(plsobj['Q'])
+    pyo_P  = np2D2pyomo(plsobj['P'])
+    
+    var_t = np.var(plsobj['T'],axis=0)
+    
+    pyo_var_t = np1D2pyomo(var_t)
+    pyo_mx    = np1D2pyomo(plsobj['mx'])
+    pyo_sx    = np1D2pyomo(plsobj['sx'])
+    pyo_my    = np1D2pyomo(plsobj['my'])
+    pyo_sy    = np1D2pyomo(plsobj['sy'])
+    
+    
+    if not isinstance(r_length,bool):
+        if r_length > N:   
+            indx_r     = np.arange(1,r_length+1)
+            indx_rk_eq = np.arange(r_length+1,N+1)
+            indx_r     = indx_r.tolist()
+            indx_rk_eq = indx_rk_eq.tolist()
+        elif r_length == N:
+            indx_r  = pyo_N
+    else:
+        if not r_length:
+           indx_r  = pyo_N 
+           indx_rk_eq = 0
+            
+    plsobj_['pyo_A']      = pyo_A
+    plsobj_['pyo_N']      = pyo_N
+    plsobj_['pyo_M']      = pyo_M
+    plsobj_['pyo_Ws']     = pyo_Ws
+    plsobj_['pyo_Q']      = pyo_Q
+    plsobj_['pyo_P']      = pyo_P
+    plsobj_['pyo_var_t']  = pyo_var_t
+    plsobj_['indx_r']     = indx_r
+    plsobj_['indx_rk_eq'] = indx_rk_eq
+    plsobj_['pyo_mx']     = pyo_mx
+    plsobj_['pyo_sx']     = pyo_sx
+    plsobj_['pyo_my']     = pyo_my
+    plsobj_['pyo_sy']     = pyo_sy
+    return plsobj_
+    
