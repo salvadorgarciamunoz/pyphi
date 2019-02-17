@@ -1,68 +1,7 @@
 import numpy as np
 import datetime
 from scipy.special import factorial
-
-def z2n(X,X_nan_map):
-    X[X_nan_map==1] = np.nan
-    return X
-
-def n2z(X):
-    X_nan_map = np.isnan(X)            
-    if X_nan_map.any():
-        X_nan_map       = X_nan_map*1
-        X[X_nan_map==1] = 0
-    else:
-        X_nan_map       = X_nan_map*1
-    return X,X_nan_map
-
-def mean(X):
-    X_nan_map = np.isnan(X)
-    X_ = X.copy()
-    if X_nan_map.any():
-        X_nan_map       = X_nan_map*1
-        X_[X_nan_map==1] = 0
-        aux             = np.sum(X_nan_map,axis=0)
-        #Calculate mean without accounting for NaN's
-        x_mean = np.sum(X_,axis=0,keepdims=1)/(np.ones((1,X_.shape[1]))*X_.shape[0]-aux)
-    else:
-        x_mean = np.mean(X_,axis=0,keepdims=1)
-    return x_mean
-
-def std(X):
-    x_mean=mean(X)
-    x_mean=np.tile(x_mean,(X.shape[0],1))
-    X_nan_map = np.isnan(X)
-    if X_nan_map.any():
-        X_nan_map             = X_nan_map*1
-        X_                    = X.copy()
-        X_[X_nan_map==1]      = 0
-        aux_mat               = (X_-x_mean)**2
-        aux_mat[X_nan_map==1] = 0
-        aux                   = np.sum(X_nan_map,axis=0)
-        #Calculate mean without accounting for NaN's
-        x_std = np.sqrt((np.sum(aux_mat,axis=0,keepdims=1))/(np.ones((1,X_.shape[1]))*(X_.shape[0]-1-aux)))
-    else:
-        x_std = np.sqrt(np.sum((X-x_mean)**2,axis=0,keepdims=1)/(np.ones((1,X.shape[1]))*(X.shape[0]-1)))
-    return x_std
-   
-def meancenterscale(X,*,mcs=True):
-    if isinstance(mcs,bool):
-        if mcs:
-            x_mean = mean(X)
-            x_std  = std(X)
-            X      = X-np.tile(x_mean,(X.shape[0],1))
-            X      = X/np.tile(x_std,(X.shape[0],1))
-    elif mcs=='center':
-         x_mean = mean(X)
-         X      = X-np.tile(x_mean,(X.shape[0],1))
-         x_std  = np.ones((1,X.shape[1]))
-    elif mcs=='autoscale':
-         x_std  = std(X) 
-         X      = X/np.tile(x_std,(X.shape[0],1))
-         x_mean = np.zeros((1,X.shape[1]))
-    return X,x_mean,x_std
- 
-    
+  
 def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
     X_=X.copy()
     if isinstance(mcs,bool):
@@ -115,8 +54,13 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
         r2xc = np.cumsum(r2)
         print('--------------------------------------------------------------')
         print('PC #      Eig        R2X       sum(R2X) ')
-        for a in list(range(A)):
-            print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}".format(eigs[a], r2[a], r2xc[a]))
+        if A>1:
+            for a in list(range(A)):
+                print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}".format(eigs[a], r2[a], r2xc[a]))
+        else:
+            d1=eigs[0]
+            d2=r2xc[0]
+            print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}".format(d1, r2, d2))
         print('--------------------------------------------------------------')      
         return pca_obj
     else:
@@ -188,10 +132,14 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
              eigs = np.var(T,axis=0);
              r2xc = np.cumsum(r2)
              print('--------------------------------------------------------------')
-             print('PC #      Eig        R2X       sum(R2X) ')
-             for a in list(range(A)):
-                 print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}".format(eigs[a], r2[a], r2xc[a]))
-             print('--------------------------------------------------------------')    
+             if A>1:
+                 for a in list(range(A)):
+                     print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}".format(eigs[a], r2[a], r2xc[a]))
+             else:
+                 d1=eigs[0]
+                 d2=r2xc[0]
+                 print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}".format(d1, r2, d2))
+             print('--------------------------------------------------------------')      
         
              pca_obj={'T':T,'P':P,'r2x':r2,'r2xpv':r2pv,'mx':x_mean,'sx':x_std}    
              return pca_obj                            
@@ -199,8 +147,6 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
             #use NLP per Lopez-Negrete et al. J. Chemometrics 2010; 24: 301–311
             pca_obj=1
             return pca_obj
-           
-    
   
 def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
     X_=X.copy()
@@ -296,8 +242,14 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
         r2yc = np.cumsum(r2Y)
         print('--------------------------------------------------------------')
         print('LV #     Eig       R2X       sum(R2X)   R2Y       sum(R2Y)')
-        for a in list(range(A)):
-            print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a],r2Y[a],r2yc[a]))
+        if A>1:    
+            for a in list(range(A)):
+                print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a],r2Y[a],r2yc[a]))
+        else:
+            d1=eigs[0]
+            d2=r2xc[0]
+            d3=r2yc[0]
+            print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(d1, r2X, d2,r2Y,d3))
         print('--------------------------------------------------------------')   
         
         pls_obj={'T':T,'P':P,'Q':Q,'W':W,'Ws':Ws,'U':U,'r2x':r2X,'r2xpv':r2Xpv,'mx':x_mean,'sx':x_std,'r2y':r2Y,'r2ypv':r2Ypv,'my':y_mean,'sy':y_std}  
@@ -415,8 +367,14 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
              r2yc = np.cumsum(r2Y)
              print('--------------------------------------------------------------')
              print('LV #     Eig       R2X       sum(R2X)   R2Y       sum(R2Y)')
-             for a in list(range(A)):
-                 print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a],r2Y[a],r2yc[a]))
+             if A>1:    
+                 for a in list(range(A)):
+                     print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a],r2Y[a],r2yc[a]))
+             else:
+                d1=eigs[0]
+                d2=r2xc[0]
+                d3=r2yc[0]
+                print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(d1, r2X, d2,r2Y,d3))
              print('--------------------------------------------------------------')   
                        
              pls_obj={'T':T,'P':P,'Q':Q,'W':W,'Ws':Ws,'U':U,'r2x':r2X,'r2xpv':r2Xpv,'mx':x_mean,'sx':x_std,'r2y':r2Y,'r2ypv':r2Ypv,'my':y_mean,'sy':y_std}  
@@ -426,6 +384,88 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
             #use NLP per Lopez-Negrete et al. J. Chemometrics 2010; 24: 301–311
             pca_obj=1
             return pca_obj
+
+
+def pca_pred(Xnew,pcaobj):
+    X_=Xnew.copy()
+    X_nan_map = np.isnan(X_)
+    #not_Xmiss = (np.logical_not(X_nan_map))*1
+    if not(X_nan_map.any()):
+        tnew = ((X_-np.tile(pcaobj['mx'],(X_.shape[0],1)))/(np.tile(pcaobj['sx'],(X_.shape[0],1)))) @ pcaobj['P']
+        xhat = (tnew @ pcaobj['P'].T) * np.tile(pcaobj['sy'],(X_.shape[0],1)) + np.tile(pcaobj['my'],(X_.shape[0],1))
+        xpred={'Xhat':xhat,'Tnew':tnew}
+    return xpred
+
+def pls_pred(Xnew,plsobj):
+    X_=Xnew.copy()
+    X_nan_map = np.isnan(X_)    
+    if not(X_nan_map.any()):
+        tnew = ((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1)))) @ plsobj['Ws']
+        yhat = (tnew @ plsobj['Q'].T) * np.tile(plsobj['sy'],(X_.shape[0],1)) + np.tile(plsobj['my'],(X_.shape[0],1))
+        ypred ={'Yhat':yhat,'Tnew':tnew}
+    return ypred
+
+
+
+def z2n(X,X_nan_map):
+    X[X_nan_map==1] = np.nan
+    return X
+
+def n2z(X):
+    X_nan_map = np.isnan(X)            
+    if X_nan_map.any():
+        X_nan_map       = X_nan_map*1
+        X[X_nan_map==1] = 0
+    else:
+        X_nan_map       = X_nan_map*1
+    return X,X_nan_map
+
+def mean(X):
+    X_nan_map = np.isnan(X)
+    X_ = X.copy()
+    if X_nan_map.any():
+        X_nan_map       = X_nan_map*1
+        X_[X_nan_map==1] = 0
+        aux             = np.sum(X_nan_map,axis=0)
+        #Calculate mean without accounting for NaN's
+        x_mean = np.sum(X_,axis=0,keepdims=1)/(np.ones((1,X_.shape[1]))*X_.shape[0]-aux)
+    else:
+        x_mean = np.mean(X_,axis=0,keepdims=1)
+    return x_mean
+
+def std(X):
+    x_mean=mean(X)
+    x_mean=np.tile(x_mean,(X.shape[0],1))
+    X_nan_map = np.isnan(X)
+    if X_nan_map.any():
+        X_nan_map             = X_nan_map*1
+        X_                    = X.copy()
+        X_[X_nan_map==1]      = 0
+        aux_mat               = (X_-x_mean)**2
+        aux_mat[X_nan_map==1] = 0
+        aux                   = np.sum(X_nan_map,axis=0)
+        #Calculate mean without accounting for NaN's
+        x_std = np.sqrt((np.sum(aux_mat,axis=0,keepdims=1))/(np.ones((1,X_.shape[1]))*(X_.shape[0]-1-aux)))
+    else:
+        x_std = np.sqrt(np.sum((X-x_mean)**2,axis=0,keepdims=1)/(np.ones((1,X.shape[1]))*(X.shape[0]-1)))
+    return x_std
+   
+def meancenterscale(X,*,mcs=True):
+    if isinstance(mcs,bool):
+        if mcs:
+            x_mean = mean(X)
+            x_std  = std(X)
+            X      = X-np.tile(x_mean,(X.shape[0],1))
+            X      = X/np.tile(x_std,(X.shape[0],1))
+    elif mcs=='center':
+         x_mean = mean(X)
+         X      = X-np.tile(x_mean,(X.shape[0],1))
+         x_std  = np.ones((1,X.shape[1]))
+    elif mcs=='autoscale':
+         x_std  = std(X) 
+         X      = X/np.tile(x_std,(X.shape[0],1))
+         x_mean = np.zeros((1,X.shape[1]))
+    return X,x_mean,x_std
 
 def snv (x):
     if x.ndim ==2:
@@ -521,13 +561,19 @@ def conv_eiot(plsobj,*,r_length=False):
     
     
     if not isinstance(r_length,bool):
-        if r_length > N:   
+        if r_length < N:   
             indx_r     = np.arange(1,r_length+1)
             indx_rk_eq = np.arange(r_length+1,N+1)
             indx_r     = indx_r.tolist()
             indx_rk_eq = indx_rk_eq.tolist()
         elif r_length == N:
             indx_r  = pyo_N
+        else:
+            print('r_length >> N !!')
+            print('Forcing r_length=N')
+            indx_r  = pyo_N
+            indx_rk_eq=0
+            
     else:
         if not r_length:
            indx_r  = pyo_N 
