@@ -1,9 +1,21 @@
 import numpy as np
+import pandas as pd
 import datetime
 from scipy.special import factorial
   
 def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
-    X_=X.copy()
+    if isinstance(X,np.ndarray):
+        X_=X.copy()
+        obsidX = False
+        varidX = False
+    elif isinstance(X,pd.DataFrame):
+        X_=np.array(X.values[:,1:]).astype(float)
+        obsidX = X.values[:,0].astype(str)
+        obsidX = obsidX.tolist()
+        varidX = X.columns.values
+        varidX = varidX[1:]
+        varidX = varidX.tolist()
+            
     if isinstance(mcs,bool):
         if mcs:
             #Mean center and autoscale  
@@ -50,6 +62,9 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
              r2[a]     = r2[a]-r2[a-1]
              r2pv[:,a] = r2pv[:,a]-r2pv[:,a-1]
         pca_obj={'T':T,'P':P,'r2x':r2,'r2xpv':r2pv,'mx':x_mean,'sx':x_std}
+        if not isinstance(obsidX,bool):
+            pca_obj['obsidX']=obsidX
+            pca_obj['varidX']=varidX
         eigs = np.var(T,axis=0);
         r2xc = np.cumsum(r2)
         print('--------------------------------------------------------------')
@@ -142,6 +157,9 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
              print('--------------------------------------------------------------')      
         
              pca_obj={'T':T,'P':P,'r2x':r2,'r2xpv':r2pv,'mx':x_mean,'sx':x_std}    
+             if not isinstance(obsidX,bool):
+                 pca_obj['obsidX']=obsidX
+                 pca_obj['varidX']=varidX
              return pca_obj                            
         elif md_algorithm=='nlp':
             #use NLP per Lopez-Negrete et al. J. Chemometrics 2010; 24: 301–311
@@ -149,8 +167,31 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
             return pca_obj
   
 def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
-    X_=X.copy()
-    Y_=Y.copy()
+    if isinstance(X,np.ndarray):
+        X_ = X.copy()
+        obsidX = False
+        varidX = False
+    elif isinstance(X,pd.DataFrame):
+        X_=np.array(X.values[:,1:]).astype(float)
+        obsidX = X.values[:,0].astype(str)
+        obsidX = obsidX.tolist()
+        varidX = X.columns.values
+        varidX = varidX[1:]
+        varidX = varidX.tolist()
+        
+    if isinstance(Y,np.ndarray):
+        Y_=Y.copy()
+        obsidY = False
+        varidY = False
+    elif isinstance(Y,pd.DataFrame):
+        Y_=np.array(Y.values[:,1:]).astype(float)
+        obsidY = Y.values[:,0].astype(str)
+        obsidY = obsidY.tolist()
+        varidY = Y.columns.values
+        varidY = varidY[1:]
+        varidY = varidY.tolist()        
+        
+   
     if isinstance(mcsX,bool):
         if mcsX:
             #Mean center and autoscale  
@@ -253,6 +294,12 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
         print('--------------------------------------------------------------')   
         
         pls_obj={'T':T,'P':P,'Q':Q,'W':W,'Ws':Ws,'U':U,'r2x':r2X,'r2xpv':r2Xpv,'mx':x_mean,'sx':x_std,'r2y':r2Y,'r2ypv':r2Ypv,'my':y_mean,'sy':y_std}  
+        if not isinstance(obsidX,bool):
+            pls_obj['obsidX']=obsidX
+            pls_obj['varidX']=varidX
+        if not isinstance(obsidY,bool):
+            pls_obj['obsidY']=obsidY
+            pls_obj['varidY']=varidY
         return pls_obj
     else:
         if md_algorithm=='nipals':
@@ -378,12 +425,18 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
              print('--------------------------------------------------------------')   
                        
              pls_obj={'T':T,'P':P,'Q':Q,'W':W,'Ws':Ws,'U':U,'r2x':r2X,'r2xpv':r2Xpv,'mx':x_mean,'sx':x_std,'r2y':r2Y,'r2ypv':r2Ypv,'my':y_mean,'sy':y_std}  
+             if not isinstance(obsidX,bool):
+                 pls_obj['obsidX']=obsidX
+                 pls_obj['varidX']=varidX
+             if not isinstance(obsidY,bool):
+                pls_obj['obsidY']=obsidY
+                pls_obj['varidY']=varidY             
              return pls_obj   
                          
         elif md_algorithm=='nlp':
-            #use NLP per Lopez-Negrete et al. J. Chemometrics 2010; 24: 301–311
-            pca_obj=1
-            return pca_obj
+            #use NLP per Eranda's paper
+            pls_obj=1
+            return pls_obj
 
 
 def pca_pred(Xnew,pcaobj):
@@ -568,6 +621,7 @@ def conv_eiot(plsobj,*,r_length=False):
             indx_rk_eq = indx_rk_eq.tolist()
         elif r_length == N:
             indx_r  = pyo_N
+            indx_rk_eq=0
         else:
             print('r_length >> N !!')
             print('Forcing r_length=N')
@@ -592,5 +646,7 @@ def conv_eiot(plsobj,*,r_length=False):
     plsobj_['pyo_sx']     = pyo_sx
     plsobj_['pyo_my']     = pyo_my
     plsobj_['pyo_sy']     = pyo_sy
+    plsobj_['S_I']        = np.nan
+    plsobj_['pyo_S_I']        = np.nan
     return plsobj_
     
