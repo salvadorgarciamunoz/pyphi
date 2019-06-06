@@ -167,6 +167,17 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
             return pca_obj
   
 def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
+    ''' Partial Least Squares routine by Sal Garcia sgarciam@ic.ac.uk
+        import pyphi as phi
+        #import your data into X and Y#
+        #simplest use for a 2LV model
+        [mvm] = phi.pls(X,Y,2)    
+    
+        Options:   
+        mcsX / mcsY  = 'center' | 'autoscale' | True  <does both and is the default>
+        md_algorithm = 'nipals' <default>  (NLP options to come soon)
+        force_nipals = True | False <default> (If data has is complete and force_nipals='False' then uses SVD)
+    '''
     if isinstance(X,np.ndarray):
         X_ = X.copy()
         obsidX = False
@@ -438,7 +449,47 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
             pls_obj=1
             return pls_obj
 
+def lwpls(xnew,loc_par,mvm,X,Y):
+    vip=np.sum(np.abs(mvm['Ws'] * np.tile(mvm['r2y'],(mvm['Ws'].shape[0],1)) ),axis=1)
+    vip=np.reshape(vip,(len(vip),-1))
+    theta=vip; #Using element wise operations for speed, no need for matrix notation
 
+    D     = X - np.tile(xnew.T,(X.shape[0],1))
+    d2    = D * np.tile(theta.T,(X.shape[0],1)) * D
+    d2    = np.sqrt(np.sum(d2,axis=1))
+    omega = np.exp(-d2/(np.var(d2,ddof=1)*loc_par))
+    OMEGA = np.diag(omega)
+    omega = np.reshape(omega,(len(omega),-1))
+    
+    X_weighted_mean = np.sum((np.tile(omega,(1,X.shape[1])) * X),axis=0)/np.sum(omega)
+    Y_weighted_mean = np.sum((np.tile(omega,(1,Y.shape[1])) * Y),axis=0)/np.sum(omega)
+    
+    X_weighted_mean=np.reshape(X_weighted_mean,(len(X_weighted_mean),-1))
+    Y_weighted_mean=np.reshape(Y_weighted_mean,(len(Y_weighted_mean),-1))
+    
+    Xi = X - X_weighted_mean.T
+    Yi = Y - Y_weighted_mean.T
+    
+    xnewi = xnew - X_weighted_mean
+    yhat=Y_weighted_mean
+    
+    for a in list(range(0,mvm['T'].shape[1])):
+        [U_,S,Wh]=np.linalg.svd(Xi.T @ OMEGA @ Yi @ Yi.T @ OMEGA @ Xi)
+        w           = Wh.T
+        w           = w[:,[0]]
+        t = Xi @ w
+        p = Xi.T @ OMEGA @ t / (t.T @ OMEGA @ t)        
+        q = Yi.T @ OMEGA @ t / (t.T @ OMEGA @ t)
+        
+        tnew = xnewi.T @ w
+        yhat =yhat + tnew @ q
+        
+        Xi    = Xi - t @ p.T
+        Yi    = Yi - t @ q.T
+        xnewi = xnewi - p @ tnew
+    return yhat
+    
+    
 def pca_pred(Xnew,pcaobj):
     X_=Xnew.copy()
     X_nan_map = np.isnan(X_)
