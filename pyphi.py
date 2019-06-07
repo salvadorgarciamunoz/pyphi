@@ -490,23 +490,65 @@ def lwpls(xnew,loc_par,mvm,X,Y):
     return yhat
     
     
-def pca_pred(Xnew,pcaobj):
+def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
     X_=Xnew.copy()
     X_nan_map = np.isnan(X_)
     #not_Xmiss = (np.logical_not(X_nan_map))*1
     if not(X_nan_map.any()):
         tnew = ((X_-np.tile(pcaobj['mx'],(X_.shape[0],1)))/(np.tile(pcaobj['sx'],(X_.shape[0],1)))) @ pcaobj['P']
-        xhat = (tnew @ pcaobj['P'].T) * np.tile(pcaobj['sy'],(X_.shape[0],1)) + np.tile(pcaobj['my'],(X_.shape[0],1))
+        xhat = (tnew @ pcaobj['P'].T) * np.tile(pcaobj['sx'],(X_.shape[0],1)) + np.tile(pcaobj['mx'],(X_.shape[0],1))
+        xpred={'Xhat':xhat,'Tnew':tnew}
+    elif algorithm=='p2mp':  # Using Projection to the model plane method for missing data    
+        X_nan_map = np.isnan(Xnew)
+        not_Xmiss = (np.logical_not(X_nan_map))*1
+        X_,dummy=n2z(X_)
+        Xmcs=((X_-np.tile(pcaobj['mx'],(X_.shape[0],1)))/(np.tile(pcaobj['sx'],(X_.shape[0],1))))
+        for i in list(range(Xmcs.shape[0])):
+            row_missing_map=not_Xmiss[[i],:]
+            tempP = pcaobj['P'] * np.tile(row_missing_map.T,(1,pcaobj['P'].shape[1]))
+            PTP = tempP.T @ tempP
+            tnew_ = np.linalg.inv(PTP) @ tempP.T  @ Xmcs[[i],:].T
+            if i==0:
+                tnew = tnew_.T
+            else:
+                tnew = np.vstack((tnew,tnew_.T))
+        xhat = (tnew @ pcaobj['P'].T) * np.tile(pcaobj['sx'],(X_.shape[0],1)) + np.tile(pcaobj['mx'],(X_.shape[0],1))        
         xpred={'Xhat':xhat,'Tnew':tnew}
     return xpred
 
-def pls_pred(Xnew,plsobj):
+def pls_pred(Xnew,plsobj,algorithm='p2mp'):
     X_=Xnew.copy()
     X_nan_map = np.isnan(X_)    
     if not(X_nan_map.any()):
         tnew = ((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1)))) @ plsobj['Ws']
         yhat = (tnew @ plsobj['Q'].T) * np.tile(plsobj['sy'],(X_.shape[0],1)) + np.tile(plsobj['my'],(X_.shape[0],1))
-        ypred ={'Yhat':yhat,'Tnew':tnew}
+        xhat = (tnew @ plsobj['P'].T) * np.tile(plsobj['sx'],(X_.shape[0],1)) + np.tile(plsobj['mx'],(X_.shape[0],1))
+        ypred ={'Yhat':yhat,'Xhat':xhat,'Tnew':tnew}
+    elif algorithm=='p2mp':
+        X_nan_map = np.isnan(Xnew)
+        not_Xmiss = (np.logical_not(X_nan_map))*1
+        X_,dummy=n2z(X_)
+        Xmcs=((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1))))
+        for i in list(range(Xmcs.shape[0])):
+            row_missing_map=not_Xmiss[[i],:]
+            tempWs = plsobj['Ws'] * np.tile(row_missing_map.T,(1,plsobj['Ws'].shape[1]))
+            
+            for a in list(range(plsobj['Ws'].shape[1])):
+                WsTWs    = tempWs[:,[a]].T @ tempWs[:,[a]]
+                tnew_aux = np.linalg.inv(WsTWs) @ tempWs[:,[a]].T  @ Xmcs[[i],:].T
+                Xmcs[[i],:] = (Xmcs[[i],:] - tnew_aux @ plsobj['P'][:,[a]].T) * row_missing_map
+                if a==0:
+                    tnew_=tnew_aux
+                else:
+                    tnew_=np.vstack((tnew_,tnew_aux))
+                    
+            if i==0:
+                tnew = tnew_.T
+            else:
+                tnew = np.vstack((tnew,tnew_.T))
+        yhat = (tnew @ plsobj['Q'].T) * np.tile(plsobj['sy'],(X_.shape[0],1)) + np.tile(plsobj['my'],(X_.shape[0],1))
+        xhat = (tnew @ plsobj['P'].T) * np.tile(plsobj['sx'],(X_.shape[0],1)) + np.tile(plsobj['mx'],(X_.shape[0],1))
+        ypred ={'Yhat':yhat,'Xhat':xhat,'Tnew':tnew}     
     return ypred
 
 
@@ -700,4 +742,55 @@ def conv_eiot(plsobj,*,r_length=False):
     plsobj_['S_I']        = np.nan
     plsobj_['pyo_S_I']        = np.nan
     return plsobj_
-    
+
+def spe_ci(spe):    
+    chi =np.array(
+            [[   0,    1.6900,    4.0500],
+          [1.0000,    3.8400,    6.6300],
+          [2.0000,    5.9900,    9.2100],
+          [3.0000,    7.8100,   11.3400],
+          [4.0000,    9.4900,   13.2800],
+          [5.0000,   11.0700,   15.0900],
+          [6.0000,   12.5900,   16.8100],
+          [7.0000,   14.0700,   18.4800],
+          [8.0000,   15.5100,   20.0900],
+          [9.0000,   16.9200,   21.6700],
+          [10.0000,   18.3100,   23.2100],
+          [11.0000,   19.6800,   24.7200],
+          [12.0000,   21.0300,   26.2200],
+          [13.0000,   22.3600,   27.6900],
+          [14.0000,   23.6800,   29.1400],
+          [15.0000,   25.0000,   30.5800],
+          [16.0000,   26.3000,   32.0000],
+          [17.0000,   27.5900,   33.4100],
+          [18.0000,  28.8700 ,  34.8100],
+          [19.0000,   30.1400,   36.1900],
+          [20.0000,   31.4100,   37.5700],
+          [21.0000,   32.6700,   38.9300],
+          [22.0000,   33.9200,   40.2900],
+          [23.0000,   35.1700,   41.6400],
+          [24.0000,   36.4200,   42.9800],
+          [25.0000,   37.6500,   44.3100],
+          [26.0000,   38.8900,   45.6400],
+          [27.0000,   40.1100,   46.9600],
+          [28.0000,   41.3400,   48.2800],
+          [29.0000,   42.5600,   49.5900],
+          [30.0000,   43.7700,   50.8900],
+          [40.0000,   55.7600,   63.6900],
+          [50.0000,   67.5000,   76.1500],
+          [60.0000,   79.0800,   88.3800],
+          [70.0000,   90.5300,  100.4000],
+          [80.0000,  101.9000,  112.3000],
+          [90.0000,  113.1000,  124.1000],
+          [100.0000,  124.3000,  135.8000 ]])
+
+    spem=np.mean(spe)
+    spev=np.var(spe,ddof=1)
+    g=(spev/(2*spem))
+    h=(2*spem^2)/spev
+
+    lim95=np.interp(h,chi[:,[1]],chi[:,[2]])
+    lim99=np.interp(h,chi[:,[1]],chi[:,[3]]);
+    lim95= g*lim95
+    lim99= g*lim99
+    return lim95,lim99

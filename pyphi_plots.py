@@ -12,6 +12,8 @@ from bokeh.palettes import GnBu3
 from bokeh.layouts import column
 from bokeh.models import ColumnDataSource
 from bokeh.models import Span
+import pyphi as phi
+import pandas as pd
 
 import matplotlib.cm as cm
 
@@ -296,17 +298,40 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False):
     Xnew   : New data for which to make the score plot this routine evaluates and plots
     '''
     
-    if 'obsidX' in mvmobj:
-        ObsID_=mvmobj['obsidX']
+    if isinstance(Xnew,bool):
+        if 'obsidX' in mvmobj:
+            ObsID_=mvmobj['obsidX']
+        else:
+            ObsID_ = []
+            for n in list(np.arange(mvmobj['T'].shape[0])+1):
+                ObsID_.append('Obs #'+str(n))  
+        T_matrix=mvmobj['T']
     else:
-        ObsID_ = []
-        for n in list(np.arange(mvmobj['T'].shape[0])+1):
-            ObsID_.append('Obs #'+str(n))  
- 
+        if isinstance(Xnew,np.ndarray):
+            X_=Xnew.copy()
+            ObsID_ = []
+            for n in list(np.arange(Xnew.shape[0])+1):
+                ObsID_.append('Obs #'+str(n))  
+        elif isinstance(Xnew,pd.DataFrame):
+            X_=np.array(Xnew.values[:,1:]).astype(float)
+            ObsID_ = Xnew.values[:,0].astype(str)
+            ObsID_ = ObsID_.tolist()
+            
+        if 'Q' in mvmobj:  
+            xpred=phi.pls_pred(X_,mvmobj)
+        else:
+            xpred=phi.pca_pred(X_,mvmobj)
+        T_matrix=xpred['Tnew']
+
+    
     if isinstance(CLASSID,np.bool): # No CLASSIDS
         output_file("Score_Scatter.html",title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ ']')
-        x_=mvmobj['T'][:,[xydim[0]-1]]
-        y_=mvmobj['T'][:,[xydim[1]-1]]
+#        x_=mvmobj['T'][:,[xydim[0]-1]]
+#        y_=mvmobj['T'][:,[xydim[1]-1]]
+
+        x_=T_matrix[:,[xydim[0]-1]]
+        y_=T_matrix[:,[xydim[1]-1]]
+
            
         source = ColumnDataSource(data=dict(x=x_, y=y_,ObsID=ObsID_))
         TOOLS = "save,box_zoom,pan,reset,box_select,lasso_select"
@@ -336,8 +361,11 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False):
         bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]  
                        
         output_file("Score_Scatter.html",title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ ']')
-        x_=mvmobj['T'][:,[xydim[0]-1]]
-        y_=mvmobj['T'][:,[xydim[1]-1]]        
+        #x_=mvmobj['T'][:,[xydim[0]-1]]
+        #y_=mvmobj['T'][:,[xydim[1]-1]]  
+        x_=T_matrix[:,[xydim[0]-1]]
+        y_=T_matrix[:,[xydim[1]-1]]          
+        
         TOOLS = "save,box_zoom,pan,reset,box_select,lasso_select"
         TOOLTIPS = [
                 ("index", "$index"),
