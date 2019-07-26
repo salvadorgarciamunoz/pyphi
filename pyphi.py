@@ -556,7 +556,13 @@ def lwpls(xnew,loc_par,mvm,X,Y):
     
     
 def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
-    X_=Xnew.copy()
+    if isinstance(Xnew,np.ndarray):
+        X_=Xnew.copy()
+        if X_.ndim==1:
+            X_=np.reshape(X_,(1,-1))
+    elif isinstance(Xnew,pd.DataFrame):
+        X_=np.array(Xnew.values[:,1:]).astype(float)
+
     X_nan_map = np.isnan(X_)
     #not_Xmiss = (np.logical_not(X_nan_map))*1
     if not(X_nan_map.any()):
@@ -582,7 +588,12 @@ def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
     return xpred
 
 def pls_pred(Xnew,plsobj,algorithm='p2mp'):
-    X_=Xnew.copy()
+    if isinstance(Xnew,np.ndarray):
+        X_=Xnew.copy()
+        if X_.ndim==1:
+            X_=np.reshape(X_,(1,-1))
+    elif isinstance(Xnew,pd.DataFrame):
+        X_=np.array(Xnew.values[:,1:]).astype(float)
     X_nan_map = np.isnan(X_)    
     if not(X_nan_map.any()):
         tnew = ((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1)))) @ plsobj['Ws']
@@ -590,7 +601,7 @@ def pls_pred(Xnew,plsobj,algorithm='p2mp'):
         xhat = (tnew @ plsobj['P'].T) * np.tile(plsobj['sx'],(X_.shape[0],1)) + np.tile(plsobj['mx'],(X_.shape[0],1))
         ypred ={'Yhat':yhat,'Xhat':xhat,'Tnew':tnew}
     elif algorithm=='p2mp':
-        X_nan_map = np.isnan(Xnew)
+        X_nan_map = np.isnan(X_)
         not_Xmiss = (np.logical_not(X_nan_map))*1
         X_,dummy=n2z(X_)
         Xmcs=((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1))))
@@ -628,7 +639,42 @@ def hott2(mvmobj,*,Xnew=False,Tnew=False):
         Tnew=xpred['Tnew']    
         var_t = (mvmobj['T'].T @ mvmobj['T'])/mvmobj['T'].shape[0]
         hott2_ = np.sum((Tnew @ np.linalg.inv(var_t)) * Tnew,axis=1)
+    elif isinstance(Xnew,bool) and isinstance(Tnew,bool):
+        var_t = (mvmobj['T'].T @ mvmobj['T'])/mvmobj['T'].shape[0]
+        Tnew =mvmobj['T']
+        hott2_ = np.sum((Tnew @ np.linalg.inv(var_t)) * Tnew,axis=1)
     return hott2_
+
+def spe(mvmobj,Xnew,*,Ynew=False):
+        if 'Q' in mvmobj:  
+            xpred = pls_pred(Xnew,mvmobj)  
+        else:
+            xpred = pca_pred(Xnew,mvmobj)  
+        Tnew=xpred['Tnew']
+        if isinstance(Xnew,np.ndarray):
+            X_=Xnew.copy()
+        elif isinstance(Xnew,pd.DataFrame):
+            X_=np.array(Xnew.values[:,1:]).astype(float)
+        if isinstance(Ynew,np.ndarray):
+            Y_=Ynew.copy()
+        elif isinstance(Ynew,pd.DataFrame):
+            Y_=np.array(Ynew.values[:,1:]).astype(float)
+        
+        Xnewhat= Tnew @ mvmobj['P'].T
+        Xres = X_ - np.tile(mvmobj['mx'],(Xnew.shape[0],1))
+        Xres = Xres / np.tile(mvmobj['sx'],(Xnew.shape[0],1))
+        Xres = Xres - Xnewhat
+        spex_ =  np.sum(Xres**2,axis=1,keepdims=True)
+        
+        if not(isinstance(Ynew,np.bool)) and ('Q' in mvmobj):
+            Ynewhat= Tnew @ mvmobj['Q'].T
+            Yres = Y_   - np.tile(mvmobj['my'],(Ynew.shape[0],1))
+            Yres = Yres / np.tile(mvmobj['sy'],(Ynew.shape[0],1))
+            Yres = Yres - Ynewhat
+            spey_ =  np.sum(Yres**2,axis=1,keepdims=True)
+            return spex_,spey_
+        else:      
+            return spex_
 
 
 def z2n(X,X_nan_map):
@@ -965,6 +1011,40 @@ def f95(i,j):
     return f95_
     
 
+def scores_conf_int_calc(st,N):
+    n_points=100
+    cte2=((N-1)*(N+1)*(2))/(N*(N-2))
+    f95_=cte2*f95(2,N-2)
+    f99_=cte2*f99(2,N-2)
+    xd95=np.sqrt(f95_*st[0,0])
+    xd99=np.sqrt(f99_*st[0,0])
+    xd95=np.linspace(-xd95,xd95,num=n_points)
+    xd99=np.linspace(-xd99,xd99,num=n_points)
+    
+    st=np.linalg.inv(st)
+    s11=st[0,0]
+    s22=st[1,1]
+    s12=st[0,1]
+    s21=st[1,0]
+
+    a=np.tile(s22,n_points)
+    b=xd95*np.tile(s12,n_points)+xd95*np.tile(s21,n_points)
+    c=(xd95**2)*np.tile(s11,n_points)-f95_
+    safe_chk=b**2-4*a*c
+    safe_chk[safe_chk<0]=0
+    yd95p=(-b+np.sqrt(safe_chk))/(2*a)
+    yd95n=(-b-np.sqrt(safe_chk))/(2*a)
+    
+    a=np.tile(s22,n_points)
+    b=xd99*np.tile(s12,n_points)+xd99*np.tile(s21,n_points)
+    c=(xd99**2)*np.tile(s11,n_points)-f99_
+    safe_chk=b**2-4*a*c
+    safe_chk[safe_chk<0]=0
+
+    yd99p=(-b+np.sqrt(safe_chk))/(2*a)
+    yd99n=(-b-np.sqrt(safe_chk))/(2*a)
+    
+    return xd95,xd99,yd95p,yd95n,yd99p,yd99n
     
 
 

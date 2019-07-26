@@ -60,7 +60,8 @@ def r2pv(mvmobj):
             
     
     if is_pls:
-        output_file("r2xypv.html",title="R2XYPV") 
+        rnd_num=str(int(np.round(1000*np.random.random_sample())))
+        output_file("r2xypv_"+rnd_num+".html",title="R2XYPV") 
         colormap =cm.get_cmap("rainbow")
         different_colors=A
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
@@ -89,7 +90,8 @@ def r2pv(mvmobj):
         
         
     else:   
-        output_file("r2xpv.html",title='R2XPV') 
+        rnd_num=str(int(np.round(1000*np.random.random_sample())))
+        output_file("r2xpv_"+rnd_num+".html",title='R2XPV') 
         colormap =cm.get_cmap("rainbow")
         different_colors=A
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
@@ -146,7 +148,8 @@ def loadings(mvmobj):
         for i in list(np.arange(A)):
             X_loading_dict.update({lv_labels[i] : mvmobj['P'][:,i].tolist()})
     if is_pls:
-        output_file("Loadings X Space.html",title='X Loadings PLS')
+        rnd_num=str(int(np.round(1000*np.random.random_sample())))
+        output_file("Loadings X Space_"+rnd_num+".html",title='X Loadings PLS')
         for i in list(np.arange(A)):
             p = figure(x_range=XVar, plot_height=250, title="X Space Loadings "+lv_labels[i],
                     tools="save,box_zoom,pan,reset")
@@ -157,8 +160,9 @@ def loadings(mvmobj):
                 p_list=[p]
             else:
                 p_list.append(p)
-        show(column(p_list))        
-        output_file("Loadings Y Space.html",title='Y Loadings PLS')
+        show(column(p_list))    
+        rnd_num=str(int(np.round(1000*np.random.random_sample())))
+        output_file("Loadings Y Space_"+rnd_num+".html",title='Y Loadings PLS')
         for i in list(np.arange(A)):
             p = figure(x_range=YVar, plot_height=250, title="Y Space Loadings "+lv_labels[i],
                     tools="save,box_zoom,pan,reset")
@@ -171,7 +175,8 @@ def loadings(mvmobj):
                 p_list.append(p)                    
         show(column(p_list))
     else:   
-        output_file("Loadings X Space.html",title='X Loadings PCA') 
+        rnd_num=str(int(np.round(1000*np.random.random_sample())))
+        output_file("Loadings X Space_"+rnd_num+".html",title='X Loadings PCA') 
         for i in list(np.arange(A)):
             p = figure(x_range=XVar, plot_height=250, title="X Space Loadings "+lv_labels[i],
                     tools="save,box_zoom,pan,reset")
@@ -224,7 +229,8 @@ def weighted_loadings(mvmobj):
         for i in list(np.arange(A)):
             X_loading_dict.update({lv_labels[i] : mvmobj['P'][:,i].tolist()})
     if is_pls:
-        output_file("Loadings X Space.html",title='X Weighted Loadings PLS')
+        rnd_num=str(int(np.round(1000*np.random.random_sample())))
+        output_file("Loadings X Space_"+rnd_num+".html",title='X Weighted Loadings PLS')
         for i in list(np.arange(A)):
             p = figure(x_range=XVar, plot_height=250, title="X Space Weighted Loadings "+lv_labels[i],
                      tools="save,box_zoom,pan,reset")
@@ -235,8 +241,9 @@ def weighted_loadings(mvmobj):
                 p_list=[p]
             else:
                 p_list.append(p)
-        show(column(p_list))        
-        output_file("Loadings Y Space.html",title='Y Weighted Loadings PLS')
+        show(column(p_list)) 
+        rnd_num=str(int(np.round(1000*np.random.random_sample())))
+        output_file("Loadings Y Space_"+rnd_num+".html",title='Y Weighted Loadings PLS')
         for i in list(np.arange(A)):
             p = figure(x_range=YVar, plot_height=250, title="Y Space Weighted Loadings "+lv_labels[i],
                      tools="save,box_zoom,pan,reset")
@@ -249,7 +256,8 @@ def weighted_loadings(mvmobj):
                 p_list.append(p)                    
         show(column(p_list))
     else:   
-        output_file("Loadings X Space.html",title='X Weighted Loadings PCA') 
+        rnd_num=str(int(np.round(1000*np.random.random_sample())))
+        output_file("Loadings X Space_"+rnd_num+".html",title='X Weighted Loadings PCA') 
         for i in list(np.arange(A)):
             p = figure(x_range=XVar, plot_height=250, title="X Space Weighted Loadings "+lv_labels[i],
                      tools="save,box_zoom,pan,reset")
@@ -265,7 +273,8 @@ def weighted_loadings(mvmobj):
  
 def vip(mvmobj):
     if 'Q' in mvmobj:  
-        output_file("VIP.html",title='VIP Coefficient') 
+        rnd_num=str(int(np.round(1000*np.random.random_sample())))
+        output_file("VIP_"+rnd_num+".html",title='VIP Coefficient') 
         num_varX=mvmobj['P'].shape[0]            
         if 'varidX' in mvmobj:
             XVar=mvmobj['varidX']
@@ -289,7 +298,7 @@ def vip(mvmobj):
         show(p)
     return    
 
-def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False):
+def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False):
     '''
     mvmobj : PLS or PCA object from phyphi
     xydim  : LV to plot on x and y axes. eg [1,2] will plot t1 vs t2
@@ -325,16 +334,15 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False):
 
     
     if isinstance(CLASSID,np.bool): # No CLASSIDS
-        output_file("Score_Scatter.html",title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ ']')
-#        x_=mvmobj['T'][:,[xydim[0]-1]]
-#        y_=mvmobj['T'][:,[xydim[1]-1]]
+        rnd_num=str(int(np.round(1000*np.random.random_sample())))
+        output_file("Score_Scatter_"+rnd_num+".html",title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ ']')
 
         x_=T_matrix[:,[xydim[0]-1]]
         y_=T_matrix[:,[xydim[1]-1]]
 
            
         source = ColumnDataSource(data=dict(x=x_, y=y_,ObsID=ObsID_))
-        TOOLS = "save,box_zoom,pan,reset,box_select,lasso_select"
+        TOOLS = "save,wheel_zoom,box_zoom,pan,reset,box_select,lasso_select"
         TOOLTIPS = [
                 ("index", "$index"),
                 ("(x,y)", "($x, $y)"),
@@ -343,6 +351,17 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False):
         
         p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ ']')
         p.circle('x', 'y', source=source,size=7)
+        if add_ci:
+            T_aux1=mvmobj['T'][:,[xydim[0]-1]]
+            T_aux2=mvmobj['T'][:,[xydim[1]-1]]
+            T_aux = np.hstack((T_aux1,T_aux2))
+            st=(T_aux.T @ T_aux)/T_aux.shape[0]
+            [xd95,xd99,yd95p,yd95n,yd99p,yd99n]=phi.scores_conf_int_calc(st,mvmobj['T'].shape[0])
+            p.line(xd95,yd95p,line_color="gold",line_dash='dashed')
+            p.line(xd95,yd95n,line_color="gold",line_dash='dashed')
+            p.line(xd99,yd99p,line_color="red",line_dash='dashed')
+            p.line(xd99,yd99n,line_color="red",line_dash='dashed')
+            
 
         p.xaxis.axis_label = 't ['+str(xydim[0])+']'
         p.yaxis.axis_label = 't ['+str(xydim[1])+']'
@@ -359,14 +378,12 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False):
         different_colors=A
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
         bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]  
-                       
-        output_file("Score_Scatter.html",title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ ']')
-        #x_=mvmobj['T'][:,[xydim[0]-1]]
-        #y_=mvmobj['T'][:,[xydim[1]-1]]  
+        rnd_num=str(int(np.round(1000*np.random.random_sample())))               
+        output_file("Score_Scatter_"+rnd_num+".html",title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ ']') 
         x_=T_matrix[:,[xydim[0]-1]]
         y_=T_matrix[:,[xydim[1]-1]]          
         
-        TOOLS = "save,box_zoom,pan,reset,box_select,lasso_select"
+        TOOLS = "save,wheel_zoom,box_zoom,pan,reset,box_select,lasso_select"
         TOOLTIPS = [
                 ("index", "$index"),
                 ("(x,y)", "($x, $y)"),
@@ -374,15 +391,34 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False):
                 ("Class:","@Class")
                 ]        
         classid_=list(CLASSID[colorby])
-        color_list_=[]
-        for i in list(range(len(ObsID_))):
-            color_list_.append(bokeh_palette[Classes_.index(classid_[i])])
-        source = ColumnDataSource(data=dict(x=x_, y=y_,ObsID=ObsID_,color_list=color_list_,Class=list(CLASSID[colorby])))
+        
         
         p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ ']')
 
-        p.circle('x', 'y', source=source,size=7,color='color_list')
-
+        for classid_in_turn in Classes_:
+            x_aux=[]
+            y_aux=[]
+            obsid_aux=[]
+            classid_aux=[]
+            for i in list(range(len(ObsID_))):
+                if classid_[i]==classid_in_turn:
+                    x_aux.append(x_[i][0])
+                    y_aux.append(y_[i][0])
+                    obsid_aux.append(ObsID_[i])
+                    classid_aux.append(classid_in_turn)
+            source = ColumnDataSource(data=dict(x=x_aux, y=y_aux,ObsID=obsid_aux,Class=classid_aux))        
+            color_=bokeh_palette[Classes_.index(classid_in_turn)]
+            p.circle('x','y',source=source,color=color_,legend=classid_in_turn)
+        if add_ci:
+            T_aux1=mvmobj['T'][:,[xydim[0]-1]]
+            T_aux2=mvmobj['T'][:,[xydim[1]-1]]
+            T_aux = np.hstack((T_aux1,T_aux2))
+            st=(T_aux.T @ T_aux)/T_aux.shape[0]
+            [xd95,xd99,yd95p,yd95n,yd99p,yd99n]=phi.scores_conf_int_calc(st,mvmobj['T'].shape[0])
+            p.line(xd95,yd95p,line_color="gold",line_dash='dashed')
+            p.line(xd95,yd95n,line_color="gold",line_dash='dashed')
+            p.line(xd99,yd99p,line_color="red",line_dash='dashed')
+            p.line(xd99,yd99n,line_color="red",line_dash='dashed') 
         p.xaxis.axis_label = 't ['+str(xydim[0])+']'
         p.yaxis.axis_label = 't ['+str(xydim[1])+']'
         # Vertical line
@@ -392,4 +428,316 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False):
         p.renderers.extend([vline, hline])
         show(p)
     return    
+
+def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False):
+    if isinstance(score_plot_xydim,np.bool):
+        add_score_plot = False
+    else:
+        add_score_plot = True
+        
+    if isinstance(Xnew,np.bool): #No Xnew was given need to plot all from model
+        if 'obsidX' in mvmobj:
+            ObsID_=mvmobj['obsidX']
+        else:
+            ObsID_ = []
+            for n in list(np.arange(mvmobj['T'].shape[0])+1):
+                ObsID_.append('Obs #'+str(n))  
+                              
+        Obs_num = np.arange(mvmobj['T'].shape[0])+1
+        
+        if add_score_plot and not(isinstance(score_plot_xydim,np.bool)):
+            t_x  = mvmobj['T'][:,[score_plot_xydim[0]-1]]
+            t_y  = mvmobj['T'][:,[score_plot_xydim[1]-1]]
+        else:
+            add_score_plot = False
+        
+        if not(add_score_plot):
+            if 'Q' in mvmobj:
+                spey_=1
+                source = ColumnDataSource(data=dict(x=Obs_num, ObsID=ObsID_,t2=mvmobj['T2'],spex=mvmobj['speX'],spey=mvmobj['speY']))  
+            else:
+                source = ColumnDataSource(data=dict(x=Obs_num, ObsID=ObsID_,t2=mvmobj['T2'],spex=mvmobj['speX'])) 
+        else:
+            if 'Q' in mvmobj:
+                spey_=1
+                source = ColumnDataSource(data=dict(x=Obs_num, ObsID=ObsID_,t2=mvmobj['T2'],spex=mvmobj['speX'],spey=mvmobj['speY'],tx=t_x,ty=t_y))  
+            else:
+                source = ColumnDataSource(data=dict(x=Obs_num, ObsID=ObsID_,t2=mvmobj['T2'],spex=mvmobj['speX'],tx=t_x,ty=t_y))
+    else: #Xnew was given
+        if isinstance(Xnew,np.ndarray):
+            ObsID_ = []
+            for n in list(np.arange(Xnew.shape[0])+1):
+                ObsID_.append('Obs #'+str(n))  
+        elif isinstance(Xnew,pd.DataFrame):
+            X_=np.array(Xnew.values[:,1:]).astype(float)
+            ObsID_ = Xnew.values[:,0].astype(str)
+            ObsID_ = ObsID_.tolist()
+            
+        Obs_num = np.arange(mvmobj['T'].shape[0])+1
+        
+        if add_score_plot and not(isinstance(score_plot_xydim,np.bool)):
+            if 'Q' in mvmobj:  
+                xpred=phi.pls_pred(X_,mvmobj)
+            else:
+                xpred=phi.pca_pred(X_,mvmobj)
+            T_matrix=xpred['Tnew']
+            t_x  = T_matrix[:,[score_plot_xydim[0]-1]]
+            t_y  = T_matrix[:,[score_plot_xydim[1]-1]]
+        else:
+            add_score_plot = False
+        
+        t2_ = phi.hott2(mvmobj,Xnew=Xnew)
+        
+        if 'Q' in mvmobj and not(isinstance(Ynew,np.bool)):
+            spex_,spey_ = phi.spe(mvmobj,Xnew,Ynew=Ynew)
+        else:
+            spex_ = phi.spe(mvmobj,Xnew)
+            spey_ = False
+        if not(add_score_plot):
+            if 'Q' in mvmobj and not(isinstance(Ynew,np.bool)):
+                source = ColumnDataSource(data=dict(x=Obs_num, ObsID=ObsID_,t2=t2_,spex=spex_,spey=spey_))  
+            else:
+                source = ColumnDataSource(data=dict(x=Obs_num, ObsID=ObsID_,t2=t2_,spex=spex_)) 
+        else:
+            if 'Q' in mvmobj and not(isinstance(Ynew,np.bool)):
+                source = ColumnDataSource(data=dict(x=Obs_num, ObsID=ObsID_,t2=t2_,spex=spex_,spey=spey_,tx=t_x,ty=t_y))  
+            else:
+                source = ColumnDataSource(data=dict(x=Obs_num, ObsID=ObsID_,t2=t2_,spex=spex_,tx=t_x,ty=t_y))
+    TOOLS = "save,wheel_zoom,box_zoom,reset,lasso_select"
+    TOOLTIPS = [
+            ("index", "$index"),
+            ("(x,y)", "($x, $y)"),
+            ("Obs: ","@ObsID")
+            ]
     
+    rnd_num=str(int(np.round(1000*np.random.random_sample())))               
+    output_file("Diagnostics"+rnd_num+".html",title='Diagnostics') 
+    p = figure(tools=TOOLS, tooltips=TOOLTIPS, plot_height=400, title="Hotelling's T2")
+    p.circle('x','t2',source=source)
+    p.line([0,Obs_num[-1]],[mvmobj['T2_lim95'],mvmobj['T2_lim95']],line_color='gold')
+    p.line([0,Obs_num[-1]],[mvmobj['T2_lim99'],mvmobj['T2_lim99']],line_color='red')
+    p.xaxis.axis_label = 'Observation sequence'
+    p.yaxis.axis_label = "HT2"
+    p_list=[p]
+    
+    p = figure(tools=TOOLS, tooltips=TOOLTIPS, plot_height=400, title='SPE X')
+    p.circle('x','spex',source=source)
+    p.line([0,Obs_num[-1]],[mvmobj['speX_lim95'],mvmobj['speX_lim95']],line_color='gold')
+    p.line([0,Obs_num[-1]],[mvmobj['speX_lim99'],mvmobj['speX_lim99']],line_color='red')
+    p.xaxis.axis_label = 'Observation sequence'
+    p.yaxis.axis_label = 'SPE X-Space'
+    p_list.append(p)
+    
+    p = figure(tools=TOOLS, tooltips=TOOLTIPS, plot_height=400, title='Outlier Map')
+    p.circle('t2','spex',source=source)
+    
+    vline = Span(location=mvmobj['T2_lim99'], dimension='height', line_color='red', line_width=1)
+    hline = Span(location=mvmobj['speX_lim99'], dimension='width', line_color='red', line_width=1)
+    p.renderers.extend([vline, hline])
+    
+    p.xaxis.axis_label = "Hotelling's T2"
+    p.yaxis.axis_label = 'SPE X-Space'
+    p_list.append(p)
+    
+    
+    if 'Q' in mvmobj and not(isinstance(spey_,np.bool)):
+        p = figure(tools=TOOLS, tooltips=TOOLTIPS, plot_height=400, title='SPE Y')
+        p.circle('x','spey',source=source)
+        p.line([0,Obs_num[-1]],[mvmobj['speY_lim95'],mvmobj['speY_lim95']],line_color='gold')
+        p.line([0,Obs_num[-1]],[mvmobj['speY_lim99'],mvmobj['speY_lim99']],line_color='red')
+        p.xaxis.axis_label = 'Observation sequence'
+        p.yaxis.axis_label = 'SPE Y-Space'
+        p_list.append(p)
+    if add_score_plot:
+        p = figure(tools=TOOLS, tooltips=TOOLTIPS, plot_height=400, title='Score Scatter')
+        p.circle('tx', 'ty', source=source,size=7)
+        
+        T_aux1=mvmobj['T'][:,[score_plot_xydim[0]-1]]
+        T_aux2=mvmobj['T'][:,[score_plot_xydim[1]-1]]
+        T_aux = np.hstack((T_aux1,T_aux2))
+        st=(T_aux.T @ T_aux)/T_aux.shape[0]
+        [xd95,xd99,yd95p,yd95n,yd99p,yd99n]=phi.scores_conf_int_calc(st,mvmobj['T'].shape[0])
+        p.line(xd95,yd95p,line_color="gold",line_dash='dashed')
+        p.line(xd95,yd95n,line_color="gold",line_dash='dashed')
+        p.line(xd99,yd99p,line_color="red",line_dash='dashed')
+        p.line(xd99,yd99n,line_color="red",line_dash='dashed') 
+        p.xaxis.axis_label = 't ['+str(score_plot_xydim[0])+']'
+        p.yaxis.axis_label = 't ['+str(score_plot_xydim[1])+']'
+        # Vertical line
+        vline = Span(location=0, dimension='height', line_color='black', line_width=2)
+        # Horizontal line
+        hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+        p.renderers.extend([vline, hline])
+        #Do another p.figure
+        p_list.append(p)
+    
+    show(column(p_list)) 
+    return
+
+def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
+    num_varX=mvmobj['P'].shape[0]
+    
+    if isinstance(X,np.ndarray):
+        X_=X.copy()
+        ObsID_ = []
+        for n in list(np.arange(X.shape[0])+1):
+            ObsID_.append('Obs #'+str(n))  
+        XVarID_ = []
+        for n in list(np.arange(X.shape[1])+1):
+            XVarID_.append('Var #'+str(n))  
+    elif isinstance(X,pd.DataFrame):
+        X_=np.array(X.values[:,1:]).astype(float)
+        ObsID_ = X.values[:,0].astype(str)
+        ObsID_ = ObsID_.tolist()
+
+    if 'varidX' in mvmobj:
+        XVar=mvmobj['varidX']
+    else:
+        XVar = []
+        for n in list(np.arange(num_varX)+1):
+            XVar.append('XVar #'+str(n))    
+                        
+    if 'Q' in mvmobj:
+        num_varY=mvmobj['Q'].shape[0]
+        if 'varidY' in mvmobj:
+            YVar=mvmobj['varidY']
+        else:
+            YVar = []
+            for n in list(np.arange(num_varY)+1):
+                YVar.append('YVar #'+str(n))
+                        
+
+    if isinstance(Y,np.ndarray):
+        Y_=Y.copy()
+    elif isinstance(Y,pd.DataFrame):
+        Y_=np.array(Y.values[:,1:]).astype(float)
+
+            
+    if 'Q' in mvmobj:  
+        pred=phi.pls_pred(X_,mvmobj)
+        yhat=pred['Yhat']
+        if x_space:
+            xhat=pred['Xhat']
+        else:
+            xhat=False
+    else:
+        x_space=True
+        pred=phi.pca_pred(X_,mvmobj)
+        xhat=pred['Xhat']
+        yhat=False
+        
+    TOOLS = "save,wheel_zoom,box_zoom,pan,reset,box_select,lasso_select"
+    TOOLTIPS = [
+                ("index", "$index"),
+                ("(x,y)", "($x, $y)"),
+                ("Obs: ","@ObsID")
+                ]
+    
+    if isinstance(CLASSID,np.bool): # No CLASSIDS
+        rnd_num=str(int(np.round(1000*np.random.random_sample())))
+        output_file("ObsvsPred_"+rnd_num+".html",title='ObsvsPred')
+        plot_counter=0
+        
+        if not(isinstance(yhat,np.bool)): #skip if PCA model sent
+            for i in list(range(Y_.shape[1])):
+                x_ = Y_[:,i]
+                y_ = yhat[:,i]           
+                source = ColumnDataSource(data=dict(x=x_, y=y_,ObsID=ObsID_))
+                p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title=YVar[i])
+                p.circle('x', 'y', source=source,size=7,color='darkblue')
+                p.line([np.nanmin(x_),np.nanmax(x_)],[np.nanmin(y_),np.nanmax(y_)],line_color='cyan',line_dash='dashed')
+                p.xaxis.axis_label ='Observed'
+                p.yaxis.axis_label ='Predicted'
+                if plot_counter==0:
+                    p_list=[p]
+                else:
+                    p_list.append(p)
+                plot_counter = plot_counter+1
+                
+        if x_space: #
+            for i in list(range(X_.shape[1])):
+                x_ = X_[:,i]
+                y_ = xhat[:,i]           
+                source = ColumnDataSource(data=dict(x=x_, y=y_,ObsID=ObsID_))
+                p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title=XVar[i])
+                p.circle('x', 'y', source=source,size=7,color='darkblue')
+                p.line([np.nanmin(x_),np.nanmax(x_)],[np.nanmin(y_),np.nanmax(y_)],line_color='cyan',line_dash='dashed')
+                p.xaxis.axis_label ='Observed'
+                p.yaxis.axis_label ='Predicted'
+                if plot_counter==0:
+                    p_list=[p]
+                else:
+                    p_list.append(p)
+                plot_counter = plot_counter+1
+        show(column(p_list))
+        
+    else: # YES CLASSIDS
+        Classes_=np.unique(CLASSID[colorby]).tolist()
+        different_colors=len(Classes_)
+        colormap =cm.get_cmap("rainbow")
+        color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
+        bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]  
+        rnd_num=str(int(np.round(1000*np.random.random_sample())))
+        output_file("ObsvsPred_"+rnd_num+".html",title='ObsvsPred')      
+        classid_=list(CLASSID[colorby])
+        
+        plot_counter=0
+        
+        if not(isinstance(yhat,np.bool)): #skip if PCA model sent
+            for i in list(range(Y_.shape[1])):
+                x_ = Y_[:,i]
+                y_ = yhat[:,i]
+                p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title=YVar[i])
+                for classid_in_turn in Classes_:
+                    x_aux=[]
+                    y_aux=[]
+                    obsid_aux=[]
+                    classid_aux=[]
+                    for i in list(range(len(ObsID_))):
+                        if classid_[i]==classid_in_turn and not(np.isnan(x_[i])):
+                            x_aux.append(x_[i])
+                            y_aux.append(y_[i])
+                            obsid_aux.append(ObsID_[i])
+                            classid_aux.append(classid_in_turn)
+                    source = ColumnDataSource(data=dict(x=x_aux, y=y_aux,ObsID=obsid_aux,Class=classid_aux))        
+                    color_=bokeh_palette[Classes_.index(classid_in_turn)]
+                    p.circle('x','y',source=source,color=color_,legend=classid_in_turn)
+                    p.line([np.nanmin(x_),np.nanmax(x_)],[np.nanmin(y_),np.nanmax(y_)],line_color='cyan',line_dash='dashed')
+                p.xaxis.axis_label ='Observed'
+                p.yaxis.axis_label ='Predicted'
+                
+                if plot_counter==0:
+                    p_list=[p]
+                    plot_counter = plot_counter+1
+                else:
+                    p_list.append(p)
+              
+        if x_space: #
+            for i in list(range(X_.shape[1])):
+                x_ = X_[:,i]
+                y_ = xhat[:,i]
+                p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title=XVar[i])
+                for classid_in_turn in Classes_:
+                    x_aux=[]
+                    y_aux=[]
+                    obsid_aux=[]
+                    classid_aux=[]
+                    for i in list(range(len(ObsID_))):
+                        if classid_[i]==classid_in_turn and not(np.isnan(x_[i])):
+                            x_aux.append(x_[i])
+                            y_aux.append(y_[i])
+                            obsid_aux.append(ObsID_[i])
+                            classid_aux.append(classid_in_turn)
+                    source = ColumnDataSource(data=dict(x=x_aux, y=y_aux,ObsID=obsid_aux,Class=classid_aux))        
+                    color_=bokeh_palette[Classes_.index(classid_in_turn)]
+                    p.circle('x','y',source=source,color=color_,legend=classid_in_turn)
+                    p.line([np.nanmin(x_),np.nanmax(x_)],[np.nanmin(y_),np.nanmax(y_)],line_color='cyan',line_dash='dashed')
+                p.xaxis.axis_label ='Observed'
+                p.yaxis.axis_label ='Predicted'
+                if plot_counter==0:
+                    p_list=[p]
+                    plot_counter = plot_counter+1
+                else:
+                    p_list.append(p)
+        show(column(p_list))
+    return    
