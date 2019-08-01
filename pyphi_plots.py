@@ -10,8 +10,8 @@ from bokeh.io import show, output_file
 from bokeh.plotting import figure
 from bokeh.palettes import GnBu3
 from bokeh.layouts import column
-from bokeh.models import ColumnDataSource
-from bokeh.models import Span
+from bokeh.models import ColumnDataSource,LabelSet, Label,Span
+
 import pyphi as phi
 import pandas as pd
 
@@ -156,6 +156,8 @@ def loadings(mvmobj):
             p.vbar(x=XVar, top=mvmobj['Ws'][:,i].tolist(), width=0.5)
             p.xgrid.grid_line_color = None
             p.yaxis.axis_label = 'W* ['+str(i+1)+']'
+            hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+            p.renderers.extend([hline])
             if i==0:
                 p_list=[p]
             else:
@@ -169,6 +171,8 @@ def loadings(mvmobj):
             p.vbar(x=YVar, top=mvmobj['Q'][:,i].tolist(), width=0.5)
             p.xgrid.grid_line_color = None
             p.yaxis.axis_label = 'Q ['+str(i+1)+']'
+            hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+            p.renderers.extend([hline])
             if i==0:
                 p_list=[p]
             else:
@@ -183,12 +187,79 @@ def loadings(mvmobj):
             p.vbar(x=XVar, top=mvmobj['P'][:,i].tolist(), width=0.5)
             p.xgrid.grid_line_color = None
             p.yaxis.axis_label = 'P ['+str(i+1)+']'
+            hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+            p.renderers.extend([hline])
             if i==0:
                 p_list=[p]
             else:
                 p_list.append(p)
         show(column(p_list))
     return    
+
+def loadings_map(mvmobj,dims):
+    A= mvmobj['T'].shape[1]
+    num_varX=mvmobj['P'].shape[0]    
+    if 'Q' in mvmobj:
+        lv_prefix='LV #'     
+        lv_labels = []   
+        for a in list(np.arange(A)+1):
+            lv_labels.append(lv_prefix+str(a))    
+        if 'varidX' in mvmobj:
+            XVar=mvmobj['varidX']
+        else:
+            XVar = []
+            for n in list(np.arange(num_varX)+1):
+                XVar.append('XVar #'+str(n))               
+        num_varY=mvmobj['Q'].shape[0]
+        if 'varidY' in mvmobj:
+            YVar=mvmobj['varidY']
+        else:
+            YVar = []
+            for n in list(np.arange(num_varY)+1):
+                YVar.append('YVar #'+str(n))               
+    
+        rnd_num=str(int(np.round(1000*np.random.random_sample())))
+        output_file("Loadings Map"+rnd_num+".html",title='Loadings Map')
+       
+    
+        x_ws = mvmobj['Ws'][:,dims[0]-1]
+        x_ws = x_ws/np.max(np.abs(x_ws))
+        y_ws = mvmobj['Ws'][:,dims[1]-1]
+        y_ws = y_ws/np.max(np.abs(y_ws))
+        
+        x_q = mvmobj['Q'][:,dims[0]-1]
+        x_q = x_q/np.max(np.abs(x_q))   
+        y_q = mvmobj['Q'][:,dims[1]-1]
+        y_q = y_q/np.max(np.abs(y_q))
+        
+        
+        TOOLS = "save,wheel_zoom,box_zoom,pan,reset,box_select,lasso_select"
+        TOOLTIPS = [
+                ("index", "$index"),
+                ("(x,y)", "($x, $y)"),
+                ("Variable:","@names")
+                ]
+    
+        source1 = ColumnDataSource(data=dict(x=x_ws, y=y_ws,names=XVar))  
+        source2 = ColumnDataSource(data=dict(x=x_q, y=y_q,names=YVar)) 
+        p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title="Loadings Map LV["+str(dims[0])+"] - LV["+str(dims[1])+"]",
+                                                                                                          x_range=(-1.5,1.5),y_range=(-1.5,1.5))
+        p.circle('x', 'y', source=source1,size=10,color='darkblue')
+        p.circle('x', 'y', source=source2,size=10,color='red')
+        p.xaxis.axis_label = lv_labels [dims[0]-1]
+        p.yaxis.axis_label = lv_labels [dims[1]-1]
+        
+        labelsX = LabelSet(x='x', y='y', text='names', level='glyph',x_offset=5, y_offset=5, source=source1, render_mode='canvas')
+        labelsY = LabelSet(x='x', y='y', text='names', level='glyph',x_offset=5, y_offset=5, source=source2, render_mode='canvas')
+        p.add_layout(labelsX)
+        p.add_layout(labelsY)
+
+        vline = Span(location=0, dimension='height', line_color='black', line_width=2)
+        # Horizontal line
+        hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+        p.renderers.extend([vline, hline])
+        show(p)    
+    return  
 
 def weighted_loadings(mvmobj):
     A= mvmobj['T'].shape[1]
@@ -237,6 +308,8 @@ def weighted_loadings(mvmobj):
             p.vbar(x=XVar, top=(mvmobj['r2xpv'][:,i] * mvmobj['Ws'][:,i]).tolist(), width=0.5)
             p.xgrid.grid_line_color = None
             p.yaxis.axis_label = 'W* ['+str(i+1)+']'
+            hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+            p.renderers.extend([hline])
             if i==0:
                 p_list=[p]
             else:
@@ -250,6 +323,8 @@ def weighted_loadings(mvmobj):
             p.vbar(x=YVar, top=(mvmobj['r2ypv'][:,i] * mvmobj['Q'][:,i]).tolist(), width=0.5)
             p.xgrid.grid_line_color = None
             p.yaxis.axis_label = 'Q ['+str(i+1)+']'
+            hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+            p.renderers.extend([hline])
             if i==0:
                 p_list=[p]
             else:
@@ -264,6 +339,8 @@ def weighted_loadings(mvmobj):
             p.vbar(x=XVar, top=(mvmobj['r2xpv'][:,i] * mvmobj['P'][:,i]).tolist(), width=0.5)
             p.xgrid.grid_line_color = None
             p.yaxis.axis_label = 'P ['+str(i+1)+']'
+            hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+            p.renderers.extend([hline])
             if i==0:
                 p_list=[p]
             else:
