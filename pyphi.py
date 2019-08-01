@@ -3,8 +3,175 @@ import pandas as pd
 import datetime
 from scipy.special import factorial
 from scipy import interpolate
-  
-def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
+ 
+def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cross_val=0):
+    """ Principal Components Analysis routine
+    
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    Inputs:
+        X : Either a pandas dataframe, or a Numpy Matrix
+        
+        A : Number of Principal Components to calculate
+        
+        mcs: 'True'      : Meancenter + autoscale *default if not sent* 
+             'False'     : No pre-processing
+             'center'    : Only center
+             'autoscale' : Only autoscale
+             
+        md_algorithm: 'nipals' *default if not sent*
+                      'nlp'    To be implemented
+                      
+        force_nipals: If = True and if X is complete, will use NIPALS.
+                           Otherwise, if X is complete will use SVD.
+                         = False *default if not sent*
+                      
+        shush: If = True supressess all printed output
+                  =  False *default if not sent*
+        
+        cross_val: If sent a scalar between 0 and 100, will cross validate
+                   element wise removing cross_val% of the data every round
+                   
+                   if ==   0:  Bypass cross-validation  *default if not sent*
+    Output:
+        A dictionary with all PCA loadings, scores and other diagnostics.
+    
+    """
+    
+    if cross_val==0:
+        pcaobj= pca_(X,A,mcs=mcs,md_algorithm=md_algorithm,force_nipals=force_nipals,shush=shush)
+    elif (cross_val > 0) and (cross_val<100):
+        if isinstance(X,np.ndarray):
+            X_=X.copy()
+        elif isinstance(X,pd.DataFrame):
+            X_=np.array(X.values[:,1:]).astype(float)
+        #Mean center and scale according to flags
+        if isinstance(mcs,bool):
+            if mcs:
+                #Mean center and autoscale  
+                X_,x_mean,x_std = meancenterscale(X_)
+            else:    
+                x_mean = np.zeros(1,X_.shape[1])
+                x_std  = np.ones(1,X_.shape[1])
+        elif mcs=='center':
+            #only center
+            X_,x_mean,x_std = meancenterscale(X_,mcs='center')
+        elif mcs=='autoscale':
+            #only autoscale
+            X_,x_mean,x_std = meancenterscale(X_,mcs='autoscale')
+            
+        #Generate Missing Data Map    
+        X_nan_map = np.isnan(X_)
+        not_Xmiss = (np.logical_not(X_nan_map))*1
+        
+
+        #Initialize TSS per var vector
+        X_,Xnanmap=n2z(X_)
+        TSS   = np.sum(X_**2)
+        TSSpv = np.sum(X_**2,axis=0)
+        cols = X_.shape[1]
+        rows = X_.shape[0]
+        X_ = z2n(X_,Xnanmap)
+        
+        for a in list(range(A)):
+            #Generate cross-val map starting from missing data
+            not_removed_map = not_Xmiss.copy()
+            not_removed_map = np.reshape(not_removed_map,(rows*cols,-1))
+            #Generate matrix of random numbers and zero out nans
+            Xrnd = np.random.random(X_.shape)*not_Xmiss
+            indx = np.argsort(np.reshape(Xrnd,(Xrnd.shape[0]*Xrnd.shape[1])))
+            elements_to_remove_per_round = np.int(np.ceil((X_.shape[0]*X_.shape[1]) * (cross_val/100)))
+            error = np.zeros((rows*cols,1))
+            while np.sum(not_removed_map) > 0 :#While there are still elements to be removed
+                X_copy=X_.copy()
+                if indx.size > elements_to_remove_per_round:
+                    indx_this_round = indx[0:elements_to_remove_per_round]
+                    indx = indx[elements_to_remove_per_round:]
+                else: 
+                    indx_this_round = indx
+                #Place NaN's     
+                X_copy                           = np.reshape(X_copy,(rows*cols,1))
+                elements_out                     = X_copy[indx_this_round]
+                X_copy[indx_this_round]          = np.nan
+                X_copy                           = np.reshape(X_copy,(rows,cols))
+                #update map
+                not_removed_map[indx_this_round] = 0
+                #look rows of missing data
+                auxmap = np.isnan(X_copy)
+                auxmap= (auxmap)*1
+                auxmap=np.sum(auxmap,axis=1)
+                indx2 = np.where(auxmap==X_copy.shape[1])
+                indx2=indx2[0].tolist()
+                if len(indx2) > 0:
+                    X_copy=np.delete(X_copy,indx2,0)
+                pcaobj_ = pca_(X_copy,1,mcs=False,shush=True)
+                xhat    = pcaobj_['T'] @ pcaobj_['P'].T
+                xhat    = np.insert(xhat, indx2,np.nan,axis=0)
+                xhat    = np.reshape(xhat,(rows*cols,1))
+                error[indx_this_round] = elements_out - xhat[indx_this_round]
+            error = np.reshape(error,(rows,cols))
+            error,dummy = n2z(error)
+            PRESSpv = np.sum(error**2,axis=0)
+            PRESS    = np.sum(error**2)
+            
+            if a==0:
+                q2   = 1 - PRESS/TSS
+                q2pv = 1 - PRESSpv/TSSpv
+                q2pv = q2pv.reshape(-1,1)
+            else:
+                q2   = np.hstack((q2,1 - PRESS/TSS))
+                aux_ = 1-PRESSpv/TSSpv
+                aux_ = aux_.reshape(-1,1)
+                q2pv = np.hstack((q2pv,aux_))
+            
+            #Deflate and go to next PC
+            X_copy=X_.copy()
+            pcaobj_ = pca_(X_copy,1,mcs=False,shush=True)
+            xhat    = pcaobj_['T'] @ pcaobj_['P'].T
+            X_,Xnanmap=n2z(X_)
+            X_ = (X_ - xhat) * not_Xmiss
+            if a==0:
+                r2   = 1-np.sum(X_**2)/TSS
+                r2pv = 1-np.sum(X_**2,axis=0)/TSSpv
+                r2pv = r2pv.reshape(-1,1)
+            else:
+                r2   = np.hstack((r2,1-np.sum(X_**2)/TSS))
+                aux_ = 1-np.sum(X_**2,axis=0)/TSSpv
+                aux_ = aux_.reshape(-1,1)
+                r2pv = np.hstack((r2pv,aux_))
+            X_ = z2n(X_,Xnanmap)
+            
+        # Fit full model
+        pcaobj = pca_(X,A,mcs=mcs,force_nipals=True,shush=True)
+        for a in list(range(A-1,0,-1)):
+             r2[a]     = r2[a]-r2[a-1]
+             r2pv[:,a] = r2pv[:,a]-r2pv[:,a-1]
+             q2[a]     = q2[a]-q2[a-1]
+             q2pv[:,a] = q2pv[:,a]-q2pv[:,a-1]
+        r2xc = np.cumsum(r2)
+        q2xc = np.cumsum(q2)
+        eigs = np.var(pcaobj['T'],axis=0)
+        pcaobj['q2']   = q2
+        pcaobj ['q2pv'] = q2pv
+        
+        if not(shush):               
+            print('--------------------------------------------------------------')
+            print('PC #          Eig      R2X     sum(R2X)      Q2X     sum(Q2X)')
+            if A>1:
+                for a in list(range(A)):
+                    print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}       {:.3f}     {:.3f}".format(eigs[a], r2[a], r2xc[a],q2[a],q2xc[a]))
+            else:
+                d1=eigs[0]
+                d2=r2xc[0]
+                d3=q2xc[0]
+                print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}       {:.3f}     {:.3f}".format(d1, r2, d2,q2,d3))
+            print('--------------------------------------------------------------')        
+    else:
+        pcaobj='Cannot cross validate  with those options'
+    return pcaobj
+
+def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
     if isinstance(X,np.ndarray):
         X_=X.copy()
         obsidX = False
@@ -20,7 +187,10 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
     if isinstance(mcs,bool):
         if mcs:
             #Mean center and autoscale  
-            X_,x_mean,x_std = meancenterscale(X_)          
+            X_,x_mean,x_std = meancenterscale(X_)  
+        else:    
+            x_mean = np.zeros((1,X_.shape[1]))
+            x_std  = np.ones((1,X_.shape[1]))
     elif mcs=='center':
         X_,x_mean,x_std = meancenterscale(X_,mcs='center')
         #only center
@@ -34,7 +204,8 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
     
     if not(X_nan_map.any()) and not(force_nipals) and ((X_.shape[1]/X_.shape[0]>=10) or (X_.shape[0]/X_.shape[1]>=10)):
         #no missing elements
-        print('phi.pca using SVD executed on: '+ str(datetime.datetime.now()) )
+        if not(shush):
+            print('phi.pca using SVD executed on: '+ str(datetime.datetime.now()) )
         TSS   = np.sum(X_**2)
         TSSpv = np.sum(X_**2,axis=0)
         if X_.shape[1]/X_.shape[0]>=10:
@@ -69,16 +240,17 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
             pca_obj['varidX']=varidX
         eigs = np.var(T,axis=0);
         r2xc = np.cumsum(r2)
-        print('--------------------------------------------------------------')
-        print('PC #      Eig        R2X       sum(R2X) ')
-        if A>1:
-            for a in list(range(A)):
-                print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}".format(eigs[a], r2[a], r2xc[a]))
-        else:
-            d1=eigs[0]
-            d2=r2xc[0]
-            print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}".format(d1, r2, d2))
-        print('--------------------------------------------------------------')      
+        if not(shush):
+            print('--------------------------------------------------------------')
+            print('PC #      Eig        R2X       sum(R2X) ')
+            if A>1:
+                for a in list(range(A)):
+                    print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}".format(eigs[a], r2[a], r2xc[a]))
+            else:
+                d1=eigs[0]
+                d2=r2xc[0]
+                print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}".format(d1, r2, d2))
+            print('--------------------------------------------------------------')      
         T2 = hott2(pca_obj,Tnew=T)
         n = T.shape[0]
         T2_lim99 = (((n-1)*(n+1)*A)/(n*(n-A)))*f99(A,(n-A))
@@ -95,7 +267,8 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
     else:
         if md_algorithm=='nipals':
              #use nipals
-             print('phi.pca using NIPALS executed on: '+ str(datetime.datetime.now()) )
+             if not(shush):
+                 print('phi.pca using NIPALS executed on: '+ str(datetime.datetime.now()) )
              X_,dummy=n2z(X_)
              epsilon=1E-10
              maxit=10000
@@ -128,7 +301,8 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
                       if num_it > maxit:
                           Converged=True
                       if Converged:
-                          print('# Iterations for PC #'+str(a+1)+': ',str(num_it))
+                          if not(shush):
+                              print('# Iterations for PC #'+str(a+1)+': ',str(num_it))
                           if a==0:
                               T=ti
                               P=pi
@@ -160,17 +334,18 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
                  
              eigs = np.var(T,axis=0);
              r2xc = np.cumsum(r2)
-             print('--------------------------------------------------------------')
-             print('PC #      Eig        R2X       sum(R2X) ')
+             if not(shush):               
+                 print('--------------------------------------------------------------')
+                 print('PC #      Eig        R2X       sum(R2X) ')
  
-             if A>1:
-                 for a in list(range(A)):
-                     print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}".format(eigs[a], r2[a], r2xc[a]))
-             else:
-                 d1=eigs[0]
-                 d2=r2xc[0]
-                 print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}".format(d1, r2, d2))
-             print('--------------------------------------------------------------')      
+                 if A>1:
+                     for a in list(range(A)):
+                         print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}".format(eigs[a], r2[a], r2xc[a]))
+                 else:
+                     d1=eigs[0]
+                     d2=r2xc[0]
+                     print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}".format(d1, r2, d2))
+                 print('--------------------------------------------------------------')      
         
              pca_obj={'T':T,'P':P,'r2x':r2,'r2xpv':r2pv,'mx':x_mean,'sx':x_std}    
              if not isinstance(obsidX,bool):
@@ -195,18 +370,522 @@ def pca(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False):
             pca_obj=1
             return pca_obj
   
-def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
-    ''' Partial Least Squares routine by Sal Garcia sgarciam@ic.ac.uk
-        import pyphi as phi
-        #import your data into X and Y#
-        #simplest use for a 2LV model
-        [mvm] = phi.pls(X,Y,2)    
+def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shush=False,cross_val=0,cross_val_X=False):
+    """ Projection to  Latent Structures routine
     
-        Options:   
-        mcsX / mcsY  = 'center' | 'autoscale' | True  <does both and is the default>
-        md_algorithm = 'nipals' <default>  (NLP options to come soon)
-        force_nipals = True | False <default> (If data has is complete and force_nipals='False' then uses SVD)
-    '''
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    Inputs:
+        X,Y : Either a pandas dataframe, or a Numpy Matrix
+        
+        A : Number of Principal Components to calculate
+        
+        mcsX/mcsY:  'True'      : Will meancenter and autoscale the data *default if not sent*  
+                    'False'     : No pre-processing
+                    'center'    : Will only center
+                    'autoscale' : Will only autoscale
+             
+        md_algorithm: 'nipals' *default*
+                      'nlp'    To be implemented
+                      
+        force_nipals: If set to True and if X is complete, will use NIPALS.
+                      Otherwise, if X is complete will use SVD.
+                      
+        shush: If set to True supressess all printed output.
+        
+        cross_val: If sent a scalar between 0 and 100, will cross validate
+                   element wise removing cross_val% of the data every round
+                   
+                   if ==   0:  Bypass cross-validation  *default if not sent*
+                   
+        cross_val_X: 'True' : Calculates Q2 values for the X and Y matrices
+                     'False': Cross-validation strictly on Y matrix *default if not sent*
+    
+    Output:
+        A dictionary with all PLS loadings, scores and other diagnostics.
+    
+    """
+    if cross_val==0:
+        plsobj = pls_(X,Y,A,mcsX=mcsX,mcsY=mcsY,md_algorithm=md_algorithm,force_nipals=force_nipals,shush=shush)  
+    elif (cross_val > 0) and (cross_val<100):
+        if isinstance(X,np.ndarray):
+            X_=X.copy()
+        elif isinstance(X,pd.DataFrame):
+            X_=np.array(X.values[:,1:]).astype(float)
+        #Mean center and scale according to flags
+        if isinstance(mcsX,bool):
+            if mcsX:
+                #Mean center and autoscale  
+                X_,x_mean,x_std = meancenterscale(X_)
+            else:    
+                x_mean = np.zeros(1,X_.shape[1])
+                x_std  = np.ones(1,X_.shape[1])
+        elif mcsX=='center':
+            #only center
+            X_,x_mean,x_std = meancenterscale(X_,mcs='center')
+        elif mcsX=='autoscale':
+            #only autoscale
+            X_,x_mean,x_std = meancenterscale(X_,mcs='autoscale')
+        #Generate Missing Data Map    
+        X_nan_map = np.isnan(X_)
+        not_Xmiss = (np.logical_not(X_nan_map))*1
+        
+        if isinstance(Y,np.ndarray):
+            Y_=Y.copy()
+        elif isinstance(Y,pd.DataFrame):
+            Y_=np.array(Y.values[:,1:]).astype(float)
+        #Mean center and scale according to flags
+        if isinstance(mcsY,bool):
+            if mcsY:
+                #Mean center and autoscale  
+                Y_,y_mean,y_std = meancenterscale(Y_)
+            else:    
+                y_mean = np.zeros(1,Y_.shape[1])
+                y_std  = np.ones(1,Y_.shape[1])
+        elif mcsY=='center':
+            #only center
+            Y_,y_mean,y_std = meancenterscale(Y_,mcs='center')
+        elif mcsY=='autoscale':
+            #only autoscale
+            Y_,y_mean,y_std = meancenterscale(Y_,mcs='autoscale')
+        #Generate Missing Data Map    
+        Y_nan_map = np.isnan(Y_)
+        not_Ymiss = (np.logical_not(Y_nan_map))*1
+        
+        #Initialize TSS per var vector
+        X_,Xnanmap=n2z(X_)
+        TSSX   = np.sum(X_**2)
+        TSSXpv = np.sum(X_**2,axis=0)
+        colsX = X_.shape[1]
+        rowsX = X_.shape[0]
+        X_ = z2n(X_,Xnanmap)
+        
+        Y_,Ynanmap=n2z(Y_)
+        TSSY   = np.sum(Y_**2)
+        TSSYpv = np.sum(Y_**2,axis=0)
+        colsY = Y_.shape[1]
+        rowsY = Y_.shape[0]
+        Y_ = z2n(Y_,Ynanmap)
+        
+        
+        for a in list(range(A)):
+            #Generate cross-val map starting from missing data
+            not_removed_mapY = not_Ymiss.copy()
+            not_removed_mapY = np.reshape(not_removed_mapY,(rowsY*colsY,-1))
+            #Generate matrix of random numbers and zero out nans
+            Yrnd = np.random.random(Y_.shape)*not_Ymiss
+            indxY = np.argsort(np.reshape(Yrnd,(Yrnd.shape[0]*Yrnd.shape[1])))
+            elements_to_remove_per_roundY = np.int(np.ceil((Y_.shape[0]*Y_.shape[1]) * (cross_val/100)))
+            errorY = np.zeros((rowsY*colsY,1))
+                
+            if cross_val_X:
+                #Generate cross-val map starting from missing data
+                not_removed_mapX = not_Xmiss.copy()
+                not_removed_mapX = np.reshape(not_removed_mapX,(rowsX*colsX,-1))
+                #Generate matrix of random numbers and zero out nans
+                Xrnd = np.random.random(X_.shape)*not_Xmiss
+                indxX = np.argsort(np.reshape(Xrnd,(Xrnd.shape[0]*Xrnd.shape[1])))
+                elements_to_remove_per_roundX = np.int(np.ceil((X_.shape[0]*X_.shape[1]) * (cross_val/100)))
+                errorX = np.zeros((rowsX*colsX,1))
+            else:
+                not_removed_mapX=0
+                
+                
+            while np.sum(not_removed_mapX) > 0 or np.sum(not_removed_mapY) > 0 :#While there are still elements to be removed
+                X_copy=X_.copy()
+                if cross_val_X:
+                    if indxX.size > elements_to_remove_per_roundX:
+                        indx_this_roundX = indxX[0:elements_to_remove_per_roundX]
+                        indxX = indxX[elements_to_remove_per_roundX:]
+                    else: 
+                        indx_this_roundX = indxX
+                    #Place NaN's     
+                    X_copy                            = np.reshape(X_copy,(rowsX*colsX,1))
+                    elements_outX                     = X_copy[indx_this_roundX]
+                    X_copy[indx_this_roundX]          = np.nan
+                    X_copy                            = np.reshape(X_copy,(rowsX,colsX))
+                    #update map
+                    not_removed_mapX[indx_this_roundX] = 0
+                    #look rows of missing data
+                    auxmap = np.isnan(X_copy)
+                    auxmap= (auxmap)*1
+                    auxmap=np.sum(auxmap,axis=1)
+                    indx2 = np.where(auxmap==X_copy.shape[1])
+                    indx2=indx2[0].tolist()
+                else:
+                    indx2=[];
+
+                        
+                Y_copy=Y_.copy()        
+                if indxY.size > elements_to_remove_per_roundY:
+                    indx_this_roundY = indxY[0:elements_to_remove_per_roundY]
+                    indxY = indxY[elements_to_remove_per_roundY:]
+                else:                      
+                    indx_this_roundY = indxY
+                #Place NaN's     
+                Y_copy                            = np.reshape(Y_copy,(rowsY*colsY,1))
+                elements_outY                     = Y_copy[indx_this_roundY]
+                Y_copy[indx_this_roundY]          = np.nan
+                Y_copy                            = np.reshape(Y_copy,(rowsY,colsY))
+                #update map
+                not_removed_mapY[indx_this_roundY] = 0
+                #look rows of missing data
+                auxmap = np.isnan(Y_copy)
+                auxmap = (auxmap)*1
+                auxmap = np.sum(auxmap,axis=1)
+                indx3  = np.where(auxmap==Y_copy.shape[1])
+                indx3  = indx3[0].tolist()
+                indx4  = np.unique(indx3+indx2)
+                indx4  = indx4.tolist()
+                if len(indx4) > 0:
+                    X_copy=np.delete(X_copy,indx4,0)
+                    Y_copy=np.delete(Y_copy,indx4,0)
+                        
+                plsobj_ = pls_(X_copy,Y_copy,1,mcsX=False,mcsY=False,shush=True)
+                plspred = pls_pred(X_,plsobj_)
+                
+                if cross_val_X:
+                    xhat    = plspred['Tnew'] @ plsobj_['P'].T
+                    xhat    = np.reshape(xhat,(rowsX*colsX,1))
+                    errorX[indx_this_roundX] = elements_outX - xhat[indx_this_roundX]
+                
+                yhat    = plspred['Tnew'] @ plsobj_['Q'].T
+                yhat    = np.reshape(yhat,(rowsY*colsY,1))
+                errorY[indx_this_roundY] = elements_outY - yhat[indx_this_roundY]
+                
+            if cross_val_X:
+                errorX = np.reshape(errorX,(rowsX,colsX))
+                errorX,dummy = n2z(errorX)
+                PRESSXpv  = np.sum(errorX**2,axis=0)
+                PRESSX    = np.sum(errorX**2)
+            
+            errorY = np.reshape(errorY,(rowsY,colsY))
+            errorY,dummy = n2z(errorY)
+            PRESSYpv  = np.sum(errorY**2,axis=0)
+            PRESSY    = np.sum(errorY**2)
+            
+            if a==0:
+                q2Y   = 1 - PRESSY/TSSY
+                q2Ypv = 1 - PRESSYpv/TSSYpv
+                q2Ypv = q2Ypv.reshape(-1,1)
+                if cross_val_X:
+                    q2X   = 1 - PRESSX/TSSX
+                    q2Xpv = 1 - PRESSXpv/TSSXpv
+                    q2Xpv = q2Xpv.reshape(-1,1)
+            else:
+                q2Y   = np.hstack((q2Y,1 - PRESSY/TSSY))
+                aux_  = 1-PRESSYpv/TSSYpv
+                aux_  = aux_.reshape(-1,1)
+                q2Ypv = np.hstack((q2Ypv,aux_))
+                if cross_val_X:
+                    q2X   = np.hstack((q2X,1 - PRESSX/TSSX))
+                    aux_  = 1-PRESSXpv/TSSXpv
+                    aux_  = aux_.reshape(-1,1)
+                    q2Xpv = np.hstack((q2Xpv,aux_)) 
+            
+            #Deflate and go to next PC
+            X_copy=X_.copy()
+            Y_copy=Y_.copy()
+            plsobj_ = pls_(X_copy,Y_copy,1,mcsX=False,mcsY=False,shush=True)
+            xhat    = plsobj_['T'] @ plsobj_['P'].T
+            yhat    = plsobj_['T'] @ plsobj_['Q'].T
+            X_,Xnanmap=n2z(X_)
+            Y_,Ynanmap=n2z(Y_)
+            X_ = (X_ - xhat) * not_Xmiss
+            Y_ = (Y_ - yhat) * not_Ymiss
+            if a==0:
+                r2X   = 1-np.sum(X_**2)/TSSX
+                r2Xpv = 1-np.sum(X_**2,axis=0)/TSSXpv
+                r2Xpv = r2Xpv.reshape(-1,1)
+                r2Y   = 1-np.sum(Y_**2)/TSSY
+                r2Ypv = 1-np.sum(Y_**2,axis=0)/TSSYpv
+                r2Ypv = r2Ypv.reshape(-1,1)
+                
+            else:
+                r2X   = np.hstack((r2X,1-np.sum(X_**2)/TSSX))
+                aux_  = 1-np.sum(X_**2,axis=0)/TSSXpv
+                aux_  = aux_.reshape(-1,1)
+                r2Xpv = np.hstack((r2Xpv,aux_))
+                
+                r2Y   = np.hstack((r2Y,1-np.sum(Y_**2)/TSSY))
+                aux_  = 1-np.sum(Y_**2,axis=0)/TSSYpv
+                aux_  = aux_.reshape(-1,1)
+                r2Ypv = np.hstack((r2Ypv,aux_))               
+            X_ = z2n(X_,Xnanmap)
+            Y_ = z2n(Y_,Ynanmap)
+            
+        # Fit full model
+        plsobj = pls_(X,Y,A,mcsX=mcsX,mcsY=mcsY,shush=True)
+        for a in list(range(A-1,0,-1)):
+             r2X[a]     = r2X[a]-r2X[a-1]
+             r2Xpv[:,a] = r2Xpv[:,a]-r2Xpv[:,a-1]
+             if cross_val_X:
+                 q2X[a]     = q2X[a]-q2X[a-1]
+                 q2Xpv[:,a] = q2Xpv[:,a]-q2Xpv[:,a-1]
+             else:
+                 q2X   = False
+                 q2Xpv = False
+             
+             r2Y[a]     = r2Y[a]-r2Y[a-1]
+             r2Ypv[:,a] = r2Ypv[:,a]-r2Ypv[:,a-1]
+             q2Y[a]     = q2Y[a]-q2Y[a-1]
+             q2Ypv[:,a] = q2Ypv[:,a]-q2Ypv[:,a-1]
+             
+        r2xc = np.cumsum(r2X)
+        r2yc = np.cumsum(r2Y)
+        if cross_val_X:
+            q2xc = np.cumsum(q2X)
+        else:
+            q2xc = False
+        q2yc = np.cumsum(q2Y)    
+        eigs = np.var(plsobj['T'],axis=0)
+        
+        plsobj['q2Y']   = q2Y
+        plsobj['q2Ypv'] = q2Ypv
+        if cross_val_X:
+            plsobj['q2X']   = q2X
+            plsobj['q2Xpv'] = q2Xpv
+        
+        if not(shush):
+            if not(cross_val_X):
+                print('---------------------------------------------------------------------------------')
+                print('PC #       Eig      R2X     sum(R2X)      R2Y     sum(R2Y)      Q2Y     sum(Q2Y)')
+                if A>1:
+                    for a in list(range(A)):
+                        print("PC #"+str(a+1)+":{:8.3f}    {:.3f}     {:.3f}       {:.3f}     {:.3f}       {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a], r2Y[a], r2yc[a],q2Y[a],q2yc[a]))
+                else:
+                    d1=eigs[0]
+                    d2=r2xc[0]
+                    d3=r2yc[0]
+                    d4=q2yc[0]
+                    print("PC #"+str(a+1)+":{:8.3f}    {:.3f}     {:.3f}       {:.3f}        {:.3f}    {:.3f}     {:.3f}".format(d1, r2X, d2,r2Y,d3,q2Y,d4))
+                print('---------------------------------------------------------------------------------')     
+            else:
+                print('-------------------------------------------------------------------------------------------------------')
+                print('PC #       Eig      R2X     sum(R2X)      Q2X     sum(Q2X)      R2Y     sum(R2Y)      Q2Y     sum(Q2Y)')
+                if A>1:
+                    for a in list(range(A)):
+                        print("PC #"+str(a+1)+":{:8.3f}    {:.3f}     {:.3f}       {:.3f}     {:.3f}       {:.3f}     {:.3f}       {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a],q2X[a],q2xc[a], r2Y[a], r2yc[a],q2Y[a],q2yc[a]))
+                else:
+                    d1=eigs[0]
+                    d2=r2xc[0]
+                    d3=q2xc[0]
+                    d4=r2yc[0]
+                    d5=q2yc[0]
+                    print("PC #"+str(a+1)+":{:8.3f}    {:.3f}     {:.3f}       {:.3f}     {:.3f}       {:.3f}     {:.3f}       {:.3f}     {:.3f}".format(d1, r2X, d2,q2X,d3,r2Y,d4,q2Y,d5))
+                print('-------------------------------------------------------------------------------------------------------')   
+    elif cross_val==100:
+        if isinstance(X,np.ndarray):
+            X_=X.copy()
+        elif isinstance(X,pd.DataFrame):
+            X_=np.array(X.values[:,1:]).astype(float)
+        #Mean center and scale according to flags
+        if isinstance(mcsX,bool):
+            if mcsX:
+                #Mean center and autoscale  
+                X_,x_mean,x_std = meancenterscale(X_)
+            else:    
+                x_mean = np.zeros(1,X_.shape[1])
+                x_std  = np.ones(1,X_.shape[1])
+        elif mcsX=='center':
+            #only center
+            X_,x_mean,x_std = meancenterscale(X_,mcs='center')
+        elif mcsX=='autoscale':
+            #only autoscale
+            X_,x_mean,x_std = meancenterscale(X_,mcs='autoscale')
+        #Generate Missing Data Map    
+        X_nan_map = np.isnan(X_)
+        not_Xmiss = (np.logical_not(X_nan_map))*1
+        
+        if isinstance(Y,np.ndarray):
+            Y_=Y.copy()
+        elif isinstance(Y,pd.DataFrame):
+            Y_=np.array(Y.values[:,1:]).astype(float)
+        #Mean center and scale according to flags
+        if isinstance(mcsY,bool):
+            if mcsY:
+                #Mean center and autoscale  
+                Y_,y_mean,y_std = meancenterscale(Y_)
+            else:    
+                y_mean = np.zeros(1,Y_.shape[1])
+                y_std  = np.ones(1,Y_.shape[1])
+        elif mcsY=='center':
+            #only center
+            Y_,y_mean,y_std = meancenterscale(Y_,mcs='center')
+        elif mcsY=='autoscale':
+            #only autoscale
+            Y_,y_mean,y_std = meancenterscale(Y_,mcs='autoscale')
+        #Generate Missing Data Map    
+        Y_nan_map = np.isnan(Y_)
+        not_Ymiss = (np.logical_not(Y_nan_map))*1
+        
+        #Initialize TSS per var vector
+        X_,Xnanmap=n2z(X_)
+        TSSX   = np.sum(X_**2)
+        TSSXpv = np.sum(X_**2,axis=0)
+        colsX = X_.shape[1]
+        rowsX = X_.shape[0]
+        X_ = z2n(X_,Xnanmap)
+        
+        Y_,Ynanmap=n2z(Y_)
+        TSSY   = np.sum(Y_**2)
+        TSSYpv = np.sum(Y_**2,axis=0)
+        colsY = Y_.shape[1]
+        rowsY = Y_.shape[0]
+        Y_ = z2n(Y_,Ynanmap)
+        
+        
+        for a in list(range(A)):
+            errorY = np.zeros((rowsY*colsY,1))               
+            if cross_val_X:
+                errorX = np.zeros((rowsX*colsX,1))
+                
+            for o in list(range(X.shape[0])): # Removing one at a time
+                X_copy=X_.copy()
+                Y_copy=Y_.copy()   
+                
+                elements_outX =X_copy[o,:].copy()
+                elements_outY =Y_copy[o,:].copy()
+                X_copy = np.delete(X_copy,o,0)
+                Y_copy = np.delete(Y_copy,o,0)
+        
+                plsobj_ = pls_(X_copy,Y_copy,1,mcsX=False,mcsY=False,shush=True)
+                plspred = pls_pred(elements_outX,plsobj_)
+                
+                if o==0:
+                    if cross_val_X:
+                        errorX= elements_outX - plspred['Xhat']
+                    errorY= elements_outY - plspred['Yhat']
+                else:
+                    if cross_val_X:
+                        errorX= np.vstack((errorX,elements_outX - plspred['Xhat']))
+                    errorY= np.vstack((errorY,elements_outY - plspred['Yhat']))
+                  
+            if cross_val_X:
+                errorX,dummy = n2z(errorX)
+                PRESSXpv  = np.sum(errorX**2,axis=0)
+                PRESSX    = np.sum(errorX**2)
+            
+            errorY,dummy = n2z(errorY)
+            PRESSYpv  = np.sum(errorY**2,axis=0)
+            PRESSY    = np.sum(errorY**2)
+            
+            if a==0:
+                q2Y   = 1 - PRESSY/TSSY
+                q2Ypv = 1 - PRESSYpv/TSSYpv
+                q2Ypv = q2Ypv.reshape(-1,1)
+                if cross_val_X:
+                    q2X   = 1 - PRESSX/TSSX
+                    q2Xpv = 1 - PRESSXpv/TSSXpv
+                    q2Xpv = q2Xpv.reshape(-1,1)
+            else:
+                q2Y   = np.hstack((q2Y,1 - PRESSY/TSSY))
+                aux_  = 1-PRESSYpv/TSSYpv
+                aux_  = aux_.reshape(-1,1)
+                q2Ypv = np.hstack((q2Ypv,aux_))
+                if cross_val_X:
+                    q2X   = np.hstack((q2X,1 - PRESSX/TSSX))
+                    aux_  = 1-PRESSXpv/TSSXpv
+                    aux_  = aux_.reshape(-1,1)
+                    q2Xpv = np.hstack((q2Xpv,aux_)) 
+            
+            #Deflate and go to next PC
+            X_copy=X_.copy()
+            Y_copy=Y_.copy()
+            plsobj_ = pls_(X_copy,Y_copy,1,mcsX=False,mcsY=False,shush=True)
+            xhat    = plsobj_['T'] @ plsobj_['P'].T
+            yhat    = plsobj_['T'] @ plsobj_['Q'].T
+            X_,Xnanmap=n2z(X_)
+            Y_,Ynanmap=n2z(Y_)
+            X_ = (X_ - xhat) * not_Xmiss
+            Y_ = (Y_ - yhat) * not_Ymiss
+            if a==0:
+                r2X   = 1-np.sum(X_**2)/TSSX
+                r2Xpv = 1-np.sum(X_**2,axis=0)/TSSXpv
+                r2Xpv = r2Xpv.reshape(-1,1)
+                r2Y   = 1-np.sum(Y_**2)/TSSY
+                r2Ypv = 1-np.sum(Y_**2,axis=0)/TSSYpv
+                r2Ypv = r2Ypv.reshape(-1,1)
+                
+            else:
+                r2X   = np.hstack((r2X,1-np.sum(X_**2)/TSSX))
+                aux_  = 1-np.sum(X_**2,axis=0)/TSSXpv
+                aux_  = aux_.reshape(-1,1)
+                r2Xpv = np.hstack((r2Xpv,aux_))
+                
+                r2Y   = np.hstack((r2Y,1-np.sum(Y_**2)/TSSY))
+                aux_  = 1-np.sum(Y_**2,axis=0)/TSSYpv
+                aux_  = aux_.reshape(-1,1)
+                r2Ypv = np.hstack((r2Ypv,aux_))               
+            X_ = z2n(X_,Xnanmap)
+            Y_ = z2n(Y_,Ynanmap)
+            
+        # Fit full model
+        plsobj = pls_(X,Y,A,mcsX=mcsX,mcsY=mcsY,shush=True)
+        for a in list(range(A-1,0,-1)):
+             r2X[a]     = r2X[a]-r2X[a-1]
+             r2Xpv[:,a] = r2Xpv[:,a]-r2Xpv[:,a-1]
+             if cross_val_X:
+                 q2X[a]     = q2X[a]-q2X[a-1]
+                 q2Xpv[:,a] = q2Xpv[:,a]-q2Xpv[:,a-1]
+             else:
+                 q2X   = False
+                 q2Xpv = False
+             
+             r2Y[a]     = r2Y[a]-r2Y[a-1]
+             r2Ypv[:,a] = r2Ypv[:,a]-r2Ypv[:,a-1]
+             q2Y[a]     = q2Y[a]-q2Y[a-1]
+             q2Ypv[:,a] = q2Ypv[:,a]-q2Ypv[:,a-1]
+             
+        r2xc = np.cumsum(r2X)
+        r2yc = np.cumsum(r2Y)
+        if cross_val_X:
+            q2xc = np.cumsum(q2X)
+        else:
+            q2xc = False
+        q2yc = np.cumsum(q2Y)    
+        eigs = np.var(plsobj['T'],axis=0)
+        
+        plsobj['q2Y']   = q2Y
+        plsobj['q2Ypv'] = q2Ypv
+        if cross_val_X:
+            plsobj['q2X']   = q2X
+            plsobj['q2Xpv'] = q2Xpv
+        
+        if not(shush):
+            if not(cross_val_X):
+                print('---------------------------------------------------------------------------------')
+                print('PC #       Eig      R2X     sum(R2X)      R2Y     sum(R2Y)      Q2Y     sum(Q2Y)')
+                if A>1:
+                    for a in list(range(A)):
+                        print("PC #"+str(a+1)+":{:8.3f}    {:.3f}     {:.3f}       {:.3f}     {:.3f}       {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a], r2Y[a], r2yc[a],q2Y[a],q2yc[a]))
+                else:
+                    d1=eigs[0]
+                    d2=r2xc[0]
+                    d3=r2yc[0]
+                    d4=q2yc[0]
+                    print("PC #"+str(a+1)+":{:8.3f}    {:.3f}     {:.3f}       {:.3f}     {:.3f}       {:.3f}     {:.3f}".format(d1, r2X, d2,r2Y,d3,q2Y,d4))
+                print('---------------------------------------------------------------------------------')     
+            else:
+                print('-------------------------------------------------------------------------------------------------------')
+                print('PC #       Eig      R2X     sum(R2X)      Q2X     sum(Q2X)      R2Y     sum(R2Y)      Q2Y     sum(Q2Y)')
+                if A>1:
+                    for a in list(range(A)):
+                        print("PC #"+str(a+1)+":{:8.3f}    {:.3f}     {:.3f}       {:.3f}     {:.3f}       {:.3f}     {:.3f}       {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a],q2X[a],q2xc[a], r2Y[a], r2yc[a],q2Y[a],q2yc[a]))
+                else:
+                    d1=eigs[0]
+                    d2=r2xc[0]
+                    d3=q2xc[0]
+                    d4=r2yc[0]
+                    d5=q2yc[0]
+                    print("PC #"+str(a+1)+":{:8.3f}    {:.3f}     {:.3f}       {:.3f}     {:.3f}       {:.3f}     {:.3f}       {:.3f}     {:.3f}".format(d1, r2X, d2,q2X,d3,r2Y,d4,q2Y,d5))
+                print('-------------------------------------------------------------------------------------------------------')   
+    else:
+        plsobj='Cannot cross validate  with those options'
+    return plsobj    
+        
+def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shush=False):
     if isinstance(X,np.ndarray):
         X_ = X.copy()
         obsidX = False
@@ -236,6 +915,9 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
         if mcsX:
             #Mean center and autoscale  
             X_,x_mean,x_std = meancenterscale(X_)
+        else:    
+            x_mean = np.zeros((1,X_.shape[1]))
+            x_std  = np.ones((1,X_.shape[1]))
     elif mcsX=='center':
         X_,x_mean,x_std = meancenterscale(X_,mcs='center')
         #only center      
@@ -247,6 +929,9 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
         if mcsY:
             #Mean center and autoscale  
             Y_,y_mean,y_std = meancenterscale(Y_)
+        else:    
+            y_mean = np.zeros((1,Y_.shape[1]))
+            y_std  = np.ones((1,Y_.shape[1]))
     elif mcsY=='center':
         Y_,y_mean,y_std = meancenterscale(Y_,mcs='center')
         #only center      
@@ -262,7 +947,8 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
     
     if (not(X_nan_map.any()) and not(Y_nan_map.any())) and not(force_nipals):
         #no missing elements
-        print('phi.pls using SVD executed on: '+ str(datetime.datetime.now()) )
+        if not(shush):
+            print('phi.pls using SVD executed on: '+ str(datetime.datetime.now()) )
         TSSX   = np.sum(X_**2)
         TSSXpv = np.sum(X_**2,axis=0)
         TSSY   = np.sum(Y_**2)
@@ -321,17 +1007,18 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
         eigs = np.var(T,axis=0);
         r2xc = np.cumsum(r2X)
         r2yc = np.cumsum(r2Y)
-        print('--------------------------------------------------------------')
-        print('LV #     Eig       R2X       sum(R2X)   R2Y       sum(R2Y)')
-        if A>1:    
-            for a in list(range(A)):
-                print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a],r2Y[a],r2yc[a]))
-        else:
-            d1=eigs[0]
-            d2=r2xc[0]
-            d3=r2yc[0]
-            print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(d1, r2X, d2,r2Y,d3))
-        print('--------------------------------------------------------------')   
+        if not(shush):
+            print('--------------------------------------------------------------')
+            print('LV #     Eig       R2X       sum(R2X)   R2Y       sum(R2Y)')
+            if A>1:    
+                for a in list(range(A)):
+                    print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a],r2Y[a],r2yc[a]))
+            else:
+                d1=eigs[0]
+                d2=r2xc[0]
+                d3=r2yc[0]
+                print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(d1, r2X, d2,r2Y,d3))
+            print('--------------------------------------------------------------')   
         
         pls_obj={'T':T,'P':P,'Q':Q,'W':W,'Ws':Ws,'U':U,'r2x':r2X,'r2xpv':r2Xpv,'mx':x_mean,'sx':x_std,'r2y':r2Y,'r2ypv':r2Ypv,'my':y_mean,'sy':y_std}  
         if not isinstance(obsidX,bool):
@@ -362,7 +1049,8 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
     else:
         if md_algorithm=='nipals':
              #use nipals
-             print('phi.pls using NIPALS executed on: '+ str(datetime.datetime.now()) )
+             if not(shush):
+                 print('phi.pls using NIPALS executed on: '+ str(datetime.datetime.now()) )
              X_,dummy=n2z(X_)
              Y_,dummy=n2z(Y_)
              epsilon=1E-10
@@ -413,7 +1101,8 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
                       if num_it > maxit:
                           Converged=True
                       if Converged:
-                          print('# Iterations for LV #'+str(a+1)+': ',str(num_it))
+                          if not(shush):
+                              print('# Iterations for LV #'+str(a+1)+': ',str(num_it))
                           # Calculate P's for deflation p=Xt/(t't)      
                           timat=np.tile(ti,(1,X_.shape[1]))
                           pi=(np.sum(X_*timat,axis=0))/(np.sum((timat*not_Xmiss)**2,axis=0))
@@ -470,17 +1159,18 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False):
              eigs = np.var(T,axis=0);
              r2xc = np.cumsum(r2X)
              r2yc = np.cumsum(r2Y)
-             print('--------------------------------------------------------------')
-             print('LV #     Eig       R2X       sum(R2X)   R2Y       sum(R2Y)')
-             if A>1:    
-                 for a in list(range(A)):
-                     print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a],r2Y[a],r2yc[a]))
-             else:
-                d1=eigs[0]
-                d2=r2xc[0]
-                d3=r2yc[0]
-                print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(d1, r2X, d2,r2Y,d3))
-             print('--------------------------------------------------------------')   
+             if not(shush):
+                 print('--------------------------------------------------------------')
+                 print('LV #     Eig       R2X       sum(R2X)   R2Y       sum(R2Y)')
+                 if A>1:    
+                     for a in list(range(A)):
+                         print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a],r2Y[a],r2yc[a]))
+                 else:
+                    d1=eigs[0]
+                    d2=r2xc[0]
+                    d3=r2yc[0]
+                    print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(d1, r2X, d2,r2Y,d3))
+                 print('--------------------------------------------------------------')   
                        
              pls_obj={'T':T,'P':P,'Q':Q,'W':W,'Ws':Ws,'U':U,'r2x':r2X,'r2xpv':r2Xpv,'mx':x_mean,'sx':x_std,'r2y':r2Y,'r2ypv':r2Ypv,'my':y_mean,'sy':y_std}  
              if not isinstance(obsidX,bool):
@@ -1045,6 +1735,10 @@ def scores_conf_int_calc(st,N):
     yd99n=(-b-np.sqrt(safe_chk))/(2*a)
     
     return xd95,xd99,yd95p,yd95n,yd99p,yd99n
+
+def contributions(ht2_or_spe,from_obs=False,to_obs=False):
+    
+    return
     
 
 
