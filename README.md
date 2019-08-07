@@ -7,3 +7,6 @@ savgol: Savitzy-Golay derivative transform
 snv   : Standard Normal Variate transform
 
 ==========================================
+
+Dependencies:
+numpy, scipy, pandas, datetime, bokeh , matplotlib
