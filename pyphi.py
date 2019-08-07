@@ -155,7 +155,8 @@ def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cro
         pcaobj['q2']   = q2
         pcaobj ['q2pv'] = q2pv
         
-        if not(shush):               
+        if not(shush):   
+            print('phi.pca using NIPALS and cross validation ('+str(cross_val)+'%) executed on: '+ str(datetime.datetime.now()) )            
             print('--------------------------------------------------------------')
             print('PC #          Eig      R2X     sum(R2X)      Q2X     sum(Q2X)')
             if A>1:
@@ -648,6 +649,7 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shu
             plsobj['q2Xpv'] = q2Xpv
         
         if not(shush):
+            print('phi.pls using NIPALS and cross-validation ('+str(cross_val)+'%) executed on: '+ str(datetime.datetime.now()) )
             if not(cross_val_X):
                 print('---------------------------------------------------------------------------------')
                 print('PC #       Eig      R2X     sum(R2X)      R2Y     sum(R2Y)      Q2Y     sum(Q2Y)')
@@ -1736,9 +1738,120 @@ def scores_conf_int_calc(st,N):
     
     return xd95,xd99,yd95p,yd95n,yd99p,yd99n
 
-def contributions(ht2_or_spe,from_obs=False,to_obs=False):
+def contributions(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_space=False):
+    """
+    Calculate contributions to diagnostics
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     
-    return
+    mvmobj : A dictionary created by phi.pls or phi.pca
+    
+    X/Y:     Data [numpy arrays or pandas dataframes] - Y space is optional
+    
+    cont_type: 'ht2'
+               'spe'
+               'scores'
+               
+    from_obs: Scalar or list of scalars with observation(s) number(s) to offset (FROM)
+              
+    to_obs: Scalar or list of scalars with observation(s) number(s) to calculate contributions (TO)          
+            *Note: from_obs is ignored when cont_type='spe'*
+            
+    lv_space: Latent spaces over which to do the calculations [applicable to 'ht2' and 'scores']
+    """
+    if isinstance(lv_space,np.bool):
+        lv_space=list(range(mvmobj['T'].shape[1]))
+    elif isinstance(lv_space,int):
+        lv_space=np.array([lv_space])-1
+        lv_space=lv_space.tolist()
+    elif isinstance(lv_space,list):
+        lv_space=np.array(lv_space)-1
+        lv_space=lv_space.tolist()
+    
+    if isinstance(to_obs,int):
+        to_obs=np.array([to_obs])
+        to_obs=to_obs.tolist()
+    elif isinstance(to_obs,list):
+        to_obs=np.array(to_obs)
+        to_obs=to_obs.tolist()
+    
+    if not(isinstance(from_obs,np.bool)):    
+        if isinstance(from_obs,int):
+           from_obs=np.array([from_obs])
+           from_obs=from_obs.tolist()
+        elif isinstance(from_obs,list):
+            from_obs=np.array(from_obs)
+            from_obs=from_obs.tolist()
+        
+    if isinstance(X,np.ndarray):
+        X_ = X.copy()
+    elif isinstance(X,pd.DataFrame):
+        X_=np.array(X.values[:,1:]).astype(float)      
+    if not(isinstance(Y,np.bool)):
+        if isinstance(Y,np.ndarray):
+            Y_=Y.copy()
+        elif isinstance(Y,pd.DataFrame):
+            Y_=np.array(Y.values[:,1:]).astype(float)
+    if cont_type=='ht2' or cont_type=='scores':
+        X_,dummy=n2z(X_)
+        X_=((X_-np.tile(mvmobj['mx'],(X_.shape[0],1)))/(np.tile(mvmobj['sx'],(X_.shape[0],1))))
+        t_stdevs=np.std(mvmobj['T'],axis=0,ddof=1)     
+        if 'Q' in mvmobj:
+            loadings=mvmobj['Ws']
+        else:
+            loadings=mvmobj['P']    
+        to_obs_mean=np.mean(X_[to_obs,:],axis=0,keepdims=True)   
+        to_cont=np.zeros((1,X_.shape[1]))
+        for a in lv_space:    
+                aux_=(to_obs_mean * np.abs(loadings[:,a].T))/t_stdevs[a]
+                if cont_type=='scores':
+                    to_cont=to_cont + aux_
+                else:
+                    to_cont=to_cont + aux_**2
+        if not(isinstance(from_obs,np.bool)):
+            from_obs_mean=np.mean(X_[from_obs,:],axis=0,keepdims=1)    
+            from_cont=np.zeros((1,X_.shape[1]))
+            for a in lv_space:    
+                    aux_=(from_obs_mean * np.abs(loadings[:,a].T))/t_stdevs[a]
+                    if cont_type=='scores':
+                        from_cont=from_cont + aux_
+                    else:
+                        from_cont=from_cont + aux_**2
+            calc_contribution = to_cont - from_cont
+            return calc_contribution            
+        else: 
+            return to_cont
+
+    elif cont_type=='spe':
+        X_=X_[to_obs,:]
+        if 'Q' in mvmobj:
+            pred=pls_pred(X_,mvmobj)
+        else:
+            pred=pca_pred(X_,mvmobj)
+        Xhat=pred['Xhat']       
+        Xhatmcs=((Xhat-np.tile(mvmobj['mx'],(Xhat.shape[0],1)))/(np.tile(mvmobj['sx'],(Xhat.shape[0],1))))
+        X_=((X_-np.tile(mvmobj['mx'],(X_.shape[0],1)))/(np.tile(mvmobj['sx'],(X_.shape[0],1))))
+        Xerror=(X_-Xhatmcs)
+        Xerror,dummy=n2z(Xerror)
+        contsX=((Xerror)**2)*np.sign(Xerror)
+        contsX=np.mean(contsX,axis=0,keepdims=True)
+        
+        if not(isinstance(Y,np.bool)):
+            Y_=Y_[to_obs,:]
+            Yhat=pred['Yhat']
+            Yhatmcs=((Yhat-np.tile(mvmobj['my'],(Yhat.shape[0],1)))/(np.tile(mvmobj['sy'],(Yhat.shape[0],1))))
+            Y_=((Y_-np.tile(mvmobj['my'],(Y_.shape[0],1)))/(np.tile(mvmobj['sy'],(Y_.shape[0],1))))
+            Yerror=(Y_-Yhatmcs)
+            Yerror,dummy=n2z(Yerror)
+            contsY=((Yerror)**2)*np.sign(Yerror)
+            contsY=np.mean(contsY,axis=0,keepdims=True)
+            return contsX,contsY
+        else:
+            return contsX
+
+        
+        
+      
     
 
 

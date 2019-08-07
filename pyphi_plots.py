@@ -18,6 +18,13 @@ import pandas as pd
 import matplotlib.cm as cm
 
 def r2pv(mvmobj):
+    """
+    R2 per variabvle plots
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    mvmobj: A model created with phi.pca or phi.pls
+    """
     A= mvmobj['T'].shape[1]
     num_varX=mvmobj['P'].shape[0]
     
@@ -110,6 +117,15 @@ def r2pv(mvmobj):
     return
     
 def loadings(mvmobj):
+    """
+    Column plots of loadings
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    mvmobj: A model created with phi.pca or phi.pls
+    
+    """
+    
     A= mvmobj['T'].shape[1]
     num_varX=mvmobj['P'].shape[0]    
     if 'Q' in mvmobj:
@@ -197,6 +213,14 @@ def loadings(mvmobj):
     return    
 
 def loadings_map(mvmobj,dims):
+    """
+    Scatter plot overlaying X and Y loadings 
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    mvmobj: A model created with phi.pca or phi.pls
+    dims: what latent spaces to plot in x and y axes e.g. dims=[1,2]
+    """
     A= mvmobj['T'].shape[1]
     num_varX=mvmobj['P'].shape[0]    
     if 'Q' in mvmobj:
@@ -262,6 +286,14 @@ def loadings_map(mvmobj,dims):
     return  
 
 def weighted_loadings(mvmobj):
+    """
+    Column plots of loadings weighted by r2x/r2y correspondingly
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    mvmobj: A model created with phi.pca or phi.pls
+    
+    """
     A= mvmobj['T'].shape[1]
     num_varX=mvmobj['P'].shape[0]    
     if 'Q' in mvmobj:
@@ -349,6 +381,14 @@ def weighted_loadings(mvmobj):
     return  
  
 def vip(mvmobj):
+    """
+    Very Important to the Projection (VIP) plot
+        by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    mvmobj: A model created with phi.pls
+    """
+    
     if 'Q' in mvmobj:  
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
         output_file("VIP_"+rnd_num+".html",title='VIP Coefficient') 
@@ -377,6 +417,10 @@ def vip(mvmobj):
 
 def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False):
     '''
+    Score scatter plot
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
     mvmobj : PLS or PCA object from phyphi
     xydim  : LV to plot on x and y axes. eg [1,2] will plot t1 vs t2
     CLASSID: Pandas DataFrame with CLASSIDS
@@ -507,6 +551,25 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=F
     return    
 
 def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False):
+    """
+    Plot calculated Hotelling's T2 and SPE
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    mvmobj: A model created with phi.pca or phi.pls
+    
+    Xnew/Ynew:     Data used to calculate diagnostics[numpy arrays or pandas dataframes] 
+    
+    optional:
+        
+    score_plot_xydim: will add a score scatter plot at the bottom 
+                      if sent with a list of [dimx, dimy] where dimx/dimy 
+                      are integers and refer to the latent space to plot
+                      in the x and y axes of the scatter plot. e.g. [1,2] will
+                      add a t1-t2 plot 
+    
+    """
+    
     if isinstance(score_plot_xydim,np.bool):
         add_score_plot = False
     else:
@@ -652,6 +715,25 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False):
     return
 
 def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
+    """
+    Plot observed vs predicted values
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    mvmobj: A model created with phi.pca or phi.pls
+    
+    X/Y:     Data [numpy arrays or pandas dataframes] 
+    
+    optional:
+    CLASSID: Pandas Data Frame with classifiers per observation, each column is a class
+    
+    colorby: one of the classes in CLASSID to color by
+    
+    x_space: = 'False' will skip plotting the obs. vs pred for X *default*
+               'True' will also plot obs vs pred for X
+  
+    
+    """
     num_varX=mvmobj['P'].shape[0]
     
     if isinstance(X,np.ndarray):
@@ -818,3 +900,130 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
                     p_list.append(p)
         show(column(p_list))
     return    
+
+def contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_space=False):
+    """
+    Calculate contributions to diagnostics
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    mvmobj : A dictionary created by phi.pls or phi.pca
+    
+    X/Y:     Data [numpy arrays or pandas dataframes] - Y space is optional
+    
+    cont_type: 'ht2'
+               'spe'
+               'scores'
+               
+    from_obs: Scalar or list of scalars with observation(s) number(s) | first element is #0
+              - OR -
+              Strings or list of strings with observation(s) name(s) [if X/Y are pandas data frames]
+              Used to off set calculations for scores or ht2
+              "False' will calculate with respect to origin *default if not sent*
+              
+    to_obs: Scalar or list of scalars with observation(s) number(s)| first element is #0
+              - OR -
+            Strings or list of strings with observation(s) name(s) [if X/Y are pandas data frames]
+            To calculate contributions for
+            
+            *Note: from_obs is ignored when cont_type='spe'*
+            
+    lv_space: Latent spaces over which to do the calculations [applicable to 'ht2' and 'scores']
+    """
+    good_to_go=True
+    if isinstance(X,pd.DataFrame):
+        ObsID=X.values[:,0].tolist()
+        if isinstance(to_obs,str):
+            to_obs_=ObsID.index(to_obs)
+        elif isinstance(to_obs,int):
+            to_obs_=to_obs
+        elif isinstance(to_obs,list):
+            if isinstance(to_obs[0],str):
+                to_obs_=[]
+                for o in to_obs:
+                    to_obs_.append(ObsID.index(o))
+            elif isinstance(to_obs[0],int):
+                to_obs_=to_obs.copy()
+        elif isinstance(to_obs,np.bool):
+            good_to_go=False
+        if not(isinstance(from_obs,np.bool)):
+            if isinstance(from_obs,str):
+                from_obs_=ObsID.index(from_obs)
+            elif isinstance(from_obs,int):
+                from_obs_=from_obs.copy()
+            elif isinstance(from_obs,list):
+                if isinstance(from_obs[0],str):
+                    from_obs_=[]
+                    for o in from_obs:
+                        from_obs_.append(ObsID.index(o))
+                elif isinstance(from_obs[0],int):
+                    from_obs_=from_obs.copy()
+        else:
+            from_obs_=False
+    else:
+        if isinstance(to_obs,int) or isinstance(to_obs,list):
+            to_obs_=to_obs.copy()
+        else:
+            good_to_go=False    
+    if cont_type=='scores' and not(isinstance(Y,np.bool)):
+        Y=False
+        
+    if isinstance(Y,np.bool) and good_to_go:
+        Xconts=phi.contributions(mvmobj,X,cont_type,Y=False,from_obs=from_obs_,to_obs=to_obs_,lv_space=lv_space)
+        Yconts=False
+    elif not(isinstance(Y,np.bool)) and good_to_go and ('Q' in mvmobj) and cont_type=='spe':
+        Xconts,Yconts=phi.contributions(mvmobj,X,cont_type,Y=Y,from_obs=from_obs_,to_obs=to_obs_,lv_space=lv_space)
+    
+    if 'varidX' in mvmobj:
+        XVar=mvmobj['varidX']
+    else:
+        XVar = []
+        for n in list(np.arange(mvmobj['P'].shape[0])+1):
+            XVar.append('XVar #'+str(n))               
+
+    rnd_num=str(int(np.round(1000*np.random.random_sample())))
+    output_file("Contributions"+rnd_num+".html",title='Contributions')
+    if isinstance(from_obs,list):
+        from_txt=", ".join(map(str, from_obs))
+        from_txt=" from obs "+from_txt
+    else:
+        from_txt=""
+    if isinstance(to_obs,list):
+        to_txt=", ".join(map(str, to_obs))
+        to_txt=" to obs "+to_txt
+    else:
+        to_txt=""
+    
+    p = figure(x_range=XVar, plot_height=300,plot_width=500, title="Contributions Plot"+from_txt+to_txt,
+                    tools="save,box_zoom,pan,reset")
+    p.vbar(x=XVar, top=Xconts[0].tolist(), width=0.5)
+    p.xgrid.grid_line_color = None
+    p.yaxis.axis_label = 'Contributions to '+cont_type
+    hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+    p.renderers.extend([hline])
+    p_list=[p]
+    
+    if not(isinstance(Yconts,np.bool)):
+        if 'varidY' in mvmobj:
+            YVar=mvmobj['varidY']
+        else:
+            YVar = []
+            for n in list(np.arange(mvmobj['Q'].shape[0])+1):
+                YVar.append('YVar #'+str(n))               
+        
+        p = figure(x_range=YVar, plot_height=300,plot_width=500, title="Contributions Plot",
+                    tools="save,box_zoom,pan,reset")
+        p.vbar(x=YVar, top=Yconts[0].tolist(), width=0.5)
+        p.xgrid.grid_line_color = None
+        p.yaxis.axis_label = 'Contributions to '+cont_type
+        hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+        p.renderers.extend([hline])
+        p_list.append(p)
+        
+    show(column(p_list))  
+    return
+           
+       
+
+    
+    
