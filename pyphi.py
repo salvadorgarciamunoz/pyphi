@@ -1430,56 +1430,75 @@ def meancenterscale(X,*,mcs=True):
     return X,x_mean,x_std
 
 def snv (x):
-    if x.ndim ==2:
-        mean_x = np.mean(x,axis=1,keepdims=1)     
-        mean_x = np.tile(mean_x,(1,x.shape[1]))
-        x      = x - mean_x
-        std_x  = np.sum(x**2,axis=1)/(x.shape[1]-1)
-        std_x  = np.sqrt(std_x)
-        std_x  = np.reshape(std_x,(len(std_x),1))
-        std_x =  np.tile(std_x,(1,x.shape[1]))
-        x      = x/std_x
-        return x
+    if isinstance(x,pd.DataFrame):
+        x_columns=x.columns
+        x_values= x.values
+        x_values[:,1:] = snv(x_values[:,1:].astype(float))
+        xpd=pd.DataFrame(x_values,columns=x_columns)
+        return xpd
     else:
-        x = x - np.mean(x)
-        stdx = np.sqrt(np.sum(x**2)/(len(x)-1))
-        x = x/stdx
-        return x
+        if x.ndim ==2:
+            mean_x = np.mean(x,axis=1,keepdims=1)     
+            mean_x = np.tile(mean_x,(1,x.shape[1]))
+            x      = x - mean_x
+            std_x  = np.sum(x**2,axis=1)/(x.shape[1]-1)
+            std_x  = np.sqrt(std_x)
+            std_x  = np.reshape(std_x,(len(std_x),1))
+            std_x =  np.tile(std_x,(1,x.shape[1]))
+            x      = x/std_x
+            return x
+        else:
+            x = x - np.mean(x)
+            stdx = np.sqrt(np.sum(x**2)/(len(x)-1))
+            x = x/stdx
+            return x
     
 def savgol(ws,od,op,Dm):
-    if Dm.ndim==1: 
-        l = Dm.shape[0]
+    """
+    Savitzky-Golay filter for spectra
+
+    """
+    if isinstance(Dm,pd.DataFrame):
+        x_columns=Dm.columns.tolist()
+        FirstElement=[x_columns[0]]
+        x_columns=x_columns[1:]
+        FirstElement.extend(x_columns[ws:-ws])
+        x_values= Dm.values
+        Col1= Dm.values[:,0].tolist()
+        Col1=np.reshape(Col1,(-1,1))
+        aux, M = savgol(ws,od,op,x_values[:,1:].astype(float))
+        data_=np.hstack((Col1,aux))
+        xpd=pd.DataFrame(data=data_,columns=FirstElement)
+        return xpd,M
     else:
-        l = Dm.shape[1]
-        
-    x_vec=np.arange(-ws,ws+1)
-    x_vec=np.reshape(x_vec,(len(x_vec),1))
-    X = np.ones((2*ws+1,1))
-    for oo in np.arange(1,op+1):
-        X=np.hstack((X,x_vec**oo))
-    XtXiXt=np.linalg.inv(X.T @ X) @ X.T
-    coeffs=XtXiXt[od,:] * factorial(od)
-    coeffs=np.reshape(coeffs,(1,len(coeffs)))
-    for i in np.arange(1,l-2*ws+1):
-        if i==1:
-            M=np.hstack((coeffs,np.zeros((1,l-2*ws-1))))
-        elif i < l-2*ws:
-            m_= np.hstack((np.zeros((1,i-1)), coeffs))
-            m_= np.hstack((m_,np.zeros((1,l-2*ws-1-i+1))))
-            M = np.vstack((M,m_))
+        if Dm.ndim==1: 
+            l = Dm.shape[0]
         else:
-            m_=np.hstack((np.zeros((1,l-2*ws-1)),coeffs))
-            M = np.vstack((M,m_))
-    if Dm.ndim==1: 
-        Dm_sg= M @ Dm
-    else:
-        for i in np.arange(1,Dm.shape[0]+1):
-            dm_ = M @ Dm[i-1,:]
+            l = Dm.shape[1]
+        
+        x_vec=np.arange(-ws,ws+1)
+        x_vec=np.reshape(x_vec,(len(x_vec),1))
+        X = np.ones((2*ws+1,1))
+        for oo in np.arange(1,op+1):
+            X=np.hstack((X,x_vec**oo))
+        XtXiXt=np.linalg.inv(X.T @ X) @ X.T
+        coeffs=XtXiXt[od,:] * factorial(od)
+        coeffs=np.reshape(coeffs,(1,len(coeffs)))
+        for i in np.arange(1,l-2*ws+1):
             if i==1:
-                Dm_sg=dm_
+                M=np.hstack((coeffs,np.zeros((1,l-2*ws-1))))
+            elif i < l-2*ws:
+                m_= np.hstack((np.zeros((1,i-1)), coeffs))
+                m_= np.hstack((m_,np.zeros((1,l-2*ws-1-i+1))))
+                M = np.vstack((M,m_))
             else:
-                Dm_sg=np.vstack((Dm_sg,dm_))
-    return Dm_sg,M
+                m_=np.hstack((np.zeros((1,l-2*ws-1)),coeffs))
+                M = np.vstack((M,m_))
+        if Dm.ndim==1: 
+            Dm_sg=  M @ Dm
+        else:
+            Dm_sg= Dm @ M.T
+        return Dm_sg,M
 
 def np2D2pyomo(arr):
     output=dict(((i+1,j+1), arr[i][j]) for i in range(arr.shape[0]) for j in range(arr.shape[1]))

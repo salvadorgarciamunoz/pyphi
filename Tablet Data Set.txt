@@ -1,0 +1,5 @@
+Data set discussed in:
+
+M. Dyrby, S.B. Engelsen, L. Nørgaard, M. Bruhn and L. Lundsberg Nielsen
+Chemometric Quantitation of the Active Substance in a Pharmaceutical Tablet Using Near Infrared (NIR) Transmittance and NIR FT Raman Spectra
+Applied Spectroscopy 56(5): 579 585 (2002)

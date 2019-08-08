@@ -8,9 +8,8 @@ Created on Sat Feb 16 12:01:54 2019
 import numpy as np
 from bokeh.io import show, output_file
 from bokeh.plotting import figure
-from bokeh.palettes import GnBu3
 from bokeh.layouts import column
-from bokeh.models import ColumnDataSource,LabelSet, Label,Span
+from bokeh.models import ColumnDataSource,LabelSet,Span
 
 import pyphi as phi
 import pandas as pd
@@ -1022,8 +1021,19 @@ def contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,
         
     show(column(p_list))  
     return
-           
-       
 
+def plot_spectra(X,*,plot_title='Main Title',tab_title='Tab Title',xaxis_label='X- axis',yaxis_label='Y- axis'): 
+    rnd_num=str(int(np.round(1000*np.random.random_sample())))                
+    output_file("Spectra"+rnd_num+".html",title=tab_title)
+    x=X.columns[1:].tolist()
+    x=np.array(x)
+    x=np.reshape(x,(1,-1))
+    y=X.values[:,1:].astype(float)
+    p = figure(title=plot_title)
+    p.xaxis.axis_label = xaxis_label
+    p.yaxis.axis_label = yaxis_label
+    p.multi_line(x.tolist()*y.shape[0],y.tolist())
+    show(p)
+    return
     
     
