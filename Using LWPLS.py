@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Example on the use of the LWPLS algorithm (International Journal of Pharmaceutics 421 (2011) 269– 274)
 
 Data set discussed in:
 
