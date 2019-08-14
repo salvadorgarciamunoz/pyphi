@@ -27,6 +27,8 @@ pp.diagnostics(pcaobj, score_plot_xydim=[1,2])
 pp.contributions_plot(pcaobj,Cars_Features,'scores',to_obs=['Car1'])
 pp.contributions_plot(pcaobj,Cars_Features,'scores',to_obs=['Car1'],from_obs=['Car4'])
 
+# Build a PLS model with 3 PC's
+plsobj=phi.pls(Cars_Features,Cars_Performance,3)
 # Build a PLS model with 3 PC's, cross validating by elements removing 5% of the data per round
 plsobj=phi.pls(Cars_Features,Cars_Performance,3,cross_val=5)
 # Build a PLS model with 3 PC's, cross validating by elements removing 5% of the data per round add crossval of X Space
