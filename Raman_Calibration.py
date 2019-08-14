@@ -1,9 +1,6 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Aug  8 09:54:43 2019
 
-@author: Sal Garcia
+"""
+Example on building a PLS model with spectra
 """
 import pandas as pd
 import numpy as np
