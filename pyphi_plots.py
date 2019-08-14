@@ -713,7 +713,7 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False):
     show(column(p_list)) 
     return
 
-def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
+def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False,yhat=False):
     """
     Plot observed vs predicted values
     by Salvador Garcia-Munoz 
@@ -772,8 +772,9 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
 
             
     if 'Q' in mvmobj:  
-        pred=phi.pls_pred(X_,mvmobj)
-        yhat=pred['Yhat']
+        if isinstance(yhat,np.bool):
+            pred=phi.pls_pred(X_,mvmobj)
+            yhat=pred['Yhat']
         if x_space:
             xhat=pred['Xhat']
         else:
@@ -1022,13 +1023,43 @@ def contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,
     show(column(p_list))  
     return
 
-def plot_spectra(X,*,plot_title='Main Title',tab_title='Tab Title',xaxis_label='X- axis',yaxis_label='Y- axis'): 
+def plot_spectra(X,*,xaxis=False,plot_title='Main Title',tab_title='Tab Title',xaxis_label='X- axis',yaxis_label='Y- axis'): 
+    """
+    Simple way to plot Spectra with Bokeh. 
+    Programmed by Salvador Garcia-Munoz
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    X:      A numpy array or a pandas object with Spectra to be plotted
+    xaxis:  wavenumbers or wavelengths to index the x axis of the plot 
+            * ignored if X is a pandas dataframe *
+            
+    optional: 
+    plot_title
+    tab_title
+    xaxis_label
+    yaxis_label
+    
+    """
+    
+    if isinstance(X,pd.DataFrame):
+        x=X.columns[1:].tolist()
+        x=np.array(x)
+        x=np.reshape(x,(1,-1))
+        y=X.values[:,1:].astype(float)
+    elif isinstance(X,np.ndarray):
+        y=X.copy()
+        if isinstance(xaxis,np.ndarray):
+            x=xaxis
+            x=np.reshape(x,(1,-1))
+        elif isinstance(xaxis,list):
+            x=np.array(xaxis)
+            x=np.reshape(x,(1,-1))
+        elif isinstance(xaxis,np.bool):
+            x=np.array(list(range(X.shape[1])))
+            x=np.reshape(x,(1,-1))
     rnd_num=str(int(np.round(1000*np.random.random_sample())))                
     output_file("Spectra"+rnd_num+".html",title=tab_title)
-    x=X.columns[1:].tolist()
-    x=np.array(x)
-    x=np.reshape(x,(1,-1))
-    y=X.values[:,1:].astype(float)
+
     p = figure(title=plot_title)
     p.xaxis.axis_label = xaxis_label
     p.yaxis.axis_label = yaxis_label

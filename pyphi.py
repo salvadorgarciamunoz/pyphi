@@ -1206,8 +1206,32 @@ def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,sh
             pls_obj=1
             return pls_obj
 
-def lwpls(xnew,loc_par,mvm,X,Y):
-    vip=np.sum(np.abs(mvm['Ws'] * np.tile(mvm['r2y'],(mvm['Ws'].shape[0],1)) ),axis=1)
+def lwpls(xnew,loc_par,mvmobj,X,Y,*,shush=False):
+    """
+    LWPLS algorithm in: International Journal of Pharmaceutics 421 (2011) 269– 274
+    
+    Implemented by Salvador Garcia-Munoz
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    xnew   : Regressor vector to make prediction
+    loc_par: Localization parameter
+    mvmobj : PLS model between X and Y 
+    X,Y    : Training set for mvmobj (PLS model) numpy arrays or pandas dataframes
+    shush  : ='True'  will silent outpuit
+              'False' will display outpuit  *default if not sent*
+    
+    """
+    if not(shush):
+        print('phi.lwpls executed on: '+ str(datetime.datetime.now()) )
+    xnew=np.reshape(xnew,(-1,1))     
+    
+    if isinstance(X,pd.DataFrame):
+        X=np.array(X.values[:,1:]).astype(float)
+
+    if isinstance(Y,pd.DataFrame):
+        Y=np.array(Y.values[:,1:]).astype(float)
+        
+    vip=np.sum(np.abs(mvmobj['Ws'] * np.tile(mvmobj['r2y'],(mvmobj['Ws'].shape[0],1)) ),axis=1)
     vip=np.reshape(vip,(len(vip),-1))
     theta=vip; #Using element wise operations for speed, no need for matrix notation
 
@@ -1230,7 +1254,7 @@ def lwpls(xnew,loc_par,mvm,X,Y):
     xnewi = xnew - X_weighted_mean
     yhat=Y_weighted_mean
     
-    for a in list(range(0,mvm['T'].shape[1])):
+    for a in list(range(0,mvmobj['T'].shape[1])):
         [U_,S,Wh]=np.linalg.svd(Xi.T @ OMEGA @ Yi @ Yi.T @ OMEGA @ Xi)
         w           = Wh.T
         w           = w[:,[0]]
@@ -1244,7 +1268,7 @@ def lwpls(xnew,loc_par,mvm,X,Y):
         Xi    = Xi - t @ p.T
         Yi    = Yi - t @ q.T
         xnewi = xnewi - p @ tnew
-    return yhat
+    return yhat[0]
     
     
 def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
