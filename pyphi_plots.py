@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Feb 16 12:01:54 2019
+Plots for pyPhi
 
 @author: Sal Garcia <sgarciam@ic.ac.uk> <salvadorgarciamunoz@gmail.com>
+
+Release Date: Aug 22 2019
+
+What was done:
+    
+    * This header is now included to track high level changes 
+    
 """
 import numpy as np
 from bokeh.io import show, output_file
 from bokeh.plotting import figure
 from bokeh.layouts import column
 from bokeh.models import ColumnDataSource,LabelSet,Span
-
 import pyphi as phi
 import pandas as pd
 
@@ -713,7 +719,7 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False):
     show(column(p_list)) 
     return
 
-def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False,yhat=False):
+def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
     """
     Plot observed vs predicted values
     by Salvador Garcia-Munoz 
@@ -730,8 +736,7 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False,yhat=False)
     
     x_space: = 'False' will skip plotting the obs. vs pred for X *default*
                'True' will also plot obs vs pred for X
-  
-    
+
     """
     num_varX=mvmobj['P'].shape[0]
     
@@ -772,9 +777,8 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False,yhat=False)
 
             
     if 'Q' in mvmobj:  
-        if isinstance(yhat,np.bool):
-            pred=phi.pls_pred(X_,mvmobj)
-            yhat=pred['Yhat']
+        pred=phi.pls_pred(X_,mvmobj)
+        yhat=pred['Yhat']
         if x_space:
             xhat=pred['Xhat']
         else:

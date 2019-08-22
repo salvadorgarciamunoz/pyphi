@@ -1,3 +1,19 @@
+"""
+Phi for Python (pyPhi)
+
+by Salvador Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
+
+Release Date: Aug 22 2019
+
+What was done:
+    
+    * This header is now included to track high level changes 
+    * fixed LWPLS it works now for scalar and multivariable  Y's
+    * fixed minor bug in phi.pca and phi.pls when mcsX/Y = False
+    
+
+"""
+
 import numpy as np
 import pandas as pd
 import datetime
@@ -52,8 +68,8 @@ def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cro
                 #Mean center and autoscale  
                 X_,x_mean,x_std = meancenterscale(X_)
             else:    
-                x_mean = np.zeros(1,X_.shape[1])
-                x_std  = np.ones(1,X_.shape[1])
+                x_mean = np.zeros((1,X_.shape[1]))
+                x_std  = np.ones((1,X_.shape[1]))
         elif mcs=='center':
             #only center
             X_,x_mean,x_std = meancenterscale(X_,mcs='center')
@@ -420,8 +436,8 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shu
                 #Mean center and autoscale  
                 X_,x_mean,x_std = meancenterscale(X_)
             else:    
-                x_mean = np.zeros(1,X_.shape[1])
-                x_std  = np.ones(1,X_.shape[1])
+                x_mean = np.zeros((1,X_.shape[1]))
+                x_std  = np.ones((1,X_.shape[1]))
         elif mcsX=='center':
             #only center
             X_,x_mean,x_std = meancenterscale(X_,mcs='center')
@@ -442,8 +458,8 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shu
                 #Mean center and autoscale  
                 Y_,y_mean,y_std = meancenterscale(Y_)
             else:    
-                y_mean = np.zeros(1,Y_.shape[1])
-                y_std  = np.ones(1,Y_.shape[1])
+                y_mean = np.zeros((1,Y_.shape[1]))
+                y_std  = np.ones((1,Y_.shape[1]))
         elif mcsY=='center':
             #only center
             Y_,y_mean,y_std = meancenterscale(Y_,mcs='center')
@@ -471,6 +487,8 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shu
         
         
         for a in list(range(A)):
+            if not(shush):
+                print('Cross validating LV #'+str(a+1))
             #Generate cross-val map starting from missing data
             not_removed_mapY = not_Ymiss.copy()
             not_removed_mapY = np.reshape(not_removed_mapY,(rowsY*colsY,-1))
@@ -492,8 +510,11 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shu
             else:
                 not_removed_mapX=0
                 
-                
+            number_of_rounds=1    
             while np.sum(not_removed_mapX) > 0 or np.sum(not_removed_mapY) > 0 :#While there are still elements to be removed
+                if not(shush):
+                    print('Random removal round #'+ str(number_of_rounds))
+                number_of_rounds=number_of_rounds+1
                 X_copy=X_.copy()
                 if cross_val_X:
                     if indxX.size > elements_to_remove_per_roundX:
@@ -542,8 +563,9 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shu
                 if len(indx4) > 0:
                     X_copy=np.delete(X_copy,indx4,0)
                     Y_copy=np.delete(Y_copy,indx4,0)
-                        
+                #print('Running PLS')        
                 plsobj_ = pls_(X_copy,Y_copy,1,mcsX=False,mcsY=False,shush=True)
+                #print('Done with PLS')
                 plspred = pls_pred(X_,plsobj_)
                 
                 if cross_val_X:
@@ -688,8 +710,8 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shu
                 #Mean center and autoscale  
                 X_,x_mean,x_std = meancenterscale(X_)
             else:    
-                x_mean = np.zeros(1,X_.shape[1])
-                x_std  = np.ones(1,X_.shape[1])
+                x_mean = np.zeros((1,X_.shape[1]))
+                x_std  = np.ones((1,X_.shape[1]))
         elif mcsX=='center':
             #only center
             X_,x_mean,x_std = meancenterscale(X_,mcs='center')
@@ -710,8 +732,8 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shu
                 #Mean center and autoscale  
                 Y_,y_mean,y_std = meancenterscale(Y_)
             else:    
-                y_mean = np.zeros(1,Y_.shape[1])
-                y_std  = np.ones(1,Y_.shape[1])
+                y_mean = np.zeros((1,Y_.shape[1]))
+                y_std  = np.ones((1,Y_.shape[1]))
         elif mcsY=='center':
             #only center
             Y_,y_mean,y_std = meancenterscale(Y_,mcs='center')
@@ -1055,8 +1077,8 @@ def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,sh
                  print('phi.pls using NIPALS executed on: '+ str(datetime.datetime.now()) )
              X_,dummy=n2z(X_)
              Y_,dummy=n2z(Y_)
-             epsilon=1E-10
-             maxit=10000
+             epsilon=1E-5
+             maxit=2000
 
              TSSX   = np.sum(X_**2)
              TSSXpv = np.sum(X_**2,axis=0)
@@ -1263,12 +1285,12 @@ def lwpls(xnew,loc_par,mvmobj,X,Y,*,shush=False):
         q = Yi.T @ OMEGA @ t / (t.T @ OMEGA @ t)
         
         tnew = xnewi.T @ w
-        yhat =yhat + tnew @ q
-        
+#        yhat =yhat + tnew @ q
+        yhat  = yhat + q @ tnew         
         Xi    = Xi - t @ p.T
         Yi    = Yi - t @ q.T
         xnewi = xnewi - p @ tnew
-    return yhat[0]
+    return yhat.T
     
     
 def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
