@@ -1077,7 +1077,7 @@ def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,sh
                  print('phi.pls using NIPALS executed on: '+ str(datetime.datetime.now()) )
              X_,dummy=n2z(X_)
              Y_,dummy=n2z(Y_)
-             epsilon=1E-5
+             epsilon=1E-9
              maxit=2000
 
              TSSX   = np.sum(X_**2)
@@ -1304,9 +1304,15 @@ def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
     X_nan_map = np.isnan(X_)
     #not_Xmiss = (np.logical_not(X_nan_map))*1
     if not(X_nan_map.any()):
-        tnew = ((X_-np.tile(pcaobj['mx'],(X_.shape[0],1)))/(np.tile(pcaobj['sx'],(X_.shape[0],1)))) @ pcaobj['P']
+        X_mcs= X_- np.tile(pcaobj['mx'],(X_.shape[0],1))
+        X_mcs= X_mcs/(np.tile(pcaobj['sx'],(X_.shape[0],1)))      
+        tnew =  X_mcs @ pcaobj['P']
         xhat = (tnew @ pcaobj['P'].T) * np.tile(pcaobj['sx'],(X_.shape[0],1)) + np.tile(pcaobj['mx'],(X_.shape[0],1))
-        xpred={'Xhat':xhat,'Tnew':tnew}
+        var_t = (pcaobj['T'].T @ pcaobj['T'])/pcaobj['T'].shape[0]
+        htt2 = np.sum((tnew @ np.linalg.inv(var_t)) * tnew,axis=1)
+        spe  = ((X_-np.tile(pcaobj['mx'],(X_.shape[0],1)))/(np.tile(pcaobj['sx'],(X_.shape[0],1))))-(tnew @ pcaobj['P'].T)
+        spe  = np.sum(spe**2) 
+        xpred={'Xhat':xhat,'Tnew':tnew, 'speX':spe,'T2':htt2}
     elif algorithm=='p2mp':  # Using Projection to the model plane method for missing data    
         X_nan_map = np.isnan(Xnew)
         not_Xmiss = (np.logical_not(X_nan_map))*1
@@ -1322,7 +1328,11 @@ def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
             else:
                 tnew = np.vstack((tnew,tnew_.T))
         xhat = (tnew @ pcaobj['P'].T) * np.tile(pcaobj['sx'],(X_.shape[0],1)) + np.tile(pcaobj['mx'],(X_.shape[0],1))        
-        xpred={'Xhat':xhat,'Tnew':tnew}
+        var_t = (pcaobj['T'].T @ pcaobj['T'])/pcaobj['T'].shape[0]
+        htt2 = np.sum((tnew @ np.linalg.inv(var_t)) * tnew,axis=1)
+        spe  = ((X_-np.tile(pcaobj['mx'],(X_.shape[0],1)))/(np.tile(pcaobj['sx'],(X_.shape[0],1))))-(tnew @ pcaobj['P'].T)
+        spe  = np.sum(spe**2) 
+        xpred={'Xhat':xhat,'Tnew':tnew, 'speX':spe,'T2':htt2}
     return xpred
 
 def pls_pred(Xnew,plsobj,algorithm='p2mp'):
@@ -1337,7 +1347,11 @@ def pls_pred(Xnew,plsobj,algorithm='p2mp'):
         tnew = ((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1)))) @ plsobj['Ws']
         yhat = (tnew @ plsobj['Q'].T) * np.tile(plsobj['sy'],(X_.shape[0],1)) + np.tile(plsobj['my'],(X_.shape[0],1))
         xhat = (tnew @ plsobj['P'].T) * np.tile(plsobj['sx'],(X_.shape[0],1)) + np.tile(plsobj['mx'],(X_.shape[0],1))
-        ypred ={'Yhat':yhat,'Xhat':xhat,'Tnew':tnew}
+        var_t = (plsobj['T'].T @ plsobj['T'])/plsobj['T'].shape[0]
+        htt2 = np.sum((tnew @ np.linalg.inv(var_t)) * tnew,axis=1)
+        speX  = ((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1))))-(tnew @ plsobj['P'].T)
+        speX  = np.sum(speX**2) 
+        ypred ={'Yhat':yhat,'Xhat':xhat,'Tnew':tnew,'speX':speX,'T2':htt2}
     elif algorithm=='p2mp':
         X_nan_map = np.isnan(X_)
         not_Xmiss = (np.logical_not(X_nan_map))*1
@@ -1362,7 +1376,11 @@ def pls_pred(Xnew,plsobj,algorithm='p2mp'):
                 tnew = np.vstack((tnew,tnew_.T))
         yhat = (tnew @ plsobj['Q'].T) * np.tile(plsobj['sy'],(X_.shape[0],1)) + np.tile(plsobj['my'],(X_.shape[0],1))
         xhat = (tnew @ plsobj['P'].T) * np.tile(plsobj['sx'],(X_.shape[0],1)) + np.tile(plsobj['mx'],(X_.shape[0],1))
-        ypred ={'Yhat':yhat,'Xhat':xhat,'Tnew':tnew}     
+        var_t = (plsobj['T'].T @ plsobj['T'])/plsobj['T'].shape[0]
+        htt2 = np.sum((tnew @ np.linalg.inv(var_t)) * tnew,axis=1)
+        speX  = ((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1))))-(tnew @ plsobj['P'].T)
+        speX  = np.sum(speX**2) 
+        ypred ={'Yhat':yhat,'Xhat':xhat,'Tnew':tnew,'speX':speX,'T2':htt2}     
     return ypred
 
 def hott2(mvmobj,*,Xnew=False,Tnew=False):
