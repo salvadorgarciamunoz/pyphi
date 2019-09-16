@@ -1311,7 +1311,7 @@ def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
         var_t = (pcaobj['T'].T @ pcaobj['T'])/pcaobj['T'].shape[0]
         htt2 = np.sum((tnew @ np.linalg.inv(var_t)) * tnew,axis=1)
         spe  = ((X_-np.tile(pcaobj['mx'],(X_.shape[0],1)))/(np.tile(pcaobj['sx'],(X_.shape[0],1))))-(tnew @ pcaobj['P'].T)
-        spe  = np.sum(spe**2) 
+        spe  = np.sum(spe**2,axis=1,keepdims=True) 
         xpred={'Xhat':xhat,'Tnew':tnew, 'speX':spe,'T2':htt2}
     elif algorithm=='p2mp':  # Using Projection to the model plane method for missing data    
         X_nan_map = np.isnan(Xnew)
@@ -1331,7 +1331,7 @@ def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
         var_t = (pcaobj['T'].T @ pcaobj['T'])/pcaobj['T'].shape[0]
         htt2 = np.sum((tnew @ np.linalg.inv(var_t)) * tnew,axis=1)
         spe  = ((X_-np.tile(pcaobj['mx'],(X_.shape[0],1)))/(np.tile(pcaobj['sx'],(X_.shape[0],1))))-(tnew @ pcaobj['P'].T)
-        spe  = np.sum(spe**2) 
+        spe  = np.sum(spe**2,axis=1,keepdims=True) 
         xpred={'Xhat':xhat,'Tnew':tnew, 'speX':spe,'T2':htt2}
     return xpred
 
@@ -1350,7 +1350,7 @@ def pls_pred(Xnew,plsobj,algorithm='p2mp'):
         var_t = (plsobj['T'].T @ plsobj['T'])/plsobj['T'].shape[0]
         htt2 = np.sum((tnew @ np.linalg.inv(var_t)) * tnew,axis=1)
         speX  = ((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1))))-(tnew @ plsobj['P'].T)
-        speX  = np.sum(speX**2) 
+        speX  = np.sum(speX**2,axis=1,keepdims=True) 
         ypred ={'Yhat':yhat,'Xhat':xhat,'Tnew':tnew,'speX':speX,'T2':htt2}
     elif algorithm=='p2mp':
         X_nan_map = np.isnan(X_)
@@ -1379,7 +1379,7 @@ def pls_pred(Xnew,plsobj,algorithm='p2mp'):
         var_t = (plsobj['T'].T @ plsobj['T'])/plsobj['T'].shape[0]
         htt2 = np.sum((tnew @ np.linalg.inv(var_t)) * tnew,axis=1)
         speX  = ((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1))))-(tnew @ plsobj['P'].T)
-        speX  = np.sum(speX**2) 
+        speX  = np.sum(speX**2,axis=1,keepdims=True) 
         ypred ={'Yhat':yhat,'Xhat':xhat,'Tnew':tnew,'speX':speX,'T2':htt2}     
     return ypred
 
