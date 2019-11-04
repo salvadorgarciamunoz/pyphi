@@ -53,8 +53,8 @@ def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cro
     Output:
         A dictionary with all PCA loadings, scores and other diagnostics.
     
-    """
-    
+    """      
+        
     if cross_val==0:
         pcaobj= pca_(X,A,mcs=mcs,md_algorithm=md_algorithm,force_nipals=force_nipals,shush=shush)
     elif (cross_val > 0) and (cross_val<100):
@@ -91,6 +91,8 @@ def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cro
         X_ = z2n(X_,Xnanmap)
         
         for a in list(range(A)):
+            if not(shush):
+                print('Cross validating PC #'+str(a+1))
             #Generate cross-val map starting from missing data
             not_removed_map = not_Xmiss.copy()
             not_removed_map = np.reshape(not_removed_map,(rows*cols,-1))
@@ -99,7 +101,11 @@ def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cro
             indx = np.argsort(np.reshape(Xrnd,(Xrnd.shape[0]*Xrnd.shape[1])))
             elements_to_remove_per_round = np.int(np.ceil((X_.shape[0]*X_.shape[1]) * (cross_val/100)))
             error = np.zeros((rows*cols,1))
+            rounds=1
             while np.sum(not_removed_map) > 0 :#While there are still elements to be removed
+                #if not(shush):
+                #   print('Removing samples round #'+str(rounds)+' for component :'+str(a+1))
+                rounds=rounds+1          
                 X_copy=X_.copy()
                 if indx.size > elements_to_remove_per_round:
                     indx_this_round = indx[0:elements_to_remove_per_round]
@@ -288,7 +294,7 @@ def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
                  print('phi.pca using NIPALS executed on: '+ str(datetime.datetime.now()) )
              X_,dummy=n2z(X_)
              epsilon=1E-10
-             maxit=10000
+             maxit=5000
              TSS   = np.sum(X_**2)
              TSSpv = np.sum(X_**2,axis=0)
              #T=[];
@@ -512,8 +518,8 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shu
                 
             number_of_rounds=1    
             while np.sum(not_removed_mapX) > 0 or np.sum(not_removed_mapY) > 0 :#While there are still elements to be removed
-                if not(shush):
-                    print('Random removal round #'+ str(number_of_rounds))
+                #if not(shush):
+                #    print('Random removal round #'+ str(number_of_rounds))
                 number_of_rounds=number_of_rounds+1
                 X_copy=X_.copy()
                 if cross_val_X:
@@ -1335,7 +1341,7 @@ def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
         xpred={'Xhat':xhat,'Tnew':tnew, 'speX':spe,'T2':htt2}
     return xpred
 
-def pls_pred(Xnew,plsobj,algorithm='p2mp'):
+def pls_pred(Xnew,plsobj,*,algorithm='p2mp'):
     if isinstance(Xnew,np.ndarray):
         X_=Xnew.copy()
         if X_.ndim==1:
@@ -1494,6 +1500,13 @@ def meancenterscale(X,*,mcs=True):
     return X,x_mean,x_std
 
 def snv (x):
+    """
+    Inputs:
+        x: Spectra
+    Outputs:
+        x: Post-processed Spectra
+    """
+    
     if isinstance(x,pd.DataFrame):
         x_columns=x.columns
         x_values= x.values
@@ -1520,6 +1533,17 @@ def snv (x):
 def savgol(ws,od,op,Dm):
     """
     Savitzky-Golay filter for spectra
+    inputs:
+    ws : Window Size
+    od: Order of the derivative
+    op: Order of the polynomial
+    Dm: Spectra
+    
+    Outputs:
+        Dm_sg, M
+        
+        Dm_sg: Processed Spectra
+        M:     Transformation Matrix for new samples
 
     """
     if isinstance(Dm,pd.DataFrame):
@@ -1692,6 +1716,56 @@ def spe_ci(spe):
     lim99=np.interp(h,chi[:,0],chi[:,2]);
     lim95= g*lim95
     lim99= g*lim99
+    return lim95,lim99
+
+def single_score_conf_int(t):
+    '''
+    Confidence intervals for a single t-score (used for bar and line plots)
+    Input: a column vector of t-scores values
+    Outputs: the two limits based on a t-distribution
+    '''
+    tstud =np.array(
+            [[1,       12.706,       63.657],
+             [2,        4.303,        9.925],
+             [3,        3.182,        5.841],
+             [4,        2.776,        4.604],
+             [5,        2.571,        4.032],
+             [6,        2.447,        3.707],
+             [7,        2.365,        3.499],
+             [8,        2.306,        3.355],
+             [9,        2.262,        3.250],
+             [10,       2.228,        3.169],
+             [11,       2.201,        3.106],
+             [12,       2.179,        3.055],
+             [13,       2.160,        3.012],
+             [14,       2.145,        2.977],
+             [15,       2.131,        2.947],
+             [16,       2.120,        2.921],
+             [17,       2.110,        2.898],
+             [18,       2.101,        2.878],
+             [19,       2.093,        2.861],
+             [20,       2.086,        2.845],
+             [21,       2.080,        2.831],
+             [22,       2.074,        2.819],
+             [23,       2.069,        2.807],
+             [24,       2.064,        2.797],
+             [25,       2.060,        2.787],
+             [26,       2.056,        2.779],
+             [27,       2.052,        2.771],
+             [28,       2.048,        2.763],
+             [29,       2.045,        2.756],
+             [30,       2.042,        2.750],
+             [40,       2.021,        2.704],
+             [60,       2.000,        2.660],
+             [120,      1.980,        2.617],
+             [1000,     1.960,        2.576],
+             [1E6,      1.960,        2.576]])
+
+    st=np.var(t,ddof=1)
+    lim95=np.interp(t.shape[0],tstud[:,0],tstud[:,1])
+    lim99=np.interp(t.shape[0],tstud[:,0],tstud[:,2])
+    lim95=lim95*np.sqrt(st)
+    lim99=lim99*np.sqrt(st)
     return lim95,lim99
 
 def f99(i,j):
@@ -1934,10 +2008,39 @@ def contributions(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_sp
 
         
         
-      
+def clean_low_variances(X,*,shush=False):
+    if isinstance(X,pd.DataFrame):
+        X_=np.array(X.values[:,1:]).astype(float)
+        varidX = X.columns.values
+        varidX = varidX[1:]
+        varidX = varidX.tolist()
+    else:
+        X_=X.copy()
+        varidX=[]
+        for n in list(np.arange(X.shape[1])+1):
+            varidX.append('Var #'+str(n))                     
+    std_x=std(X_)
+    std_x=std_x.flatten()
     
-
-
+    indx = find(std_x, lambda x: x<1E-10)
+    if len(indx)>0:
+        for i in indx:
+            if not(shush):
+                print('Removing variable ', varidX[i], ' due to low variance')
+        if isinstance(X,pd.DataFrame):
+            indx = np.array(indx)
+            indx = indx +1
+            X_=X.drop(X.columns[indx],axis=1)
+        else:
+            X_=np.delete(X_,indx,1)
+        return X_    
+    else:
+        return X
+    
+def find(a, func):
+    return [i for (i, val) in enumerate(a) if func(val)]
+    
+        
 
     
 
