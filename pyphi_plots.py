@@ -310,6 +310,40 @@ def loadings_map(mvmobj,dims,*,plotwidth=600):
         hline = Span(location=0, dimension='width', line_color='black', line_width=2)
         p.renderers.extend([vline, hline])
         show(p)    
+    else:
+        lv_prefix='PC #'     
+        lv_labels = []   
+        for a in list(np.arange(A)+1):
+            lv_labels.append(lv_prefix+str(a))    
+        if 'varidX' in mvmobj:
+            XVar=mvmobj['varidX']
+        else:
+            XVar = []
+            for n in list(np.arange(num_varX)+1):
+                XVar.append('XVar #'+str(n))                   
+        rnd_num=str(int(np.round(1000*np.random.random_sample())))
+        output_file("Loadings Map"+rnd_num+".html",title='Loadings Map')    
+        x_p = mvmobj['P'][:,dims[0]-1]
+        y_p = mvmobj['P'][:,dims[1]-1]                        
+        TOOLS = "save,wheel_zoom,box_zoom,pan,reset,box_select,lasso_select"
+        TOOLTIPS = [
+                ("index", "$index"),
+                ("(x,y)", "($x, $y)"),
+                ("Variable:","@names")
+                ]
+    
+        source1 = ColumnDataSource(data=dict(x=x_p, y=y_p,names=XVar))  
+        p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=plotwidth, title="Loadings Map PC["+str(dims[0])+"] - PC["+str(dims[1])+"]",                                                                                                         x_range=(-1.5,1.5),y_range=(-1.5,1.5))
+        p.circle('x', 'y', source=source1,size=10,color='darkblue')
+        p.xaxis.axis_label = lv_labels [dims[0]-1]
+        p.yaxis.axis_label = lv_labels [dims[1]-1]        
+        labelsX = LabelSet(x='x', y='y', text='names', level='glyph',x_offset=5, y_offset=5, source=source1, render_mode='canvas')
+        p.add_layout(labelsX)
+        vline = Span(location=0, dimension='height', line_color='black', line_width=2)
+        # Horizontal line
+        hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+        p.renderers.extend([vline, hline])
+        show(p)            
     return  
 
 def weighted_loadings(mvmobj,*,plotwidth=600):
@@ -1052,11 +1086,15 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
         if not(isinstance(yhat,np.bool)): #skip if PCA model sent
             for i in list(range(Y_.shape[1])):
                 x_ = Y_[:,i]
-                y_ = yhat[:,i]           
+                y_ = yhat[:,i]          
+                min_value = np.nanmin([np.nanmin(x_),np.nanmin(y_)])
+                max_value = np.nanmax([np.nanmax(x_),np.nanmax(y_)])
+                
                 source = ColumnDataSource(data=dict(x=x_, y=y_,ObsID=ObsID_))
-                p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title=YVar[i])
+                #p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title=YVar[i])
+                p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title=YVar[i],x_range=(min_value, max_value),y_range=(min_value, max_value))
                 p.circle('x', 'y', source=source,size=7,color='darkblue')
-                p.line([np.nanmin(x_),np.nanmax(x_)],[np.nanmin(y_),np.nanmax(y_)],line_color='cyan',line_dash='dashed')
+                p.line([min_value,max_value],[min_value,max_value],line_color='cyan',line_dash='dashed')
                 p.xaxis.axis_label ='Observed'
                 p.yaxis.axis_label ='Predicted'
                 if plot_counter==0:
@@ -1068,11 +1106,14 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
         if x_space: #
             for i in list(range(X_.shape[1])):
                 x_ = X_[:,i]
-                y_ = xhat[:,i]           
+                y_ = xhat[:,i]    
+                min_value = np.nanmin([np.nanmin(x_),np.nanmin(y_)])
+                max_value = np.nanmax([np.nanmax(x_),np.nanmax(y_)])
+ 
                 source = ColumnDataSource(data=dict(x=x_, y=y_,ObsID=ObsID_))
-                p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title=XVar[i])
+                p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title=XVar[i],x_range=(min_value, max_value),y_range=(min_value, max_value))
                 p.circle('x', 'y', source=source,size=7,color='darkblue')
-                p.line([np.nanmin(x_),np.nanmax(x_)],[np.nanmin(y_),np.nanmax(y_)],line_color='cyan',line_dash='dashed')
+                p.line([min_value,max_value],[min_value,max_value],line_color='cyan',line_dash='dashed')
                 p.xaxis.axis_label ='Observed'
                 p.yaxis.axis_label ='Predicted'
                 if plot_counter==0:
@@ -1098,7 +1139,9 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
             for i in list(range(Y_.shape[1])):
                 x_ = Y_[:,i]
                 y_ = yhat[:,i]
-                p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title=YVar[i])
+                min_value = np.nanmin([np.nanmin(x_),np.nanmin(y_)])
+                max_value = np.nanmax([np.nanmax(x_),np.nanmax(y_)])
+                p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title=YVar[i],x_range=(min_value, max_value),y_range=(min_value, max_value))
                 for classid_in_turn in Classes_:
                     x_aux=[]
                     y_aux=[]
@@ -1113,7 +1156,7 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
                     source = ColumnDataSource(data=dict(x=x_aux, y=y_aux,ObsID=obsid_aux,Class=classid_aux))        
                     color_=bokeh_palette[Classes_.index(classid_in_turn)]
                     p.circle('x','y',source=source,color=color_,legend=classid_in_turn)
-                    p.line([np.nanmin(x_),np.nanmax(x_)],[np.nanmin(y_),np.nanmax(y_)],line_color='cyan',line_dash='dashed')
+                    p.line([min_value,max_value],[min_value,max_value],line_color='cyan',line_dash='dashed')
                 p.xaxis.axis_label ='Observed'
                 p.yaxis.axis_label ='Predicted'
                 p.legend.click_policy="hide"
@@ -1128,7 +1171,9 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
             for i in list(range(X_.shape[1])):
                 x_ = X_[:,i]
                 y_ = xhat[:,i]
-                p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title=XVar[i])
+                min_value = np.nanmin([np.nanmin(x_),np.nanmin(y_)])
+                max_value = np.nanmax([np.nanmax(x_),np.nanmax(y_)])
+                p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title=XVar[i],x_range=(min_value, max_value),y_range=(min_value, max_value))
                 for classid_in_turn in Classes_:
                     x_aux=[]
                     y_aux=[]
@@ -1143,7 +1188,7 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
                     source = ColumnDataSource(data=dict(x=x_aux, y=y_aux,ObsID=obsid_aux,Class=classid_aux))        
                     color_=bokeh_palette[Classes_.index(classid_in_turn)]
                     p.circle('x','y',source=source,color=color_,legend=classid_in_turn)
-                    p.line([np.nanmin(x_),np.nanmax(x_)],[np.nanmin(y_),np.nanmax(y_)],line_color='cyan',line_dash='dashed')
+                    p.line([min_value,max_value],[min_value,max_value],line_color='cyan',line_dash='dashed')
                 p.xaxis.axis_label ='Observed'
                 p.yaxis.axis_label ='Predicted'
                 p.legend.click_policy="hide"
