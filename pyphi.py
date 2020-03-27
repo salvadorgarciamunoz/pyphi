@@ -19,6 +19,12 @@ import pandas as pd
 import datetime
 from scipy.special import factorial
 from scipy import interpolate
+try:
+    from pyomo.environ import *
+    pyomo_ok = True
+except ImportError:
+    pyomo_ok = False
+ 
  
 def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cross_val=0):
     """ Principal Components Analysis routine
@@ -36,12 +42,12 @@ def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cro
              'center'    : Only center
              'autoscale' : Only autoscale
              
-        md_algorithm: 'nipals' *default if not sent*
-                      'nlp'    To be implemented
+        md_algorithm: Missing Data algorithm to use
+                      'nipals' *default if not sent*
+                      'nlp'    Uses non-linear programming approach by Lopez-Negrete et al. J. Chemometrics 2010; 24: 301–311
                       
-        force_nipals: If = True and if X is complete, will use NIPALS.
-                           Otherwise, if X is complete will use SVD.
-                         = False *default if not sent*
+        force_nipals: If = True  will use NIPALS.
+                         = False if X is complete will use SVD. *default if not sent*
                       
         shush: If = True supressess all printed output
                   =  False *default if not sent*
@@ -388,8 +394,108 @@ def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
              pca_obj['speX_lim99']= speX_lim99
              pca_obj['speX_lim95']= speX_lim95
              return pca_obj                            
-        elif md_algorithm=='nlp':
+        elif md_algorithm=='nlp' and pyomo_ok:
             #use NLP per Lopez-Negrete et al. J. Chemometrics 2010; 24: 301–311
+            if not(shush):
+                 print('phi.pca using NLP with Ipopt executed on: '+ str(datetime.datetime.now()) )
+            pcaobj_= pca_(X,A,mcs=mcs,md_algorithm='nipals',shush=True)
+            pcaobj_= prep_pca_4_MDbyNLP(pcaobj_,X_)
+          
+            TSS   = np.sum(X_**2)
+            TSSpv = np.sum(X_**2,axis=0)
+            
+            #Set up the model in Pyomo
+            model             = ConcreteModel()
+            model.A           = Set(initialize = pcaobj_['pyo_A'] )
+            model.N           = Set(initialize = pcaobj_['pyo_N'] )
+            model.O           = Set(initialize = pcaobj_['pyo_O'] )
+            model.P           = Var(model.N,model.A, within = Reals,initialize = pcaobj_['pyo_P_init'])
+            model.T           = Var(model.O,model.A, within = Reals,initialize = pcaobj_['pyo_T_init'])
+            model.psi         = Param(model.O,model.N,initialize = pcaobj_['pyo_psi'])
+            model.X           = Param(model.O,model.N,initialize = pcaobj_['pyo_X'])
+            model.delta       = Param(model.A, model.A, initialize=lambda model, a1, a2: 1.0 if a1==a2 else 0)
+            
+            # Constraints 20b
+            def _c20b_con(model, a1, a2):
+                return sum(model.P[j, a1] * model.P[j, a2] for j in model.N) == model.delta[a1, a2]
+            model.c20b = Constraint(model.A, model.A, rule=_c20b_con)
+    
+            # Constraints 20c
+            def _20c_con(model, a1, a2):
+                if a2 < a1:
+                    return sum(model.T[o, a1] * model.T[o, a2] for o in model.O) == 0
+                else:
+                    return Constraint.Skip
+            model.c20c = Constraint(model.A, model.A, rule=_20c_con)
+                
+            # Constraints 20d
+            def mean_zero(model,i):
+                return sum (model.T[o,i]  for o in model.O )==0
+            model.eq3 = Constraint(model.A,rule=mean_zero)
+                  
+            def _eq_20a_obj(model):
+                return sum(sum((model.X[o,n]- model.psi[o,n] * sum(model.T[o,a] * model.P[n,a] for a in model.A))**2 for n in model.N) for o in model.O)
+            model.obj = Objective(rule=_eq_20a_obj)
+            
+            solver = SolverFactory('ipopt')
+            solver.options['linear_solver']='ma57'
+            results=solver.solve(model,tee=True)   
+            T=[]
+            for o in model.O:
+                 t=[]
+                 for a in model.A:
+                    t.append(value(model.T[o,a]))
+                 T.append(t)   
+            T=np.array(T)     
+            P=[]
+            for n in model.N:
+                 p=[]
+                 for a in model.A:
+                    p.append(value(model.P[n,a]))
+                 P.append(p)   
+            P=np.array(P)   
+            
+            # Calculate R2
+           
+            for a in list(range(0, A)):
+                 ti=T[:,[a]]
+                 pi=P[:,[a]]
+                 X_=(X_- ti @ pi.T)*not_Xmiss
+                 if a==0:
+                    r2   = 1-np.sum(X_**2)/TSS
+                    r2pv = 1-np.sum(X_**2,axis=0)/TSSpv
+                    r2pv = r2pv.reshape(-1,1)
+                 else:
+                    r2   = np.hstack((r2,1-np.sum(X_**2)/TSS))
+                    aux_ = 1-np.sum(X_**2,axis=0)/TSSpv
+                    aux_ = aux_.reshape(-1,1)
+                    r2pv = np.hstack((r2pv,aux_))
+                    
+            for a in list(range(A-1,0,-1)):
+                 r2[a]     = r2[a]-r2[a-1]
+                 r2pv[:,a] = r2pv[:,a]-r2pv[:,a-1]
+                 
+            eigs = np.var(T,axis=0);
+            r2xc = np.cumsum(r2)
+            if not(shush):               
+                 print('--------------------------------------------------------------')
+                 print('PC #      Eig        R2X       sum(R2X) ')
+ 
+                 if A>1:
+                     for a in list(range(A)):
+                         print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}".format(eigs[a], r2[a], r2xc[a]))
+                 else:
+                     d1=eigs[0]
+                     d2=r2xc[0]
+                     print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}".format(d1, r2, d2))
+                 print('--------------------------------------------------------------')      
+        
+            pca_obj={'T':T,'P':P,'r2x':r2,'r2xpv':r2pv,'mx':x_mean,'sx':x_std}    
+            return pca_obj                  
+            
+        elif md_algorithm=='nlp' and not( pyomo_ok):
+            print('Pyomo was not found in your system sorry')
+            print('visit  http://www.pyomo.org/ ')
             pca_obj=1
             return pca_obj
   
@@ -1489,6 +1595,9 @@ def meancenterscale(X,*,mcs=True):
             x_std  = std(X)
             X      = X-np.tile(x_mean,(X.shape[0],1))
             X      = X/np.tile(x_std,(X.shape[0],1))
+        else:
+            x_mean = np.nan
+            x_std  = np.nan
     elif mcs=='center':
          x_mean = mean(X)
          X      = X-np.tile(x_mean,(X.shape[0],1))
@@ -1600,8 +1709,11 @@ def np1D2pyomo(arr,*,indexes=False):
     elif isinstance(indexes,list):
         output=dict((indexes[j], arr[j]) for j in range(len(arr)))
     return output
-       
-def conv_eiot(plsobj,*,r_length=False):
+
+
+
+
+def adapt_pls_4_pyomo(plsobj):
     plsobj_ = plsobj.copy()
     
     A = plsobj['T'].shape[1]
@@ -1628,26 +1740,6 @@ def conv_eiot(plsobj,*,r_length=False):
     pyo_my    = np1D2pyomo(plsobj['my'])
     pyo_sy    = np1D2pyomo(plsobj['sy'])
     
-    
-    if not isinstance(r_length,bool):
-        if r_length < N:   
-            indx_r     = np.arange(1,r_length+1)
-            indx_rk_eq = np.arange(r_length+1,N+1)
-            indx_r     = indx_r.tolist()
-            indx_rk_eq = indx_rk_eq.tolist()
-        elif r_length == N:
-            indx_r  = pyo_N
-            indx_rk_eq=0
-        else:
-            print('r_length >> N !!')
-            print('Forcing r_length=N')
-            indx_r  = pyo_N
-            indx_rk_eq=0
-            
-    else:
-        if not r_length:
-           indx_r  = pyo_N 
-           indx_rk_eq = 0
             
     plsobj_['pyo_A']      = pyo_A
     plsobj_['pyo_N']      = pyo_N
@@ -1656,14 +1748,11 @@ def conv_eiot(plsobj,*,r_length=False):
     plsobj_['pyo_Q']      = pyo_Q
     plsobj_['pyo_P']      = pyo_P
     plsobj_['pyo_var_t']  = pyo_var_t
-    plsobj_['indx_r']     = indx_r
-    plsobj_['indx_rk_eq'] = indx_rk_eq
     plsobj_['pyo_mx']     = pyo_mx
     plsobj_['pyo_sx']     = pyo_sx
     plsobj_['pyo_my']     = pyo_my
     plsobj_['pyo_sy']     = pyo_sy
-    plsobj_['S_I']        = np.nan
-    plsobj_['pyo_S_I']        = np.nan
+    plsobj_['speX_lim95'] =  plsobj['speX_lim95']
     return plsobj_
 
 def spe_ci(spe):    
@@ -2039,9 +2128,105 @@ def clean_low_variances(X,*,shush=False):
     
 def find(a, func):
     return [i for (i, val) in enumerate(a) if func(val)]
-    
-        
 
+def conv_pls_2_eiot(plsobj,*,r_length=False):
+    plsobj_ = plsobj.copy()
+    
+    A = plsobj['T'].shape[1]
+    N = plsobj['P'].shape[0]
+    M = plsobj['Q'].shape[0]
+    
+    
+    pyo_A = np.arange(1,A+1)  #index for LV's
+    pyo_N = np.arange(1,N+1)  #index for columns of X
+    pyo_M = np.arange(1,M+1)  #index for columns of Y
+    pyo_A = pyo_A.tolist()
+    pyo_N = pyo_N.tolist()
+    pyo_M = pyo_M.tolist()
+    
+    pyo_Ws = np2D2pyomo(plsobj['Ws'])
+    pyo_Q  = np2D2pyomo(plsobj['Q'])
+    pyo_P  = np2D2pyomo(plsobj['P'])
+    
+    var_t = np.var(plsobj['T'],axis=0)
+    
+    pyo_var_t = np1D2pyomo(var_t)
+    pyo_mx    = np1D2pyomo(plsobj['mx'])
+    pyo_sx    = np1D2pyomo(plsobj['sx'])
+    pyo_my    = np1D2pyomo(plsobj['my'])
+    pyo_sy    = np1D2pyomo(plsobj['sy'])
+    
+    
+    if not isinstance(r_length,bool):
+        if r_length < N:   
+            indx_r     = np.arange(1,r_length+1)
+            indx_rk_eq = np.arange(r_length+1,N+1)
+            indx_r     = indx_r.tolist()
+            indx_rk_eq = indx_rk_eq.tolist()
+        elif r_length == N:
+            indx_r  = pyo_N
+            indx_rk_eq=0
+        else:
+            print('r_length >> N !!')
+            print('Forcing r_length=N')
+            indx_r  = pyo_N
+            indx_rk_eq=0
+            
+    else:
+        if not r_length:
+           indx_r  = pyo_N 
+           indx_rk_eq = 0
+            
+    plsobj_['pyo_A']      = pyo_A
+    plsobj_['pyo_N']      = pyo_N
+    plsobj_['pyo_M']      = pyo_M
+    plsobj_['pyo_Ws']     = pyo_Ws
+    plsobj_['pyo_Q']      = pyo_Q
+    plsobj_['pyo_P']      = pyo_P
+    plsobj_['pyo_var_t']  = pyo_var_t
+    plsobj_['indx_r']     = indx_r
+    plsobj_['indx_rk_eq'] = indx_rk_eq
+    plsobj_['pyo_mx']     = pyo_mx
+    plsobj_['pyo_sx']     = pyo_sx
+    plsobj_['pyo_my']     = pyo_my
+    plsobj_['pyo_sy']     = pyo_sy
+    plsobj_['S_I']        = np.nan
+    plsobj_['pyo_S_I']    = np.nan
+    plsobj_['var_t']      = var_t
+    return plsobj_    
+        
+def prep_pca_4_MDbyNLP(pcaobj,X):
+    pcaobj_ = pcaobj.copy()
+    X_nan_map = np.isnan(X)
+    psi = (np.logical_not(X_nan_map))*1
+    X,dummy=n2z(X)
+    
+    A = pcaobj['T'].shape[1]
+    O = pcaobj['T'].shape[0]
+    N = pcaobj['P'].shape[0]
+   
+    pyo_A = np.arange(1,A+1)  #index for LV's
+    pyo_N = np.arange(1,N+1)  #index for columns of X (rows of P)
+    pyo_O = np.arange(1,O+1)  #index for rows of X 
+    pyo_A = pyo_A.tolist()
+    pyo_N = pyo_N.tolist()
+    pyo_O = pyo_O.tolist()
+    
+    pyo_P_init  = np2D2pyomo(pcaobj['P'])
+    pyo_T_init  = np2D2pyomo(pcaobj['T'])
+    pyo_X       = np2D2pyomo(X)
+    pyo_psi     = np2D2pyomo(psi)
+
+    
+    pcaobj_['pyo_A']      = pyo_A
+    pcaobj_['pyo_N']      = pyo_N
+    pcaobj_['pyo_O']      = pyo_O
+    pcaobj_['pyo_P_init'] = pyo_P_init
+    pcaobj_['pyo_T_init'] = pyo_T_init
+    pcaobj_['pyo_X']      = pyo_X
+    pcaobj_['pyo_psi']    = pyo_psi
+
+    return pcaobj_    
     
 
 
