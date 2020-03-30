@@ -1,6 +1,6 @@
 # pyphi
 phi toolbox for multivariate analysis by Sal Garcia (salvadorgarciamunoz@gmail.com , sgarciam@ic.ac.uk )
-version 1.0 includes: Principal Components Analysis, Projection to Latent Structures, LWPLS, Savitzy-Golay derivative transform, Standard Normal Variate transform.
+version 1.0 includes: Principal Components Analysis (PCA), Projection to Latent Structures (PLS), Locally Weighted PLS (LWPLS), Savitzy-Golay derivative and Standard Normal Variate pre-processing for spectra.
 
 # pyphi_plots
 A variety of plotting tools for models created with pyphi. 
@@ -8,4 +8,10 @@ A variety of plotting tools for models created with pyphi.
 ==========================================
 
 Dependencies:
-numpy, scipy, pandas, datetime, bokeh , matplotlib
+numpy, scipy, pandas, datetime, bokeh , matplotlib, pyomo
+
+=============================================
+What is New Release March 30th.
+
+* PCA model estimation using Non-linear programming as described in Lopez-Negrete et al. J. Chemometrics 2010; 24: 301–311
+
