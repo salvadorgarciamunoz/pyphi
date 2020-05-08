@@ -30,6 +30,15 @@ try:
 except ImportError:
     pyomo_ok = False
 
+# check if an ipopt binary is accessable
+# shutil was introduced in Python 3.2
+from shutil import which
+if (which('ipopt')):
+    ipopt_ok = True
+else:
+    ipopt_ok = False
+    print("IPOPT exectuable not found in path. Using NEOS server instead.")
+
 # check if we have libhsl availble to use as IPOPT's linear solver
 from ctypes.util import find_library
 hsl_ok = ipopt_ok and find_library('libhsl')
@@ -445,13 +454,17 @@ def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
             def _eq_20a_obj(model):
                 return sum(sum((model.X[o,n]- model.psi[o,n] * sum(model.T[o,a] * model.P[n,a] for a in model.A))**2 for n in model.N) for o in model.O)
             model.obj = Objective(rule=_eq_20a_obj)
-            
-            solver = SolverFactory('ipopt')
-            if (hsl_ok):
-                print("libhsl found. Using ma57 with IPOPT")
-                # TODO: This assumes user's libhsl has ma57. Personal licences may not.
-                solver.options['linear_solver'] = 'ma57'
-            results=solver.solve(model,tee=True)
+
+            if (ipopt_ok):
+                solver = SolverFactory('ipopt')
+                if (hsl_ok):
+                    print("libhsl found. Using ma57 with IPOPT")
+                    # TODO: This assumes user's libhsl has ma57. Personal licences may not.
+                    solver.options['linear_solver'] = 'ma57'
+                results = solver.solve(model,tee=True)
+            else:
+                solver_manager = SolverManagerFactory('neos')
+                results = solver_manager.solve(model, opt='ipopt', tee=True)
 
             T=[]
             for o in model.O:

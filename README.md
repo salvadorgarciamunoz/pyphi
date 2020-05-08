@@ -10,12 +10,12 @@ A variety of plotting tools for models created with pyphi.
 Dependencies:
 numpy, scipy, pandas, xlrd, bokeh, matplotlib, pyomo
 
-External Dependencies:
-- IPOPT as an executable in system path
+Optional External Dependencies:
+- IPOPT as an executable in system path (Solves remotely via the NEOS server if local executable is not available)
   All platforms: ```conda install -c conda-forge  IPOPT```
   Windows: [IPOPT releases page](https://github.com/coin-or/Ipopt/releases)
   Mac/Linux: [Compile using coinbrew](https://coin-or.github.io/Ipopt/INSTALL.html#COINBREW)
-- (optional) libhsl with ma57 within library loading path (Requires a free academic or paid industrial license)
+- libhsl with ma57 within library loading path (Speeds up IPOPT for large problems but requires a free academic or paid industrial license)
 
 To use,
 1) Download this repository via ```git clone``` or manually using the download zip button at the top of the page.
