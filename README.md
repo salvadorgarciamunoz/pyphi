@@ -8,8 +8,11 @@ A variety of plotting tools for models created with pyphi.
 ==========================================
 
 Dependencies:
-numpy, scipy, pandas, datetime, bokeh , matplotlib, pyomo
+numpy, scipy, pandas, xlrd, bokeh, matplotlib, pyomo
 
+External Dependencies:
+- ipopt as an executable in system path
+- libhsl with ma57
 
 =============================================
 What is New Release March 30th.
