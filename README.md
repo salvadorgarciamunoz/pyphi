@@ -15,7 +15,7 @@ External Dependencies:
   All platforms: ```conda install -c conda-forge  IPOPT```
   Windows: [IPOPT releases page](https://github.com/coin-or/Ipopt/releases)
   Mac/Linux: [Compile using coinbrew](https://coin-or.github.io/Ipopt/INSTALL.html#COINBREW)
-- libhsl with ma57 within library loading path (Requires a free academic or paid industrial license)
+- (optional) libhsl with ma57 within library loading path (Requires a free academic or paid industrial license)
 
 To use,
 1) Download this repository via ```git clone``` or manually using the download zip button at the top of the page.

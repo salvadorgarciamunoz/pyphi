@@ -29,8 +29,12 @@ try:
     pyomo_ok = True
 except ImportError:
     pyomo_ok = False
- 
- 
+
+# check if we have libhsl availble to use as IPOPT's linear solver
+from ctypes.util import find_library
+hsl_ok = ipopt_ok and find_library('libhsl')
+
+
 def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cross_val=0):
     """ Principal Components Analysis routine
     
@@ -432,19 +436,23 @@ def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
                 else:
                     return Constraint.Skip
             model.c20c = Constraint(model.A, model.A, rule=_20c_con)
-                
+
             # Constraints 20d
             def mean_zero(model,i):
                 return sum (model.T[o,i]  for o in model.O )==0
             model.eq3 = Constraint(model.A,rule=mean_zero)
-                  
+
             def _eq_20a_obj(model):
                 return sum(sum((model.X[o,n]- model.psi[o,n] * sum(model.T[o,a] * model.P[n,a] for a in model.A))**2 for n in model.N) for o in model.O)
             model.obj = Objective(rule=_eq_20a_obj)
             
             solver = SolverFactory('ipopt')
-            solver.options['linear_solver']='ma57'
-            results=solver.solve(model,tee=True)   
+            if (hsl_ok):
+                print("libhsl found. Using ma57 with IPOPT")
+                # TODO: This assumes user's libhsl has ma57. Personal licences may not.
+                solver.options['linear_solver'] = 'ma57'
+            results=solver.solve(model,tee=True)
+
             T=[]
             for o in model.O:
                  t=[]
