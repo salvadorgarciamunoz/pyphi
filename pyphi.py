@@ -30,16 +30,15 @@ try:
 except ImportError:
     pyomo_ok = False
 
-# check if an ipopt binary is accessable
+# Check if an IPOPT binary available is availbale
 # shutil was introduced in Python 3.2
 from shutil import which
-if (which('ipopt')):
-    ipopt_ok = True
-else:
-    ipopt_ok = False
-    print("IPOPT exectuable not found in path. Using NEOS server instead.")
+ipopt_ok = bool(which('ipopt'))
 
-# check if we have libhsl availble to use as IPOPT's linear solver
+# Check if we have libhsl availble to use as IPOPT's linear solver
+# TODO: Does not look for ma57 header specifically. The free personal
+#  libhsl license does not include ma57, only ma27, so this will cause
+#  an error when run.
 from ctypes.util import find_library
 hsl_ok = ipopt_ok and find_library('libhsl')
 
@@ -459,7 +458,6 @@ def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
                 solver = SolverFactory('ipopt')
                 if (hsl_ok):
                     print("libhsl found. Using ma57 with IPOPT")
-                    # TODO: This assumes user's libhsl has ma57. Personal licences may not.
                     solver.options['linear_solver'] = 'ma57'
                 results = solver.solve(model,tee=True)
             else:
