@@ -1163,7 +1163,7 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
                 p.xaxis.axis_label ='Observed'
                 p.yaxis.axis_label ='Predicted'
                 p.legend.click_policy="hide"
-                
+                p.legend.location = "top_left"
                 if plot_counter==0:
                     p_list=[p]
                     plot_counter = plot_counter+1
@@ -1195,6 +1195,7 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
                 p.xaxis.axis_label ='Observed'
                 p.yaxis.axis_label ='Predicted'
                 p.legend.click_policy="hide"
+                p.legend.location = "top_left"
                 if plot_counter==0:
                     p_list=[p]
                     plot_counter = plot_counter+1

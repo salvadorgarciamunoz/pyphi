@@ -29,21 +29,8 @@ try:
     pyomo_ok = True
 except ImportError:
     pyomo_ok = False
-
-# check if an ipopt binary is accessable
-# shutil was introduced in Python 3.2
-from shutil import which
-if (which('ipopt')):
-    ipopt_ok = True
-else:
-    ipopt_ok = False
-    print("IPOPT exectuable not found in path. Using NEOS server instead.")
-
-# check if we have libhsl availble to use as IPOPT's linear solver
-from ctypes.util import find_library
-hsl_ok = ipopt_ok and find_library('libhsl')
-
-
+ 
+ 
 def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cross_val=0):
     """ Principal Components Analysis routine
     
@@ -445,27 +432,19 @@ def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
                 else:
                     return Constraint.Skip
             model.c20c = Constraint(model.A, model.A, rule=_20c_con)
-
+                
             # Constraints 20d
             def mean_zero(model,i):
                 return sum (model.T[o,i]  for o in model.O )==0
             model.eq3 = Constraint(model.A,rule=mean_zero)
-
+                  
             def _eq_20a_obj(model):
                 return sum(sum((model.X[o,n]- model.psi[o,n] * sum(model.T[o,a] * model.P[n,a] for a in model.A))**2 for n in model.N) for o in model.O)
             model.obj = Objective(rule=_eq_20a_obj)
-
-            if (ipopt_ok):
-                solver = SolverFactory('ipopt')
-                if (hsl_ok):
-                    print("libhsl found. Using ma57 with IPOPT")
-                    # TODO: This assumes user's libhsl has ma57. Personal licences may not.
-                    solver.options['linear_solver'] = 'ma57'
-                results = solver.solve(model,tee=True)
-            else:
-                solver_manager = SolverManagerFactory('neos')
-                results = solver_manager.solve(model, opt='ipopt', tee=True)
-
+            
+            solver = SolverFactory('ipopt')
+            solver.options['linear_solver']='ma57'
+            results=solver.solve(model,tee=True)   
             T=[]
             for o in model.O:
                  t=[]
@@ -1468,7 +1447,7 @@ def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
         spe  = np.sum(spe**2,axis=1,keepdims=True) 
         xpred={'Xhat':xhat,'Tnew':tnew, 'speX':spe,'T2':htt2}
     elif algorithm=='p2mp':  # Using Projection to the model plane method for missing data    
-        X_nan_map = np.isnan(Xnew)
+        X_nan_map = np.isnan(X_)
         not_Xmiss = (np.logical_not(X_nan_map))*1
         X_,dummy=n2z(X_)
         Xmcs=((X_-np.tile(pcaobj['mx'],(X_.shape[0],1)))/(np.tile(pcaobj['sx'],(X_.shape[0],1))))
@@ -1607,7 +1586,7 @@ def mean(X):
         X_nan_map       = X_nan_map*1
         X_[X_nan_map==1] = 0
         aux             = np.sum(X_nan_map,axis=0)
-        #Calculate mean without accounting for NaN's
+        #Calculate mean without accounting for NaN'
         x_mean = np.sum(X_,axis=0,keepdims=1)/(np.ones((1,X_.shape[1]))*X_.shape[0]-aux)
     else:
         x_mean = np.mean(X_,axis=0,keepdims=1)
@@ -1648,6 +1627,9 @@ def meancenterscale(X,*,mcs=True):
          x_std  = std(X) 
          X      = X/np.tile(x_std,(X.shape[0],1))
          x_mean = np.zeros((1,X.shape[1]))
+    else:
+        x_mean=np.nan
+        x_std=np.nan
     return X,x_mean,x_std
 
 def snv (x):
@@ -2137,6 +2119,37 @@ def contributions(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_sp
         else:
             return contsX
 
+def clean_empty_rows(X,*,shush=False):
+    if isinstance(X,np.ndarray):
+        X_     = X.copy()
+        ObsID_ = []
+        for n in list(np.arange(X.shape[0])+1):
+            ObsID_.append('Obs #'+str(n))  
+    elif isinstance(X,pd.DataFrame):
+        X_     = np.array(X.values[:,1:]).astype(float)
+        ObsID_ = X.values[:,0].astype(str)
+        ObsID_ = ObsID_.tolist()
+                     
+    #find rows with all data missing
+    X_nan_map = np.isnan(X_)
+    Xmiss = X_nan_map*1
+    Xmiss = np.sum(Xmiss,axis=1)
+    indx = find(Xmiss, lambda x: x==X_.shape[1])
+       
+    if len(indx)>0:
+        for i in indx:
+            if not(shush):
+                print('Removing row ', ObsID_[i], ' due to 100% missing data')
+        if isinstance(X,pd.DataFrame):
+            X_=X.drop(X.index.values[indx].tolist())
+        else:
+            X_=np.delete(X_,indx,0)
+        return X_
+    else:
+        return X
+
+
+        
         
         
 def clean_low_variances(X,*,shush=False):
@@ -2149,7 +2162,30 @@ def clean_low_variances(X,*,shush=False):
         X_=X.copy()
         varidX=[]
         for n in list(np.arange(X.shape[1])+1):
-            varidX.append('Var #'+str(n))                     
+            varidX.append('Var #'+str(n))   
+            
+    #find columns with all data missing
+    X_nan_map = np.isnan(X_)
+    Xmiss = X_nan_map*1
+    Xmiss = np.sum(Xmiss,axis=0)
+    indx = find(Xmiss, lambda x: x==X_.shape[0])
+       
+    if len(indx)>0:
+        for i in indx:
+            if not(shush):
+                print('Removing variable ', varidX[i], ' due to 100% missing data')
+        if isinstance(X,pd.DataFrame):
+            indx = np.array(indx)
+            indx = indx +1
+            X_pd=X.drop(X.columns[indx],axis=1)
+            X_=np.array(X_pd.values[:,1:]).astype(float)
+        else:
+            X_=np.delete(X_,indx,1)
+    else:
+        X_pd=X.copy()
+        
+        
+            
     std_x=std(X_)
     std_x=std_x.flatten()
     
@@ -2158,15 +2194,15 @@ def clean_low_variances(X,*,shush=False):
         for i in indx:
             if not(shush):
                 print('Removing variable ', varidX[i], ' due to low variance')
-        if isinstance(X,pd.DataFrame):
+        if isinstance(X_pd,pd.DataFrame):
             indx = np.array(indx)
             indx = indx +1
-            X_=X.drop(X.columns[indx],axis=1)
+            X_=X_pd.drop(X_pd.columns[indx],axis=1)
         else:
             X_=np.delete(X_,indx,1)
         return X_    
     else:
-        return X
+        return X_pd
     
 def find(a, func):
     return [i for (i, val) in enumerate(a) if func(val)]
