@@ -1,0 +1,7 @@
+numpy
+scipy
+pandas
+xlrd
+bokeh
+matplotlib
+pyomo
