@@ -29,8 +29,29 @@ try:
     pyomo_ok = True
 except ImportError:
     pyomo_ok = False
- 
- 
+    gams_ok = False             # GAMS is run via pyomo
+
+# Check if an IPOPT binary available is availbale
+# shutil was introduced in Python 3.2
+from shutil import which
+ipopt_ok = bool(which('ipopt'))
+
+# Check for Pyomo/GAMS interface is available
+if pyomo_ok:
+    from pyomo.solvers.plugins.solvers.GAMS import GAMSDirect, GAMSShell
+    # exeption_flag = True (default) will throw an exception if GAMS
+    # is not available
+    gams_ok = (GAMSDirect().available(exception_flag=False)
+                or GAMSShell().available(exception_flag=False))
+
+# Check if we have libhsl availble to use as IPOPT's linear solver
+# TODO: Does not look for ma57 header specifically. The free personal
+#  libhsl license does not include ma57, only ma27, so this will cause
+#  an error when run.
+from ctypes.util import find_library
+hsl_ok = ipopt_ok and find_library('libhsl')
+
+
 def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cross_val=0):
     """ Principal Components Analysis routine
     
@@ -432,19 +453,38 @@ def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
                 else:
                     return Constraint.Skip
             model.c20c = Constraint(model.A, model.A, rule=_20c_con)
-                
+
             # Constraints 20d
             def mean_zero(model,i):
                 return sum (model.T[o,i]  for o in model.O )==0
             model.eq3 = Constraint(model.A,rule=mean_zero)
-                  
+
             def _eq_20a_obj(model):
                 return sum(sum((model.X[o,n]- model.psi[o,n] * sum(model.T[o,a] * model.P[n,a] for a in model.A))**2 for n in model.N) for o in model.O)
             model.obj = Objective(rule=_eq_20a_obj)
-            
-            solver = SolverFactory('ipopt')
-            solver.options['linear_solver']='ma57'
-            results=solver.solve(model,tee=True)   
+
+            # Setup our solver as either local ipopt, gams:ipopt, or neos ipopt:
+            if (ipopt_ok):
+                print("Solving NLP using local IPOPT executable")
+                solver = SolverFactory('ipopt')
+
+                if (hsl_ok):
+                    print("libhsl found. Using ma57 with IPOPT")
+                    solver.options['linear_solver'] = 'ma57'
+
+                results = solver.solve(model,tee=True)
+            elif (gams_ok):
+                print("Solving NLP using GAMS/IPOPT interface")
+                # 'just 'ipopt' could work, if no binary in path
+                solver = SolverFactory('gams:ipopt')
+
+                # It doesn't seem to notice the opt file when I write it
+                results = solver.solve(model, tee=True)
+            else:
+                print("Solving NLP using IPOPT on remote NEOS server")
+                solver_manager = SolverManagerFactory('neos')
+                results = solver_manager.solve(model, opt='ipopt', tee=True)
+
             T=[]
             for o in model.O:
                  t=[]
