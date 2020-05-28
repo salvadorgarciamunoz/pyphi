@@ -3,6 +3,11 @@ Phi for Python (pyPhi)
 
 by Salvador Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
 
+Release Date: May 27 2020
+What was done:
+    * Added the estimation of PLS models with missind data using
+    non-linear programming per  Journal of Chemometrics, 28(7), pp.575-584.
+
 Release Date: March 30 2020
 What was done:
     * Added the estimation of PCA models with missing data using
@@ -577,7 +582,7 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shu
                     'autoscale' : Will only autoscale
              
         md_algorithm: 'nipals' *default*
-                      'nlp'    To be implemented
+                      'nlp'    Uses  algorithm described in Journal of Chemometrics, 28(7), pp.575-584.
                       
         force_nipals: If set to True and if X is complete, will use NIPALS.
                       Otherwise, if X is complete will use SVD.
@@ -1397,7 +1402,7 @@ def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,sh
              return pls_obj   
                          
         elif md_algorithm=='nlp':
-            #use NLP per Eranda's paper and a modification from Sal.
+            #use NLP per Journal of Chemometrics, 28(7), pp.575-584. and a modification from Sal.
             shush=False         
             if not(shush):
                  print('phi.pls using NLP with Ipopt executed on: '+ str(datetime.datetime.now()) )
