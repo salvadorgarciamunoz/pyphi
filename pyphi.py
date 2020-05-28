@@ -2464,6 +2464,7 @@ def clean_empty_rows(X,*,shush=False):
         
         
 def clean_low_variances(X,*,shush=False):
+    cols_removed=[]
     if isinstance(X,pd.DataFrame):
         X_=np.array(X.values[:,1:]).astype(float)
         varidX = X.columns.values
@@ -2486,17 +2487,19 @@ def clean_low_variances(X,*,shush=False):
             if not(shush):
                 print('Removing variable ', varidX[i], ' due to 100% missing data')
         if isinstance(X,pd.DataFrame):
+            for i in indx:
+                cols_removed.append(varidX[i])
             indx = np.array(indx)
             indx = indx +1
             X_pd=X.drop(X.columns[indx],axis=1)
             X_=np.array(X_pd.values[:,1:]).astype(float)
         else:
+            cols_removed.append(indx)
             X_=np.delete(X_,indx,1)
     else:
         X_pd=X.copy()
         
         
-            
     std_x=std(X_)
     std_x=std_x.flatten()
     
@@ -2506,14 +2509,17 @@ def clean_low_variances(X,*,shush=False):
             if not(shush):
                 print('Removing variable ', varidX[i], ' due to low variance')
         if isinstance(X_pd,pd.DataFrame):
+            for i in indx:
+                cols_removed.append(varidX[i])
             indx = np.array(indx)
             indx = indx +1
             X_=X_pd.drop(X_pd.columns[indx],axis=1)
         else:
             X_=np.delete(X_,indx,1)
-        return X_    
+            cols_removed.extend(varidX[indx])
+        return X_,cols_removed    
     else:
-        return X_pd
+        return X_pd,cols_removed
     
 def find(a, func):
     return [i for (i, val) in enumerate(a) if func(val)]
