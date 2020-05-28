@@ -1397,9 +1397,275 @@ def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,sh
              return pls_obj   
                          
         elif md_algorithm=='nlp':
-            #use NLP per Eranda's paper
-            pls_obj=1
-            return pls_obj
+            #use NLP per Eranda's paper and a modification from Sal.
+            shush=False         
+            if not(shush):
+                 print('phi.pls using NLP with Ipopt executed on: '+ str(datetime.datetime.now()) )
+            X_,dummy=n2z(X_)
+            Y_,dummy=n2z(Y_)
+            plsobj_= pls_(X,Y,A,mcsX=mcsX,mcsY=mcsY,md_algorithm='nipals',shush=True)
+            plsobj_= prep_pls_4_MDbyNLP(plsobj_,X_,Y_)
+              
+            TSSX   = np.sum(X_**2)
+            TSSXpv = np.sum(X_**2,axis=0)
+            TSSY   = np.sum(Y_**2)
+            TSSYpv = np.sum(Y_**2,axis=0)
+            
+            #Set up the model in Pyomo
+            model             = ConcreteModel()
+            model.A           = Set(initialize = plsobj_['pyo_A'] )
+            model.N           = Set(initialize = plsobj_['pyo_N'] )
+            model.M           = Set(initialize = plsobj_['pyo_M'])
+            model.O           = Set(initialize = plsobj_['pyo_O'] )
+            model.P           = Var(model.N,model.A, within = Reals,initialize = plsobj_['pyo_P_init'])
+            model.T           = Var(model.O,model.A, within = Reals,initialize = plsobj_['pyo_T_init'])
+            model.psi         = Param(model.O,model.N,initialize = plsobj_['pyo_psi'])
+            model.X           = Param(model.O,model.N,initialize = plsobj_['pyo_X'])
+            model.theta       = Param(model.O,model.M,initialize = plsobj_['pyo_theta'])
+            model.Y           = Param(model.O,model.M,initialize = plsobj_['pyo_Y'])           
+            model.delta       = Param(model.A, model.A, initialize=lambda model, a1, a2: 1.0 if a1==a2 else 0)
+            
+            # Constraints 27b and 27c
+            def _c27bc_con(model, a1, a2):
+                return sum(model.P[j, a1] * model.P[j, a2] for j in model.N) == model.delta[a1, a2]
+            model.c27bc = Constraint(model.A, model.A, rule=_c27bc_con)
+            
+            # Constraints 27d
+            def _27d_con(model, a1, a2):
+                if a2 < a1:
+                    return sum(model.T[o, a1] * model.T[o, a2] for o in model.O) == 0
+                else:
+                    return Constraint.Skip
+            model.c27d = Constraint(model.A, model.A, rule=_27d_con)
+            
+            # Constraints 27e
+            def _27e_con(model,i):
+                return sum (model.T[o,i]  for o in model.O )==0
+            model.c27e = Constraint(model.A,rule=_27e_con)
+            
+            def _eq_27a_obj(model):
+                return sum(sum(sum( (model.theta[o,m]*model.Y[o,m]) * (model.X[o,n]- model.psi[o,n] * sum(model.T[o,a] * model.P[n,a] for a in model.A)) for o in model.O)**2 for n in model.N) for m in model.M)
+            model.obj = Objective(rule=_eq_27a_obj)
+            
+            # Setup our solver as either local ipopt, gams:ipopt, or neos ipopt:
+            if (ipopt_ok):
+                print("Solving NLP using local IPOPT executable")
+                solver = SolverFactory('ipopt')
+            
+                if (hsl_ok):
+                    print("libhsl found. Using ma57 with IPOPT")
+                    solver.options['linear_solver'] = 'ma57'
+            
+                results = solver.solve(model,tee=True)
+            elif (gams_ok):
+                print("Solving NLP using GAMS/IPOPT interface")
+                # 'just 'ipopt' could work, if no binary in path
+                solver = SolverFactory('gams:ipopt')
+            
+                # It doesn't seem to notice the opt file when I write it
+                results = solver.solve(model, tee=True)
+            else:
+                print("Solving NLP using IPOPT on remote NEOS server")
+                solver_manager = SolverManagerFactory('neos')
+                results = solver_manager.solve(model, opt='ipopt', tee=True)
+            
+            T=[]
+            for o in model.O:
+                 t=[]
+                 for a in model.A:
+                    t.append(value(model.T[o,a]))
+                 T.append(t)   
+            T=np.array(T)     
+            P=[]
+            for n in model.N:
+                 p=[]
+                 for a in model.A:
+                    p.append(value(model.P[n,a]))
+                 P.append(p)   
+            P=np.array(P)   
+            
+           # Obtain a Ws with NLP
+           #Set up the model in Pyomo
+            Taux               = np2D2pyomo(T)
+            modelb             = ConcreteModel()
+            modelb.A           = Set(initialize = plsobj_['pyo_A'] )
+            modelb.N           = Set(initialize = plsobj_['pyo_N'] )
+            modelb.O           = Set(initialize = plsobj_['pyo_O'] )
+            modelb.Ws          = Var(model.N,model.A, within = Reals,initialize = plsobj_['pyo_Ws_init'])
+            modelb.T           = Param(model.O,model.A, within = Reals,initialize = Taux)
+            modelb.psi         = Param(model.O,model.N,initialize = plsobj_['pyo_psi'])
+            modelb.X           = Param(model.O,model.N,initialize = plsobj_['pyo_X'])
+       
+            def _eq_obj(model):
+                return sum(sum( (model.T[o,a] - sum(model.psi[o,n] * model.X[o,n] * model.Ws[n,a] for n in model.N))**2  for a in model.A)  for o in model.O)
+            modelb.obj = Objective(rule=_eq_obj)
+            # Setup our solver as either local ipopt, gams:ipopt, or neos ipopt:
+            if (ipopt_ok):
+                print("Solving NLP using local IPOPT executable")
+                solver = SolverFactory('ipopt')
+            
+                if (hsl_ok):
+                    print("libhsl found. Using ma57 with IPOPT")
+                    solver.options['linear_solver'] = 'ma57'
+            
+                results = solver.solve(modelb,tee=True)
+            elif (gams_ok):
+                print("Solving NLP using GAMS/IPOPT interface")
+                # 'just 'ipopt' could work, if no binary in path
+                solver = SolverFactory('gams:ipopt')
+            
+                # It doesn't seem to notice the opt file when I write it
+                results = solver.solve(modelb, tee=True)
+            else:
+                print("Solving NLP using IPOPT on remote NEOS server")
+                solver_manager = SolverManagerFactory('neos')
+                results = solver_manager.solve(modelb, opt='ipopt', tee=True)
+
+            Ws=[]
+            for n in modelb.N:
+                 ws=[]
+                 for a in modelb.A:
+                    ws.append(value(modelb.Ws[n,a]))
+                 Ws.append(ws)   
+            Ws=np.array(Ws)               
+            
+            
+            Xhat              = T @ P.T
+            Xaux              = X_.copy()
+            Xaux[X_nan_map]   = Xhat[X_nan_map]
+            Xaux              = np2D2pyomo(Xaux)
+            Taux              = np2D2pyomo(T)
+            
+            #Set up the model in Pyomo
+            model2             = ConcreteModel()
+            model2.A           = Set(initialize = plsobj_['pyo_A'] )
+            model2.N           = Set(initialize = plsobj_['pyo_N'] )
+            model2.M           = Set(initialize = plsobj_['pyo_M'])
+            model2.O           = Set(initialize = plsobj_['pyo_O'] )
+            
+            model2.T           = Param(model.O,model.A, within = Reals,initialize = Taux)
+            model2.Q           = Var(model.M,model.A, within = Reals,initialize = plsobj_['pyo_Q_init'])
+            model2.X           = Param(model.O,model.N,initialize = plsobj_['pyo_X'])
+            model2.theta       = Param(model.O,model.M,initialize = plsobj_['pyo_theta'])
+            model2.Y           = Param(model.O,model.M,initialize = plsobj_['pyo_Y'])           
+            model2.delta       = Param(model.A, model.A, initialize=lambda model, a1, a2: 1.0 if a1==a2 else 0)
+            
+            
+            def _eq_36a_mod_obj(model):
+                return sum(sum(sum( (model.X[o,n]) * (model.Y[o,m]- model.theta[o,m] * sum(model.T[o,a] * model.Q[m,a] for a in model.A)) for o in model.O)**2 for n in model.N) for m in model.M)
+            model2.obj = Objective(rule=_eq_36a_mod_obj)
+            
+            # Setup our solver as either local ipopt, gams:ipopt, or neos ipopt:
+            if (ipopt_ok):
+                print("Solving NLP using local IPOPT executable")
+                solver = SolverFactory('ipopt')
+            
+                if (hsl_ok):
+                    print("libhsl found. Using ma57 with IPOPT")
+                    solver.options['linear_solver'] = 'ma57'
+            
+                results = solver.solve(model2,tee=True)
+            elif (gams_ok):
+                print("Solving NLP using GAMS/IPOPT interface")
+                # 'just 'ipopt' could work, if no binary in path
+                solver = SolverFactory('gams:ipopt')
+            
+                # It doesn't seem to notice the opt file when I write it
+                results = solver.solve(model2, tee=True)
+            else:
+                print("Solving NLP using IPOPT on remote NEOS server")
+                solver_manager = SolverManagerFactory('neos')
+                results = solver_manager.solve(model2, opt='ipopt', tee=True)
+            
+               
+            Q=[]
+            for m in model2.M:
+                 q=[]
+                 for a in model2.A:
+                    q.append(value(model2.Q[m,a]))
+                 Q.append(q)   
+            Q=np.array(Q)  
+            
+         
+            # Calculate R2
+               
+            for a in list(range(0, A)):
+                 ti=T[:,[a]]
+                 pi=P[:,[a]]
+                 qi=Q[:,[a]]
+                 X_=(X_- ti @ pi.T)*not_Xmiss
+                 Y_=(Y_- ti @ qi.T)*not_Ymiss
+                 if a==0:        
+                    r2X   = 1-np.sum(X_**2)/TSSX
+                    r2Xpv = 1-np.sum(X_**2,axis=0)/TSSXpv
+                    r2Xpv = r2Xpv.reshape(-1,1)        
+                    r2Y   = 1-np.sum(Y_**2)/TSSY
+                    r2Ypv = 1-np.sum(Y_**2,axis=0)/TSSYpv
+                    r2Ypv = r2Ypv.reshape(-1,1)
+                 else:        
+                    r2X_   = 1-np.sum(X_**2)/TSSX
+                    r2Xpv_ = 1-np.sum(X_**2,axis=0)/TSSXpv
+                    r2Xpv_ = r2Xpv_.reshape(-1,1)
+                    r2X    = np.hstack((r2X,r2X_))
+                    r2Xpv  = np.hstack((r2Xpv,r2Xpv_))
+                    r2Y_   = 1-np.sum(Y_**2)/TSSY
+                    r2Ypv_ = 1-np.sum(Y_**2,axis=0)/TSSYpv
+                    r2Ypv_ = r2Ypv_.reshape(-1,1)
+                    r2Y    = np.hstack((r2Y,r2Y_))
+                    r2Ypv  = np.hstack((r2Ypv,r2Ypv_))
+                            
+                    
+            for a in list(range(A-1,0,-1)):
+                r2X[a]     = r2X[a]-r2X[a-1]
+                r2Xpv[:,a] = r2Xpv[:,a]-r2Xpv[:,a-1]
+                r2Y[a]     = r2Y[a]-r2Y[a-1]
+                r2Ypv[:,a] = r2Ypv[:,a]-r2Ypv[:,a-1]
+                 
+            #Ws=W @ np.linalg.pinv(P.T @ W)
+            #Ws=P
+            eigs = np.var(T,axis=0);
+            r2xc = np.cumsum(r2X)
+            r2yc = np.cumsum(r2Y)
+            if not(shush):
+                print('--------------------------------------------------------------')
+                print('LV #     Eig       R2X       sum(R2X)   R2Y       sum(R2Y)')
+                if A>1:    
+                    for a in list(range(A)):
+                        print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a],r2Y[a],r2yc[a]))
+                else:
+                    d1=eigs[0]
+                    d2=r2xc[0]
+                    d3=r2yc[0]
+                    print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(d1, r2X, d2,r2Y,d3))
+                print('--------------------------------------------------------------')   
+            W=1
+            U=1
+            pls_obj={'T':T,'P':P,'Q':Q,'W':W,'Ws':Ws,'U':U,'r2x':r2X,'r2xpv':r2Xpv,'mx':x_mean,'sx':x_std,'r2y':r2Y,'r2ypv':r2Ypv,'my':y_mean,'sy':y_std}  
+            if not isinstance(obsidX,bool):
+                pls_obj['obsidX']=obsidX
+                pls_obj['varidX']=varidX
+            if not isinstance(obsidY,bool):
+                pls_obj['obsidY']=obsidY
+                pls_obj['varidY']=varidY
+                
+            T2 = hott2(pls_obj,Tnew=T)
+            n  = T.shape[0]
+            T2_lim99 = (((n-1)*(n+1)*A)/(n*(n-A)))*f99(A,(n-A))
+            T2_lim95 = (((n-1)*(n+1)*A)/(n*(n-A)))*f95(A,(n-A))     
+            speX = np.sum(X_**2,axis=1,keepdims=1)
+            speX_lim95,speX_lim99 = spe_ci(speX)
+            speY = np.sum(Y_**2,axis=1,keepdims=1)
+            speY_lim95,speY_lim99 = spe_ci(speY)
+            pls_obj['T2']          = T2
+            pls_obj['T2_lim99']    = T2_lim99
+            pls_obj['T2_lim95']    = T2_lim95
+            pls_obj['speX']        = speX
+            pls_obj['speX_lim99']  = speX_lim99
+            pls_obj['speX_lim95']  = speX_lim95
+            pls_obj['speY']        = speY
+            pls_obj['speY_lim99']  = speY_lim99
+            pls_obj['speY_lim95']  = speY_lim95
+            return pls_obj 
 
 def lwpls(xnew,loc_par,mvmobj,X,Y,*,shush=False):
     """
@@ -2347,4 +2613,52 @@ def prep_pca_4_MDbyNLP(pcaobj,X):
     return pcaobj_    
     
 
+def prep_pls_4_MDbyNLP(plsobj,X,Y):
+    plsobj_ = plsobj.copy()
+    X_nan_map = np.isnan(X)
+    psi = (np.logical_not(X_nan_map))*1
+    X,dummy=n2z(X)
 
+    Y_nan_map = np.isnan(Y)
+    theta = (np.logical_not(Y_nan_map))*1
+    Y,dummy=n2z(Y)
+
+    
+    A = plsobj['T'].shape[1]
+    O = plsobj['T'].shape[0]
+    N = plsobj['P'].shape[0]
+    M = plsobj['Q'].shape[0]
+    
+    pyo_A = np.arange(1,A+1)  #index for LV's
+    pyo_N = np.arange(1,N+1)  #index for columns of X (rows of P)
+    pyo_O = np.arange(1,O+1)  #index for rows of X 
+    pyo_M = np.arange(1,M+1)  #index for columns of Y (rows of Q)
+    pyo_A = pyo_A.tolist()
+    pyo_N = pyo_N.tolist()
+    pyo_O = pyo_O.tolist()
+    pyo_M = pyo_M.tolist()
+    
+    pyo_P_init  = np2D2pyomo(plsobj['P'])
+    pyo_Ws_init = np2D2pyomo(plsobj['Ws'])
+    pyo_T_init  = np2D2pyomo(plsobj['T'])
+    pyo_Q_init  = np2D2pyomo(plsobj['Q'])
+    pyo_X       = np2D2pyomo(X)
+    pyo_Y       = np2D2pyomo(Y)
+    pyo_psi     = np2D2pyomo(psi)
+    pyo_theta   = np2D2pyomo(theta)
+
+    
+    plsobj_['pyo_A']       = pyo_A
+    plsobj_['pyo_N']       = pyo_N
+    plsobj_['pyo_O']       = pyo_O
+    plsobj_['pyo_M']       = pyo_M
+    plsobj_['pyo_P_init']  = pyo_P_init
+    plsobj_['pyo_Ws_init'] = pyo_Ws_init
+    plsobj_['pyo_T_init']  = pyo_T_init
+    plsobj_['pyo_Q_init']  = pyo_Q_init    
+    plsobj_['pyo_X']       = pyo_X
+    plsobj_['pyo_psi']     = pyo_psi
+    plsobj_['pyo_Y']       = pyo_Y
+    plsobj_['pyo_theta']   = pyo_theta
+
+    return plsobj_   
