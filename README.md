@@ -32,6 +32,8 @@ numpy, scipy, pandas, xlrd, bokeh, matplotlib, pyomo
 To confirm you have a working installation, copy the file ```Examples/Example_Script_testing_MD_by_NLP.py``` to a new directory, run it using ```python Example_Script_testing_MD_by_NLP.py```, and verity that there are no errors logged to the console.
 	
 # What is New
+#### May 28th
+* Enhanced clean_low_variances function to return a list with columns removed from dataframe
 #### May 27th
 * PLS model estimation using Non-linear programming as described in Journal of Chemometrics, 28(7), pp.575-584.
 #### March 30th
