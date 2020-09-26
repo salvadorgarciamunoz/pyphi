@@ -3,6 +3,11 @@ Phi for Python (pyPhi)
 
 by Salvador Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
 
+Release Date: Sep 26 2020
+What was done:
+        * Added rotation of loadings so that var(t) for ti>=0 is always larger
+          than var(t) for ti<0
+
 Release Date: May 27 2020
 What was done:
     * Added the estimation of PLS models with missind data using
@@ -361,10 +366,14 @@ def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
                       if num_it > maxit:
                           Converged=True
                       if Converged:
+                          if np.var(ti[ti<0]) > np.var(ti[ti>=0]):
+                             tn=-tn
+                             ti=-ti
+                             pi=-pi 
                           if not(shush):
                               print('# Iterations for PC #'+str(a+1)+': ',str(num_it))
                           if a==0:
-                              T=ti
+                              T=tn.reshape(-1,1)
                               P=pi
                           else:
                               T=np.hstack((T,tn.reshape(-1,1)))
@@ -510,6 +519,11 @@ def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
             for a in list(range(0, A)):
                  ti=T[:,[a]]
                  pi=P[:,[a]]
+                 if np.var(ti[ti<0]) > np.var(ti[ti>=0]):
+                    ti=-ti
+                    pi=-pi 
+                    T[:,[a]]=-T[:,[a]]
+                    P[:,[a]]=-P[:,[a]]                           
                  X_=(X_- ti @ pi.T)*not_Xmiss
                  if a==0:
                     r2   = 1-np.sum(X_**2)/TSS
@@ -1303,6 +1317,11 @@ def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,sh
                       if num_it > maxit:
                           Converged=True
                       if Converged:
+                          if np.var(ti[ti<0]) > np.var(ti[ti>=0]):
+                             ti=-ti
+                             wi=-wi
+                             un=-un
+                             qi=-qi
                           if not(shush):
                               print('# Iterations for LV #'+str(a+1)+': ',str(num_it))
                           # Calculate P's for deflation p=Xt/(t't)      
