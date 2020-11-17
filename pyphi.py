@@ -3,6 +3,10 @@ Phi for Python (pyPhi)
 
 by Salvador Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
 
+Release Date: NOv 16, 2020
+What was done:
+        * Fixed small bug un clean_low_variances routine
+
 Release Date: Sep 26 2020
 What was done:
         * Added rotation of loadings so that var(t) for ti>=0 is always larger
@@ -2513,7 +2517,8 @@ def clean_low_variances(X,*,shush=False):
             X_pd=X.drop(X.columns[indx],axis=1)
             X_=np.array(X_pd.values[:,1:]).astype(float)
         else:
-            cols_removed.append(indx)
+            for i in indx:
+                cols_removed.append(varidX[i])
             X_=np.delete(X_,indx,1)
     else:
         X_pd=X.copy()
@@ -2535,7 +2540,10 @@ def clean_low_variances(X,*,shush=False):
             X_=X_pd.drop(X_pd.columns[indx],axis=1)
         else:
             X_=np.delete(X_,indx,1)
-            cols_removed.extend(varidX[indx])
+            #cols_removed.extend(varidX[indx])
+            for j in indx:
+                cols_removed.append(varidX[j])
+    
         return X_,cols_removed    
     else:
         return X_pd,cols_removed
