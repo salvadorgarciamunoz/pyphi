@@ -5,6 +5,9 @@ Plots for pyPhi
 
 @author: Sal Garcia <sgarciam@ic.ac.uk> <salvadorgarciamunoz@gmail.com>
 
+Release Jan 15, 2021
+    * Added mb_blockweights plot for MBPSL models
+    
 Release Date: March 30 2020
     * Fixed small syntax change for Bohek to stay compatible
 
@@ -1439,5 +1442,39 @@ def plot_line_pd(X,col_name,*,plot_title='Main Title',tab_title='Tab Title',xaxi
          
     return
 
+def mb_blockweights(mvmobj,*,plotwidth=600,plotheight=400):
+    """
+    Super weights for Multi-block models
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    mvmobj: A multi-block PLS model created with phi.mbpls
+    """
+    A= mvmobj['T'].shape[1]
+    lv_prefix='LV #'        
+    lv_labels = []   
+    for a in list(np.arange(A)+1):
+        lv_labels.append(lv_prefix+str(a))    
+    Wt_dict = {'XVar': mvmobj['Xblocknames']}
+    XVar=mvmobj['Xblocknames']        
+    for i in list(np.arange(A)):
+        Wt_dict.update({lv_labels[i] : mvmobj['Wt'][:,i].tolist()})
+        rnd_num=str(int(np.round(1000*np.random.random_sample())))
+        output_file("blockweights_"+rnd_num+".html",title="Block Weights") 
+        colormap =cm.get_cmap("rainbow")
+        different_colors=A
+        color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
+        bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]                 
+        px = figure(x_range=XVar, title="Block weights for MBPLS",
+             tools="save,box_zoom,hover,reset", tooltips="$name @XVar: @$name",plot_width=plotwidth,plot_height=plotheight)        
+        px.vbar_stack(lv_labels, x='XVar', width=0.9,color=bokeh_palette,source=Wt_dict)
+        px.y_range.range_padding = 0.1
+        px.ygrid.grid_line_color = None
+        px.axis.minor_tick_line_color = None
+        px.outline_line_color = None
+        px.yaxis.axis_label = 'Wt'
+        px.xaxis.major_label_orientation = 45      
+    show(px)
+    return
 
     

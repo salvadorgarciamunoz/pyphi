@@ -3,6 +3,11 @@ Phi for Python (pyPhi)
 
 by Salvador Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
 
+Release Jan 15, 2021
+What was done:
+        * Added routine cat_2_matrix to conver categorical classifiers to matrices
+        * Added Multi-block PLS model
+
 Release Date: NOv 16, 2020
 What was done:
         * Fixed small bug un clean_low_variances routine
@@ -2700,3 +2705,298 @@ def prep_pls_4_MDbyNLP(plsobj,X,Y):
     plsobj_['pyo_theta']   = pyo_theta
 
     return plsobj_   
+
+def cat_2_matrix(X):
+    '''
+    cat_2_matrix(X) - Convert categorical data into binary matrices
+    
+    X is a Pandas Data Frame with categorical descriptors
+    
+    returns Xmat, XmatMB - 
+    Xmat is matrix of binary coded data, 
+    XmatMB same data, orgainzed as a list of matrices for Multi-block modeling
+    
+    '''
+    FirstOne=True
+    Xmat=[]
+    Xcat=[]
+    XcatMB=[]
+    XmatMB=[]
+    blknames=[]
+    
+    for x in X:
+        if not(FirstOne):
+            blknames.append(x)
+            categories=np.unique(X[x])
+            XcatMB.append(categories)
+            Xmat_=[]
+            for c in categories:
+                Xcat.append(c)
+                xmat_=(X[x]==c)*1
+                Xmat.append(xmat_)
+                Xmat_.append(xmat_)
+                
+            Xmat_=np.array(Xmat_)
+            Xmat_=Xmat_.T
+            Xmat_ = pd.DataFrame(Xmat_,columns=categories) 
+            Xmat_.insert(0,firstcol,X[firstcol]) 
+            XmatMB.append(Xmat_)            
+        else:
+            firstcol=x
+            FirstOne=False
+    Xmat=np.array(Xmat)
+    Xmat=Xmat.T
+    Xmat = pd.DataFrame(Xmat,columns=Xcat) 
+    Xmat.insert(0,firstcol,X[firstcol])      
+    XmatMB={'data':XmatMB,'blknames':blknames}
+    return Xmat,XmatMB
+
+def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=False,shush_=False,cross_val_=0,cross_val_X_=False):
+    '''
+    Multi-block PLS model using the approach by Westerhuis, J. Chemometrics, 12, 301–321 (1998)
+    
+    Parameters
+    ----------
+    XMB : Dictionary or PandasDataFrame
+        Multi-block entity with two fields:
+            data: List of dataframes with data
+            blknames: List of block names
+
+
+    YMB : Dictionary or PandasDataFrame
+        Multi-block entity with two fields:
+            data: List of dataframes with data
+            blknames: List of block names
+          
+    '''
+    x_means=[]
+    x_stds=[]
+    y_means=[]
+    y_stds=[]
+    Xblk_scales=[]
+    Yblk_scales=[]
+    Xcols_per_block=[]
+    Ycols_per_block=[]
+    X_var_names=[]
+    Y_var_names=[]
+    obsids=[]
+    
+    if isinstance(XMB,dict):
+        x=XMB['data'][0]        
+        columns=x.columns.tolist()
+        obsid_column_name=columns[0]        
+        obsids=x[obsid_column_name].tolist()
+        
+        c=0
+        for x in XMB['data']:        
+            x_=x.values[:,1:].astype(float)         
+            columns=x.columns.tolist()
+            for i,h in enumerate(columns):
+                if i!=0:
+                    X_var_names.append(h)
+                    
+            if isinstance(mcsX,bool):
+                if mcsX:
+                    #Mean center and autoscale  
+                    x_,x_mean_,x_std_ = meancenterscale(x_)
+                else:    
+                    x_mean_ = np.zeros((1,x_.shape[1]))
+                    x_std_  = np.ones((1,x_.shape[1]))
+            elif mcsX[c]=='center':
+                #only center
+                x_,x_mean_,x_std_ = meancenterscale(x_,mcs='center')
+            elif mcsX[c]=='autoscale':
+                #only autoscale
+                x_,x_mean_,x_std_ = meancenterscale(x_,mcs='autoscale')
+            blck_scale=np.sqrt(np.sum(std(x_)**2))
+            
+            x_means.append(x_mean_)
+            x_stds.append(x_std_)                   
+            Xblk_scales.append(blck_scale)
+            Xcols_per_block.append(x_.shape[1])
+            
+            x_=x_/blck_scale
+            if c==0:
+                X_=x_.copy() 
+            else:    
+                X_=np.hstack((X_,x_))
+            c=c+1
+    elif isinstance(XMB,pd.DataFrame):
+        columns=XMB.columns.tolist()
+        obsid_column_name=columns[0]        
+        obsids=XMB[obsid_column_name].tolist()            
+        for i,h in enumerate(columns):
+            if i!=0:
+                X_var_names.append(h)
+        
+        x_=XMB.values[:,1:].astype(float)
+        
+        if isinstance(mcsX,bool):
+            if mcsX:
+                #Mean center and autoscale  
+                x_,x_mean_,x_std_ = meancenterscale(x_)
+            else:    
+                x_mean_ = np.zeros((1,x_.shape[1]))
+                x_std_  = np.ones((1,x_.shape[1]))
+        elif mcsX[c]=='center':
+            #only center
+            x_,x_mean_,x_std_ = meancenterscale(x_,mcs='center')
+        elif mcsX[c]=='autoscale':
+            #only autoscale
+            x_,x_mean_,x_std_ = meancenterscale(x_,mcs='autoscale')
+        blck_scale=np.sqrt(np.sum(std(x_)**2))
+        
+        x_means.append(x_mean_)
+        x_stds.append(x_std_)                   
+        Xblk_scales.append(blck_scale)
+        Xcols_per_block.append(x_.shape[1])
+        x_=x_/blck_scale
+        X_=x_.copy() 
+        
+    if isinstance(YMB,dict):
+        c=0
+        for y in YMB['data']:        
+            y_=y.values[:,1:].astype(float)
+            columns=y.columns.tolist()
+            for i,h in enumerate(columns):
+                if i!=0:
+                    Y_var_names.append(h)
+            if isinstance(mcsY,bool):
+                if mcsY:
+                    #Mean center and autoscale  
+                    y_,y_mean_,y_std_ = meancenterscale(y_)
+                else:    
+                    y_mean_ = np.zeros((1,y_.shape[1]))
+                    y_std_  = np.ones((1,y_.shape[1]))
+            elif mcsY[c]=='center':
+                #only center
+                y_,y_mean_,y_std_ = meancenterscale(y_,mcs='center')
+            elif mcsY[c]=='autoscale':
+                #only autoscale
+                y_,y_mean_,y_std_ = meancenterscale(y_,mcs='autoscale')
+            blck_scale=np.sqrt(np.sum(std(y_)**2))
+            
+            y_means.append(y_mean_)
+            y_stds.append(y_std_)                   
+            Yblk_scales.append(blck_scale)
+            Ycols_per_block.append(y_.shape[1])
+            y_=y_/blck_scale
+            if c==0:
+                Y_=y_.copy() 
+            else:    
+                Y_=np.hstack((Y_,y_))
+            c=c+1    
+    elif isinstance(YMB,pd.DataFrame):
+        y_=YMB.values[:,1:].astype(float)
+        columns=YMB.columns.tolist()
+        for i,h in enumerate(columns):
+            if i!=0:
+                Y_var_names.append(h)
+        
+        
+        if isinstance(mcsY,bool):
+            if mcsY:
+                #Mean center and autoscale  
+                y_,y_mean_,y_std_ = meancenterscale(y_)
+            else:    
+                y_mean_ = np.zeros((1,y_.shape[1]))
+                y_std_  = np.ones((1,y_.shape[1]))
+        elif mcsY[c]=='center':
+            #only center
+            y_,y_mean_,y_std_ = meancenterscale(y_,mcs='center')
+        elif mcsY[c]=='autoscale':
+            #only autoscale
+            y_,y_mean_,y_std_ = meancenterscale(y_,mcs='autoscale')
+        blck_scale=np.sqrt(np.sum(std(y_)**2))
+        
+        y_means.append(y_mean_)
+        y_stds.append(y_std_)                   
+        Yblk_scales.append(blck_scale)
+        Ycols_per_block.append(y_.shape[1])
+        y_=y_/blck_scale
+        Y_=y_.copy() 
+        
+        
+    X_pd=pd.DataFrame(X_,columns=X_var_names)
+    X_pd.insert(0,obsid_column_name,obsids)
+
+    Y_pd=pd.DataFrame(Y_,columns=Y_var_names)
+    Y_pd.insert(0,obsid_column_name,obsids)
+
+     
+    pls_obj_=pls(X_pd,Y_pd,A,mcsX=False,mcsY=False,md_algorithm=md_algorithm_,force_nipals=force_nipals_,shush=shush_,cross_val=cross_val_,cross_val_X=cross_val_X_)          
+    
+    #Calculate block loadings, scores, weights
+    Wsb=[]
+    Wb=[]
+    Tb=[]
+
+    
+    for i,c in enumerate(Xcols_per_block):
+        if i==0:
+            start_index=0
+            end_index=c            
+        else:
+            start_index=np.sum(Xcols_per_block[0:i])
+            end_index = start_index + c
+
+        wsb_=pls_obj_['Ws'][start_index:end_index,:]
+        for j in list(range(wsb_.shape[1])):
+            wsb_[:,j]=wsb_[:,j]/np.linalg.norm(wsb_[:,j])
+        Wsb.append(wsb_)
+        
+        wb_=pls_obj_['W'][start_index:end_index,:]
+        for j in list(range(wb_.shape[1])):
+            wb_[:,j]=wb_[:,j]/np.linalg.norm(wb_[:,j])
+        Wb.append(wb_)
+        
+        Xb=X_[:,start_index:end_index]
+        tb=[]
+        X_nan_map = np.isnan(Xb)
+        not_Xmiss = (np.logical_not(X_nan_map))*1
+        Xb,dummy=n2z(Xb)
+        for a in list(range(A)):            
+            w_=wb_[:,[a]]
+            w_t = np.tile(w_.T,(Xb.shape[0],1))
+            w_t = w_t * not_Xmiss
+            w_t = np.sum(w_t**2,axis=1,keepdims=True)           
+            tb_=(Xb @ w_) / w_t
+            if a==0:
+                tb=tb_
+            else:
+                tb=np.hstack((tb,tb_))
+            
+            tb_t = np.tile(tb_.T,(Xb.shape[1],1))
+            tb_t = tb_t * not_Xmiss.T
+            tb_t = np.sum(tb_t**2,axis=1,keepdims=True)
+            pb_  = (Xb.T @ tb_) / tb_t
+            
+            Xb = (Xb - pls_obj_['T'][:,[a]] @ pb_.T) * not_Xmiss
+        Tb.append(tb)
+    for a in list(range(A)):
+        T_a=[]
+        u=pls_obj_['U'][:,[a]]
+        for i,c in enumerate(Xcols_per_block):
+            if i==0:
+                T_a = Tb[i][:,[a]]
+            else:
+                T_a = np.hstack((T_a,Tb[i][:,[a]]))
+        wt_=(T_a.T @ u) / (u.T @ u)
+        if a==0:
+            Wt=wt_
+        else:
+            Wt=np.hstack((Wt,wt_))
+    
+    pls_obj_['x_means']=x_means
+    pls_obj_['x_stds']=x_stds
+    pls_obj_['y_means']=y_means
+    pls_obj_['y_stds']=y_stds
+    pls_obj_['Xblk_scales']=Xblk_scales
+    pls_obj_['Yblk_scales']=Yblk_scales
+    pls_obj_['Wsb']=Wsb
+    pls_obj_['Wt']=Wt
+    if isinstance(XMB,dict):
+        pls_obj_['Xblocknames']=XMB['blknames']
+    if isinstance(YMB,dict):
+        pls_obj_['Yblocknames']=YMB['blknames']
+    return pls_obj_
