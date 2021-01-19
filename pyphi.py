@@ -2930,7 +2930,7 @@ def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=F
     Wsb=[]
     Wb=[]
     Tb=[]
-
+    
     
     for i,c in enumerate(Xcols_per_block):
         if i==0:
@@ -2955,6 +2955,8 @@ def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=F
         X_nan_map = np.isnan(Xb)
         not_Xmiss = (np.logical_not(X_nan_map))*1
         Xb,dummy=n2z(Xb)
+        TSS = np.sum(Xb**2)
+        
         for a in list(range(A)):            
             w_=wb_[:,[a]]
             w_t = np.tile(w_.T,(Xb.shape[0],1))
@@ -2971,7 +2973,16 @@ def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=F
             tb_t = np.sum(tb_t**2,axis=1,keepdims=True)
             pb_  = (Xb.T @ tb_) / tb_t
             
-            Xb = (Xb - pls_obj_['T'][:,[a]] @ pb_.T) * not_Xmiss
+            Xb = (Xb - tb_ @ pb_.T) * not_Xmiss
+            r2pb_aux=1-(np.sum(Xb**2)/TSS)
+            if a==0:
+                r2pb_=r2pb_aux
+            else:
+                r2pb_=np.hstack((r2pb_,r2pb_aux))
+        if i==0:
+            r2pbX=r2pb_
+        else:            
+            r2pbX=np.vstack((r2pbX,r2pb_))
         Tb.append(tb)
     for a in list(range(A)):
         T_a=[]
@@ -2995,6 +3006,14 @@ def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=F
     pls_obj_['Yblk_scales']=Yblk_scales
     pls_obj_['Wsb']=Wsb
     pls_obj_['Wt']=Wt
+    
+    for a in list(range(A-1,0,-1)):
+         r2pbX[:,[a]]     = r2pbX[:,[a]]-r2pbX[:,[a-1]]
+    r2pbXc = np.cumsum(r2pbX,axis=1)
+
+    pls_obj_['r2pbX']=r2pbX
+    pls_obj_['r2pbXc']=r2pbXc
+
     if isinstance(XMB,dict):
         pls_obj_['Xblocknames']=XMB['blknames']
     if isinstance(YMB,dict):

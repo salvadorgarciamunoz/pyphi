@@ -1442,7 +1442,7 @@ def plot_line_pd(X,col_name,*,plot_title='Main Title',tab_title='Tab Title',xaxi
          
     return
 
-def mb_blockweights(mvmobj,*,plotwidth=600,plotheight=400):
+def mb_weights(mvmobj,*,plotwidth=600,plotheight=400):
     """
     Super weights for Multi-block models
     by Salvador Garcia-Munoz 
@@ -1455,26 +1455,105 @@ def mb_blockweights(mvmobj,*,plotwidth=600,plotheight=400):
     lv_labels = []   
     for a in list(np.arange(A)+1):
         lv_labels.append(lv_prefix+str(a))    
-    Wt_dict = {'XVar': mvmobj['Xblocknames']}
     XVar=mvmobj['Xblocknames']        
     for i in list(np.arange(A)):
-        Wt_dict.update({lv_labels[i] : mvmobj['Wt'][:,i].tolist()})
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("blockweights_"+rnd_num+".html",title="Block Weights") 
-        colormap =cm.get_cmap("rainbow")
-        different_colors=A
-        color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
-        bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]                 
-        px = figure(x_range=XVar, title="Block weights for MBPLS",
-             tools="save,box_zoom,hover,reset", tooltips="$name @XVar: @$name",plot_width=plotwidth,plot_height=plotheight)        
-        px.vbar_stack(lv_labels, x='XVar', width=0.9,color=bokeh_palette,source=Wt_dict)
+        output_file("blockweights_"+rnd_num+".html",title="Block Weights")         
+        px = figure(x_range=XVar, title="Block weights for MBPLS"+lv_labels[i],
+             tools="save,box_zoom,hover,reset", tooltips=[("Var:","@x_")],plot_width=plotwidth,plot_height=plotheight)   
+        source1 = ColumnDataSource(data=dict(x_=XVar, y_=mvmobj['Wt'][:,i].tolist(),names=XVar)) 
+        px.vbar(x='x_', top='y_', source=source1,width=0.5)
         px.y_range.range_padding = 0.1
         px.ygrid.grid_line_color = None
         px.axis.minor_tick_line_color = None
         px.outline_line_color = None
-        px.yaxis.axis_label = 'Wt'
+        px.yaxis.axis_label = 'Wt'+str(i+1)+']'
+        px.xaxis.major_label_orientation = 45  
+        hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+        px.renderers.extend([hline])
+        if i==0:
+            p_list=[px]
+        else:
+            p_list.append(px)
+    show(column(p_list))  
+
+    return
+
+        
+
+def mb_r2pb(mvmobj,*,plotwidth=600,plotheight=400):
+    """
+    Super weights for Multi-block models
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    mvmobj: A multi-block PLS model created with phi.mbpls
+    """
+    A= mvmobj['T'].shape[1]
+    lv_prefix='LV #'        
+    lv_labels = []   
+    for a in list(np.arange(A)+1):
+        lv_labels.append(lv_prefix+str(a))    
+    r2pbX_dict = {'XVar': mvmobj['Xblocknames']}
+    XVar=mvmobj['Xblocknames']        
+    for i in list(np.arange(A)):
+        r2pbX_dict.update({lv_labels[i] : mvmobj['r2pbX'][:,i].tolist()})
+        rnd_num=str(int(np.round(1000*np.random.random_sample())))
+        output_file("r2perblock"+rnd_num+".html",title="R2 per Block") 
+        colormap =cm.get_cmap("rainbow")
+        different_colors=A
+        color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
+        bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]                 
+        px = figure(x_range=XVar, title="r2 per Block for MBPLS",
+             tools="save,box_zoom,hover,reset", tooltips="$name @XVar: @$name",plot_width=plotwidth,plot_height=plotheight)        
+        px.vbar_stack(lv_labels, x='XVar', width=0.9,color=bokeh_palette,source=r2pbX_dict)
+        px.y_range.range_padding = 0.1
+        px.ygrid.grid_line_color = None
+        px.axis.minor_tick_line_color = None
+        px.outline_line_color = None
+        px.yaxis.axis_label = 'R2 per Block per LV'
         px.xaxis.major_label_orientation = 45      
     show(px)
     return
 
+
+def mb_vip(mvmobj,*,plotwidth=600,plotheight=400):
+    """
+    Super weights for Multi-block models
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     
+    mvmobj: A multi-block PLS model created with phi.mbpls
+    """
+    A= mvmobj['T'].shape[1]
+   
+    XVar=mvmobj['Xblocknames']        
+    Wt=mvmobj['Wt']
+    r2y=mvmobj['r2y']
+    vip=np.zeros((Wt.shape[0],1))
+    for a in list(range(A)):
+        vip=vip+Wt[:,[a]]*r2y[a]
+    vip=np.reshape(vip,-1)
+    index=np.argsort(vip)
+    index=index[::-1]
+    Xvar_=[XVar[i] for i in index]
+    Xvar = Xvar_
+    vip=vip[index]
+    rnd_num=str(int(np.round(1000*np.random.random_sample())))
+    output_file("blockvip"+rnd_num+".html",title="Block VIP") 
+    source1 = ColumnDataSource(data=dict(x_=XVar, y_=vip.tolist(),names=XVar))         
+    px = figure(x_range=XVar, title="Block VIP for MBPLS",
+         tools="save,box_zoom,hover,reset",tooltips=[("Block:","@x_")],plot_width=plotwidth,plot_height=plotheight)   
+    
+    px.vbar(x='x_', top='y_', source=source1,width=0.5)
+    px.y_range.range_padding = 0.1
+    px.ygrid.grid_line_color = None
+    px.axis.minor_tick_line_color = None
+    px.outline_line_color = None
+    px.yaxis.axis_label = 'Block VIP'
+    px.xaxis.major_label_orientation = 45  
+    hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+    px.renderers.extend([hline])
+    show(px)  
+    return
+
