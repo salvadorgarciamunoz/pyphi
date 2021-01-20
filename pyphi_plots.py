@@ -1531,13 +1531,17 @@ def mb_vip(mvmobj,*,plotwidth=600,plotheight=400):
     Wt=mvmobj['Wt']
     r2y=mvmobj['r2y']
     vip=np.zeros((Wt.shape[0],1))
-    for a in list(range(A)):
-        vip=vip+Wt[:,[a]]*r2y[a]
+    if A>1:
+        for a in list(range(A)):
+            vip=vip+Wt[:,[a]]*r2y[a]
+    else:
+        vip=Wt[:,[0]]*r2y
+        
     vip=np.reshape(vip,-1)
     index=np.argsort(vip)
     index=index[::-1]
-    Xvar_=[XVar[i] for i in index]
-    Xvar = Xvar_
+    XVar_=[XVar[i] for i in index]
+    XVar = XVar_
     vip=vip[index]
     rnd_num=str(int(np.round(1000*np.random.random_sample())))
     output_file("blockvip"+rnd_num+".html",title="Block VIP") 
