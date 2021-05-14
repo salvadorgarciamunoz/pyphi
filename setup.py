@@ -12,7 +12,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/salvadorgarciamunoz/pyphi",
-    packages=setuptools.find_packages(),
+    py_modules = ["pyphi","pyphi_plots"],
     include_package_data=True,
     classifiers=[
         "Programming Language :: Python :: 3",
