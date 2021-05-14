@@ -19,12 +19,16 @@ Pyphi requires the following python packages: numpy, scipy, pandas, xlrd, bokeh,
 To confirm you have a working installation, navigate to the ```Examples``` folder and copy the ```Example_Script_testing_MD_by_NLP.py``` to the directory of your choice. Run ```python Example_Script_testing_MD_by_NLP.py```, verifying there are no errors logged to the console.
 
 ## Optional External Dependencies
-- IPOPT as an executable in your system path or GAMS python module or GAMS executable in yoru system path. (Otherwise, will solve pyomo NLPs remotely using the NEOS server).
+- IPOPT as an executable in your system path or GAMS python module or GAMS executable in yoru system path.
   - Windows: ```conda install -c conda-forge IPOPT=3.11.1``` or download from [IPOPT releases page](https://github.com/coin-or/Ipopt/releases), extract and add the IPOPT\bin folder to your system path or add all files to your working directory.
   - Mac/Linux: ```conda install -c conda-forge IPOPT```, download from [IPOPT releases page](https://github.com/coin-or/Ipopt/releases), or [Compile using coinbrew](https://coin-or.github.io/Ipopt/INSTALL.html#COINBREW).
 - libhsl with ma57 within library loading path or in the same directory as IPOPT executable.
    - Speeds up IPOPT for large problems but requires a free academic or paid industrial license and a local IPOPT installation.
    - Must request in advance and building the source code is nontrivial. Expert use only.
+- If IPOPT is not detected, pyphi will submit the pyomo models to the NEOS server to solve them remotely.
+  - To use the NEOS server, the environment variable "NEOS_EMAIL" must be assigned a valid email. This can be done outside of python using set/set/export or use ```import os
+  os.environ["NEOS_EMAIL"] = youremail@domain.com```
+  in your code.
 
 Adding a folder to your system path:
  - Windows: temporary ```set PATH=C:\Path\To\ipopt\bin;%PATH%``` or persistent ```setx PATH=C:\Path\To\ipopt\bin;%PATH%```.
