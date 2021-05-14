@@ -4,11 +4,11 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="pyphi",
-    version="1.0.0",
+    name="pyphimva",
+    version="1.0.1",
     author="Sal Garcia",
     author_email="salvadorgarciamunoz@gmail.com",
-    description="A Python toolbox for multivariate analysis",
+    description="A Python toolbox for multivariate analysis using PCA and PLS methods",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/salvadorgarciamunoz/pyphi",
