@@ -7,7 +7,7 @@ setuptools.setup(
     name="pyphimva",
     version="1.0.1",
     author="Sal Garcia",
-    author_email="salvadorgarciamunoz@gmail.com",
+    author_email="sgarciam@ic.ac.uk",
     description="A Python toolbox for multivariate analysis using PCA and PLS methods",
     long_description=long_description,
     long_description_content_type="text/markdown",
