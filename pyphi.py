@@ -88,7 +88,7 @@ def ma57_dummy_check():
         print("MA57 available to IPOPT")
     return ma57_ok
 
-if ipopt_ok:
+if pyomo_ok and ipopt_ok:
     ma57_ok = ma57_dummy_check()
 else:
     ma57_ok = False
