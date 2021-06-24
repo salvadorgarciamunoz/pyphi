@@ -63,12 +63,35 @@ if pyomo_ok:
     gams_ok = (GAMSDirect().available(exception_flag=False)
                 or GAMSShell().available(exception_flag=False))
 
-# Check if we have libhsl availble to use as IPOPT's linear solver
-# TODO: Does not look for ma57 header specifically. The free personal
-#  libhsl license does not include ma57, only ma27, so this will cause
-#  an error when run.
-from ctypes.util import find_library
-hsl_ok = ipopt_ok and find_library('libhsl')
+def ma57_dummy_check():
+    """
+    Instantiates a trivial NLP to solve with IPOPT and MA57.
+    Returns:
+          ma57_ok: boolean, True if IPOPT solved with SolverStaus.ok
+    """
+    m = ConcreteModel()
+    m.x = Var()
+    m.Obj = Objective(expr = m.x**2 -1)
+
+    s = SolverFactory('ipopt')
+    s.options['linear_solver'] = 'ma57'
+
+    import logging
+    pyomo_logger = logging.getLogger('pyomo.core')
+    LOG_DEFAULT = pyomo_logger.level
+    pyomo_logger.setLevel(logging.ERROR)
+    r = s.solve(m)
+    pyomo_logger.setLevel(LOG_DEFAULT)
+    
+    ma57_ok = r.solver.status == SolverStatus.ok
+    if ma57_ok:
+        print("MA57 available to IPOPT")
+    return ma57_ok
+
+if pyomo_ok and ipopt_ok:
+    ma57_ok = ma57_dummy_check()
+else:
+    ma57_ok = False
 
 
 def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cross_val=0):
@@ -491,8 +514,7 @@ def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
                 print("Solving NLP using local IPOPT executable")
                 solver = SolverFactory('ipopt')
 
-                if (hsl_ok):
-                    print("libhsl found. Using ma57 with IPOPT")
+                if (ma57_ok):
                     solver.options['linear_solver'] = 'ma57'
 
                 results = solver.solve(model,tee=True)
@@ -1485,8 +1507,7 @@ def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,sh
                 print("Solving NLP using local IPOPT executable")
                 solver = SolverFactory('ipopt')
             
-                if (hsl_ok):
-                    print("libhsl found. Using ma57 with IPOPT")
+                if (ma57_ok):
                     solver.options['linear_solver'] = 'ma57'
             
                 results = solver.solve(model,tee=True)
@@ -1537,8 +1558,7 @@ def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,sh
                 print("Solving NLP using local IPOPT executable")
                 solver = SolverFactory('ipopt')
             
-                if (hsl_ok):
-                    print("libhsl found. Using ma57 with IPOPT")
+                if (ma57_ok):
                     solver.options['linear_solver'] = 'ma57'
             
                 results = solver.solve(modelb,tee=True)
@@ -1593,8 +1613,7 @@ def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,sh
                 print("Solving NLP using local IPOPT executable")
                 solver = SolverFactory('ipopt')
             
-                if (hsl_ok):
-                    print("libhsl found. Using ma57 with IPOPT")
+                if (ma57_ok):
                     solver.options['linear_solver'] = 'ma57'
             
                 results = solver.solve(model2,tee=True)
