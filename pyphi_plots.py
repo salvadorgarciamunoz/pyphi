@@ -306,8 +306,8 @@ def loadings_map(mvmobj,dims,*,plotwidth=600):
         p.xaxis.axis_label = lv_labels [dims[0]-1]
         p.yaxis.axis_label = lv_labels [dims[1]-1]
         
-        labelsX = LabelSet(x='x', y='y', text='names', level='glyph',x_offset=5, y_offset=5, source=source1, render_mode='canvas')
-        labelsY = LabelSet(x='x', y='y', text='names', level='glyph',x_offset=5, y_offset=5, source=source2, render_mode='canvas')
+        labelsX = LabelSet(x='x', y='y', text='names', level='glyph',x_offset=5, y_offset=5, source=source1, render_mode='canvas',text_color='darkgray')
+        labelsY = LabelSet(x='x', y='y', text='names', level='glyph',x_offset=5, y_offset=5, source=source2, render_mode='canvas',text_color='darkgray')
         p.add_layout(labelsX)
         p.add_layout(labelsY)
 
@@ -343,7 +343,7 @@ def loadings_map(mvmobj,dims,*,plotwidth=600):
         p.circle('x', 'y', source=source1,size=10,color='darkblue')
         p.xaxis.axis_label = lv_labels [dims[0]-1]
         p.yaxis.axis_label = lv_labels [dims[1]-1]        
-        labelsX = LabelSet(x='x', y='y', text='names', level='glyph',x_offset=5, y_offset=5, source=source1, render_mode='canvas')
+        labelsX = LabelSet(x='x', y='y', text='names', level='glyph',x_offset=5, y_offset=5, source=source1, render_mode='canvas',text_color='darkgray')
         p.add_layout(labelsX)
         vline = Span(location=0, dimension='height', line_color='black', line_width=2)
         # Horizontal line
@@ -587,7 +587,9 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=F
         p.renderers.extend([vline, hline])
         show(p)      
     else: # YES CLASSIDS
-        Classes_=np.unique(CLASSID[colorby]).tolist()
+    
+        Classes_=np.unique(CLASSID[colorby]).tolist()        
+        
         A=len(Classes_)
         colormap =cm.get_cmap("rainbow")
         different_colors=A
@@ -610,7 +612,7 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=F
         
         p = figure(tools=TOOLS, tooltips=TOOLTIPS,toolbar_location="above",plot_width=plotwidth,plot_height=plotheight,title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ ']')
 
-        for classid_in_turn in Classes_:
+        for classid_in_turn in Classes_:                      
             x_aux       = []
             y_aux       = []
             obsid_aux   = []
@@ -618,6 +620,7 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=F
             classid_aux = []
             
             for i in list(range(len(ObsID_))):
+                
                 if classid_[i]==classid_in_turn:
                     x_aux.append(x_[i][0])
                     y_aux.append(y_[i][0])
@@ -628,7 +631,11 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=F
             color_=bokeh_palette[Classes_.index(classid_in_turn)]
             if add_legend:
                 c = p.circle('x','y',source=source,color=color_)
-                legend_it.append((classid_in_turn, [c]))
+                aux_=classid_in_turn
+                if isinstance(aux_,(float,int)):
+                    aux_=str(aux_)
+                #legend_it.append((classid_in_turn, [c]))
+                legend_it.append((aux_, [c]))
             else:
                 p.circle('x','y',source=source,color=color_)
             if add_labels:
@@ -781,12 +788,19 @@ def score_line(mvmobj,dim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False,
             color_=bokeh_palette[Classes_.index(classid_in_turn)]
             c=p.circle('x','y',source=source,color=color_)
             if plotline:
-                c1=p.line('x','y',source=source,color=color_)
+                c1=p.line('x','y',source=source,color=color_)    
+             #added to allow numbers in classids   
+            aux_=classid_in_turn
+            if isinstance(aux_,(float,int)):
+                aux_=str(aux_)
+             #        
             if add_legend and plotline:    
-                legend_it.append((classid_in_turn, [c,c1]))
+              #  legend_it.append((classid_in_turn, [c,c1]))
+                legend_it.append((aux_, [c,c1]))
             if add_legend and not(plotline):
-                legend_it.append((classid_in_turn, [c]))
-            
+              #  legend_it.append((classid_in_turn, [c]))
+                legend_it.append((aux_, [c]))
+
             if add_labels:
                 labelsX = LabelSet(x='x', y='y', text='ObsID', level='glyph',x_offset=5, y_offset=5, source=source, render_mode='canvas')
                 p.add_layout(labelsX)
