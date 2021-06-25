@@ -89,7 +89,10 @@ def ma57_dummy_check():
     return ma57_ok
 
 if pyomo_ok and ipopt_ok:
-    ma57_ok = ma57_dummy_check()
+    try:
+      ma57_ok = ma57_dummy_check()
+    except Exception:
+      ma57_ok = False
 else:
     ma57_ok = False
 
