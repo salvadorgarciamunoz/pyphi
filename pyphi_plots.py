@@ -79,7 +79,7 @@ def r2pv(mvmobj,*,plotwidth=600,plotheight=400):
     
     if is_pls:
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("r2xypv_"+rnd_num+".html",title="R2XYPV") 
+        output_file(mvmobj['mdlname']+'/'+"r2xypv_"+rnd_num+".html",title="R2XYPV") 
         colormap =cm.get_cmap("rainbow")
         different_colors=A
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
@@ -110,7 +110,7 @@ def r2pv(mvmobj,*,plotwidth=600,plotheight=400):
         
     else:   
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("r2xpv_"+rnd_num+".html",title='R2XPV') 
+        output_file(mvmobj['mdlname']+'/'+"r2xpv_"+rnd_num+".html",title='R2XPV') 
         colormap =cm.get_cmap("rainbow")
         different_colors=A
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
@@ -184,7 +184,7 @@ def loadings(mvmobj,*,plotwidth=600):
       
     if is_pls:
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("Loadings X Space_"+rnd_num+".html",title='X Loadings PLS')
+        output_file(mvmobj['mdlname']+'/'+"Loadings X Space_"+rnd_num+".html",title='X Loadings PLS')
         for i in list(np.arange(A)):
             p = figure(x_range=XVar, title="X Space Loadings "+lv_labels[i],
                     tools=TOOLS,tooltips=TOOLTIPS,plot_width=plotwidth)
@@ -203,7 +203,7 @@ def loadings(mvmobj,*,plotwidth=600):
                 p_list.append(p)
         show(column(p_list))    
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("Loadings Y Space_"+rnd_num+".html",title='Y Loadings PLS')
+        output_file(mvmobj['mdlname']+'/'+"Loadings Y Space_"+rnd_num+".html",title='Y Loadings PLS')
         for i in list(np.arange(A)):
             p = figure(x_range=YVar, title="Y Space Loadings "+lv_labels[i],
                     tools="save,box_zoom,pan,reset",tooltips=TOOLTIPS,plot_width=plotwidth)
@@ -223,7 +223,7 @@ def loadings(mvmobj,*,plotwidth=600):
         show(column(p_list))
     else:   
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("Loadings X Space_"+rnd_num+".html",title='X Loadings PCA') 
+        output_file(mvmobj['mdlname']+'/'+"Loadings X Space_"+rnd_num+".html",title='X Loadings PCA') 
         for i in list(np.arange(A)):
             source1 = ColumnDataSource(data=dict(x_=XVar, y_=mvmobj['P'][:,i].tolist(),names=XVar))  
             
@@ -276,7 +276,7 @@ def loadings_map(mvmobj,dims,*,plotwidth=600):
                 YVar.append('YVar #'+str(n))               
     
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("Loadings Map"+rnd_num+".html",title='Loadings Map')
+        output_file(mvmobj['mdlname']+'/'+"Loadings Map"+rnd_num+".html",title='Loadings Map')
        
     
         x_ws = mvmobj['Ws'][:,dims[0]-1]
@@ -328,7 +328,7 @@ def loadings_map(mvmobj,dims,*,plotwidth=600):
             for n in list(np.arange(num_varX)+1):
                 XVar.append('XVar #'+str(n))                   
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("Loadings Map"+rnd_num+".html",title='Loadings Map')    
+        output_file(mvmobj['mdlname']+'/'+"Loadings Map"+rnd_num+".html",title='Loadings Map')    
         x_p = mvmobj['P'][:,dims[0]-1]
         y_p = mvmobj['P'][:,dims[1]-1]                        
         TOOLS = "save,wheel_zoom,box_zoom,pan,reset,box_select,lasso_select"
@@ -406,7 +406,7 @@ def weighted_loadings(mvmobj,*,plotwidth=600):
     
     if is_pls:
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("Loadings X Space_"+rnd_num+".html",title='X Weighted Loadings PLS')
+        output_file(mvmobj['mdlname']+'/'+"Loadings X Space_"+rnd_num+".html",title='X Weighted Loadings PLS')
         for i in list(np.arange(A)):
             p = figure(x_range=XVar, title="X Space Weighted Loadings "+lv_labels[i],
                      tools=TOOLS,tooltips=TOOLTIPS,plot_width=plotwidth)
@@ -425,7 +425,7 @@ def weighted_loadings(mvmobj,*,plotwidth=600):
                 p_list.append(p)
         show(column(p_list)) 
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("Loadings Y Space_"+rnd_num+".html",title='Y Weighted Loadings PLS')
+        output_file(mvmobj['mdlname']+'/'+"Loadings Y Space_"+rnd_num+".html",title='Y Weighted Loadings PLS')
         for i in list(np.arange(A)):
             p = figure(x_range=YVar, title="Y Space Weighted Loadings "+lv_labels[i],
                      tools=TOOLS,tooltips=TOOLTIPS,plot_width=plotwidth)
@@ -445,7 +445,7 @@ def weighted_loadings(mvmobj,*,plotwidth=600):
         show(column(p_list))
     else:   
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("Loadings X Space_"+rnd_num+".html",title='X Weighted Loadings PCA') 
+        output_file(mvmobj['mdlname']+'/'+"Loadings X Space_"+rnd_num+".html",title='X Weighted Loadings PCA') 
         for i in list(np.arange(A)):
             p = figure(x_range=XVar, title="X Space Weighted Loadings "+lv_labels[i],
                      tools=TOOLS,tooltips=TOOLTIPS,plot_width=plotwidth)
@@ -476,7 +476,7 @@ def vip(mvmobj,*,plotwidth=600):
     
     if 'Q' in mvmobj:  
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("VIP_"+rnd_num+".html",title='VIP Coefficient') 
+        output_file(mvmobj['mdlname']+'/'+"VIP_"+rnd_num+".html",title='VIP Coefficient') 
         num_varX=mvmobj['P'].shape[0]            
         if 'varidX' in mvmobj:
             XVar=mvmobj['varidX']
@@ -548,7 +548,7 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=F
     
     if isinstance(CLASSID,np.bool): # No CLASSIDS
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("Score_Scatter_"+rnd_num+".html",title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ ']')
+        output_file(mvmobj['mdlname']+'/'+"Score_Scatter_"+rnd_num+".html",title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ ']')
 
         x_=T_matrix[:,[xydim[0]-1]]
         y_=T_matrix[:,[xydim[1]-1]]
@@ -596,7 +596,7 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=F
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
         bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]  
         rnd_num=str(int(np.round(1000*np.random.random_sample())))               
-        output_file("Score_Scatter_"+rnd_num+".html",title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ ']') 
+        output_file(mvmobj['mdlname']+'/'+"Score_Scatter_"+rnd_num+".html",title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ ']') 
         x_=T_matrix[:,[xydim[0]-1]]
         y_=T_matrix[:,[xydim[1]-1]]          
         
@@ -716,7 +716,7 @@ def score_line(mvmobj,dim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False,
                        
     if isinstance(CLASSID,np.bool): # No CLASSIDS
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("Score_Line_"+rnd_num+".html",title='Score Line t['+str(dim[0])+ ']')
+        output_file(mvmobj['mdlname']+'/'+"Score_Line_"+rnd_num+".html",title='Score Line t['+str(dim[0])+ ']')
 
         y_=T_matrix[:,[dim[0]-1]]
         x_=list(range(1,y_.shape[0]+1))
@@ -754,7 +754,7 @@ def score_line(mvmobj,dim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False,
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
         bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]  
         rnd_num=str(int(np.round(1000*np.random.random_sample())))               
-        output_file("Score_Line_"+rnd_num+".html",title='Score Line t['+str(dim[0])+ ']') 
+        output_file(mvmobj['mdlname']+'/'+"Score_Line_"+rnd_num+".html",title='Score Line t['+str(dim[0])+ ']') 
 
         y_=T_matrix[:,[dim[0]-1]]  
         x_=list(range(1,y_.shape[0]+1))        
@@ -942,7 +942,7 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=
             ]
     
     rnd_num=str(int(np.round(1000*np.random.random_sample())))               
-    output_file("Diagnostics"+rnd_num+".html",title='Diagnostics') 
+    output_file(mvmobj['mdlname']+'/'+"Diagnostics"+rnd_num+".html",title='Diagnostics') 
     p = figure(tools=TOOLS, tooltips=TOOLTIPS, plot_width=plotwidth, title="Hotelling's T2")
     p.circle('x','t2',source=source)
     if ht2_logscale:
@@ -1100,7 +1100,7 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
     
     if isinstance(CLASSID,np.bool): # No CLASSIDS
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("ObsvsPred_"+rnd_num+".html",title='ObsvsPred')
+        output_file(mvmobj['mdlname']+'/'+"ObsvsPred_"+rnd_num+".html",title='ObsvsPred')
         plot_counter=0
         
         if not(isinstance(yhat,np.bool)): #skip if PCA model sent
@@ -1150,7 +1150,7 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
         bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]  
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("ObsvsPred_"+rnd_num+".html",title='ObsvsPred')      
+        output_file(mvmobj['mdlname']+'/'+"ObsvsPred_"+rnd_num+".html",title='ObsvsPred')      
         classid_=list(CLASSID[colorby])
         
         plot_counter=0
@@ -1302,7 +1302,7 @@ def contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,
             XVar.append('XVar #'+str(n))               
 
     rnd_num=str(int(np.round(1000*np.random.random_sample())))
-    output_file("Contributions"+rnd_num+".html",title='Contributions')
+    output_file(mvmobj['mdlname']+'/'+"Contributions"+rnd_num+".html",title='Contributions')
     if isinstance(from_obs,list):
         from_txt=", ".join(map(str, from_obs))
         from_txt=" from obs: "+from_txt
@@ -1472,7 +1472,7 @@ def mb_weights(mvmobj,*,plotwidth=600,plotheight=400):
     XVar=mvmobj['Xblocknames']        
     for i in list(np.arange(A)):
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("blockweights_"+rnd_num+".html",title="Block Weights")         
+        output_file(mvmobj['mdlname']+'/'+"blockweights_"+rnd_num+".html",title="Block Weights")         
         px = figure(x_range=XVar, title="Block weights for MBPLS"+lv_labels[i],
              tools="save,box_zoom,hover,reset", tooltips=[("Var:","@x_")],plot_width=plotwidth,plot_height=plotheight)   
         source1 = ColumnDataSource(data=dict(x_=XVar, y_=mvmobj['Wt'][:,i].tolist(),names=XVar)) 
@@ -1513,7 +1513,7 @@ def mb_r2pb(mvmobj,*,plotwidth=600,plotheight=400):
     for i in list(np.arange(A)):
         r2pbX_dict.update({lv_labels[i] : mvmobj['r2pbX'][:,i].tolist()})
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("r2perblock"+rnd_num+".html",title="R2 per Block") 
+        output_file(mvmobj['mdlname']+'/'+"r2perblock"+rnd_num+".html",title="R2 per Block") 
         colormap =cm.get_cmap("rainbow")
         different_colors=A
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
@@ -1558,7 +1558,7 @@ def mb_vip(mvmobj,*,plotwidth=600,plotheight=400):
     XVar = XVar_
     vip=vip[index]
     rnd_num=str(int(np.round(1000*np.random.random_sample())))
-    output_file("blockvip"+rnd_num+".html",title="Block VIP") 
+    output_file(mvmobj['mdlname']+'/'+"blockvip"+rnd_num+".html",title="Block VIP") 
     source1 = ColumnDataSource(data=dict(x_=XVar, y_=vip.tolist(),names=XVar))         
     px = figure(x_range=XVar, title="Block VIP for MBPLS",
          tools="save,box_zoom,hover,reset",tooltips=[("Block:","@x_")],plot_width=plotwidth,plot_height=plotheight)   

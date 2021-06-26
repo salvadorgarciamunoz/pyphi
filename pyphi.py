@@ -102,7 +102,7 @@ else:
     ma57_ok = False
 
 
-def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cross_val=0):
+def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cross_val=0,mdlname='.'):
     """ Principal Components Analysis routine
     
     by Salvador Garcia-Munoz 
@@ -132,6 +132,9 @@ def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cro
                    element wise removing cross_val% of the data every round
                    
                    if ==   0:  Bypass cross-validation  *default if not sent*
+                   
+        mdlname: Name associated with model, default is '.'
+        
     Output:
         A dictionary with all PCA loadings, scores and other diagnostics.
     
@@ -274,6 +277,9 @@ def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cro
             print('--------------------------------------------------------------')        
     else:
         pcaobj='Cannot cross validate  with those options'
+        
+    pcaobj['mdlname'] = mdlname    
+        
     return pcaobj
 
 def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
@@ -618,7 +624,7 @@ def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
             pca_obj=1
             return pca_obj
   
-def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shush=False,cross_val=0,cross_val_X=False):
+def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shush=False,cross_val=0,cross_val_X=False,mdlname='.'):
     """ Projection to  Latent Structures routine
     
     by Salvador Garcia-Munoz 
@@ -649,6 +655,8 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shu
                    
         cross_val_X: 'True' : Calculates Q2 values for the X and Y matrices
                      'False': Cross-validation strictly on Y matrix *default if not sent*
+                     
+        mdlname: Name associated with model, default is '.'
     
     Output:
         A dictionary with all PLS loadings, scores and other diagnostics.
@@ -1138,6 +1146,9 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shu
                 print('-------------------------------------------------------------------------------------------------------')   
     else:
         plsobj='Cannot cross validate  with those options'
+        
+    plsobj['mdlname'] = mdlname    
+        
     return plsobj    
         
 def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shush=False):
