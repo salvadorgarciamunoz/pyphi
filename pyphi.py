@@ -93,6 +93,11 @@ if pyomo_ok and ipopt_ok:
       ma57_ok = ma57_dummy_check()
     except Exception:
       ma57_ok = False
+      print('---------------------------------------------------------------------')
+      print("        Error indicates MA57 not available to IPOPT")
+      print("  But pyphi can still be used; IPOPT will use default solver Mumps ")
+      print('---------------------------------------------------------------------')
+
 else:
     ma57_ok = False
 
