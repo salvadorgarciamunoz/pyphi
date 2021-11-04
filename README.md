@@ -36,6 +36,14 @@ Adding a folder to your system path:
  - Both via Conda: after activating your environment, use ```conda env config vars set``` and your OS-specific set or export command.
 
 # What is New
+
+#### Jan 15, 2021
+* Added routine cat_2_matrix to conver categorical classifiers to matrices
+* Added Multi-block PLS model
+#### Nov 16, 2020
+* Fixed small bug un clean_low_variances routine
+#### Sep 26 2020
+* Added rotation of loadings so that var(t) for ti>=0 is always larger than var(t) for ti<0
 #### May 28th
 * Enhanced clean_low_variances function to return a list with columns removed from dataframe.
 #### May 27th
