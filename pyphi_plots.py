@@ -5,6 +5,9 @@ Plots for pyPhi
 
 @author: Sal Garcia <sgarciam@ic.ac.uk> <salvadorgarciamunoz@gmail.com>
 
+Release Nov 15 2021
+    * Added "xgrid" flag to all plots using bar plots (loadings, weighted loadings, contributions) to add the Xgrid lines to the plot
+
 Release Jan 15, 2021
     * Added mb_blockweights plot for MBPSL models
     
@@ -30,7 +33,7 @@ import matplotlib.cm as cm
 
 def r2pv(mvmobj,*,plotwidth=600,plotheight=400):
     """
-    R2 per variabvle plots
+    R2 per variable plots
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     
@@ -91,6 +94,7 @@ def r2pv(mvmobj,*,plotwidth=600,plotheight=400):
         px.vbar_stack(lv_labels, x='XVar', width=0.9,color=bokeh_palette,source=r2pvX_dict)
         px.y_range.range_padding = 0.1
         px.ygrid.grid_line_color = None
+        px.xgrid.grid_line_color = None
         px.axis.minor_tick_line_color = None
         px.outline_line_color = None
         px.yaxis.axis_label = 'R2X'
@@ -102,6 +106,7 @@ def r2pv(mvmobj,*,plotwidth=600,plotheight=400):
         py.y_range.range_padding = 0.1
         py.ygrid.grid_line_color = None
         py.axis.minor_tick_line_color = None
+        py.xgrid.grid_line_color = None
         py.outline_line_color = None
         py.yaxis.axis_label = 'R2Y'
         py.xaxis.major_label_orientation = 45
@@ -129,7 +134,7 @@ def r2pv(mvmobj,*,plotwidth=600,plotheight=400):
         show(p)
     return
     
-def loadings(mvmobj,*,plotwidth=600):
+def loadings(mvmobj,*,plotwidth=600,xgrid=False):
     """
     Column plots of loadings
     by Salvador Garcia-Munoz 
@@ -192,7 +197,13 @@ def loadings(mvmobj,*,plotwidth=600):
             
             #p.vbar(x=XVar, top=mvmobj['Ws'][:,i].tolist(), width=0.5)
             p.vbar(x='x_', top='y_', source=source1,width=0.5)
-            p.xgrid.grid_line_color = None
+            p.ygrid.grid_line_color = None    
+            if xgrid:
+                p.xgrid.grid_line_color = 'lightgray'
+                
+            else:
+                p.xgrid.grid_line_color = None    
+                
             p.yaxis.axis_label = 'W* ['+str(i+1)+']'
             hline = Span(location=0, dimension='width', line_color='black', line_width=2)
             p.renderers.extend([hline])
@@ -211,7 +222,11 @@ def loadings(mvmobj,*,plotwidth=600):
             source1 = ColumnDataSource(data=dict(x_=YVar, y_=mvmobj['Q'][:,i].tolist(),names=YVar)) 
             #p.vbar(x=YVar, top=mvmobj['Q'][:,i].tolist(), width=0.5)
             p.vbar(x='x_', top='y_', source=source1,width=0.5)
-            p.xgrid.grid_line_color = None
+            p.ygrid.grid_line_color = None    
+            if xgrid:
+                p.xgrid.grid_line_color = 'lightgray'
+            else:
+                p.xgrid.grid_line_color = None    
             p.yaxis.axis_label = 'Q ['+str(i+1)+']'
             hline = Span(location=0, dimension='width', line_color='black', line_width=2)
             p.renderers.extend([hline])
@@ -233,7 +248,10 @@ def loadings(mvmobj,*,plotwidth=600):
             #p.vbar(x=XVar, top=mvmobj['P'][:,i].tolist(), width=0.5)
             
             p.vbar(x='x_', top='y_', source=source1,width=0.5)
-            p.xgrid.grid_line_color = None
+            if xgrid:
+                p.xgrid.grid_line_color = 'lightgray'
+            else:
+                p.xgrid.grid_line_color = None    
             p.yaxis.axis_label = 'P ['+str(i+1)+']'
             hline = Span(location=0, dimension='width', line_color='black', line_width=2)
             p.renderers.extend([hline])
@@ -352,7 +370,7 @@ def loadings_map(mvmobj,dims,*,plotwidth=600):
         show(p)            
     return  
 
-def weighted_loadings(mvmobj,*,plotwidth=600):
+def weighted_loadings(mvmobj,*,plotwidth=600,xgrid=False):
     """
     Column plots of loadings weighted by r2x/r2y correspondingly
     by Salvador Garcia-Munoz 
@@ -414,7 +432,12 @@ def weighted_loadings(mvmobj,*,plotwidth=600):
              
             #p.vbar(x=XVar, top=(mvmobj['r2xpv'][:,i] * mvmobj['Ws'][:,i]).tolist(), width=0.5)
             p.vbar(x='x_', top='y_', source=source1,width=0.5)
-            p.xgrid.grid_line_color = None
+            p.ygrid.grid_line_color = None    
+            if xgrid:
+                p.xgrid.grid_line_color = 'lightgray'
+            else:
+                p.xgrid.grid_line_color = None    
+
             p.yaxis.axis_label = 'W* ['+str(i+1)+']'
             hline = Span(location=0, dimension='width', line_color='black', line_width=2)
             p.renderers.extend([hline])
@@ -433,7 +456,11 @@ def weighted_loadings(mvmobj,*,plotwidth=600):
             
             #p.vbar(x=YVar, top=(mvmobj['r2ypv'][:,i] * mvmobj['Q'][:,i]).tolist(), width=0.5)
             p.vbar(x='x_', top='y_', source=source1,width=0.5)
-            p.xgrid.grid_line_color = None
+            p.ygrid.grid_line_color = None    
+            if xgrid:
+                p.xgrid.grid_line_color = 'lightgray'
+            else:
+                p.xgrid.grid_line_color = None    
             p.yaxis.axis_label = 'Q ['+str(i+1)+']'
             hline = Span(location=0, dimension='width', line_color='black', line_width=2)
             p.renderers.extend([hline])
@@ -453,7 +480,12 @@ def weighted_loadings(mvmobj,*,plotwidth=600):
             
             #p.vbar(x=XVar, top=(mvmobj['r2xpv'][:,i] * mvmobj['P'][:,i]).tolist(), width=0.5)
             p.vbar(x='x_', top='y_', source=source1,width=0.5)
-            p.xgrid.grid_line_color = None
+            p.ygrid.grid_line_color = None    
+            if xgrid:
+                p.xgrid.grid_line_color = 'lightgray'
+            else:
+                p.xgrid.grid_line_color = None    
+
             p.yaxis.axis_label = 'P ['+str(i+1)+']'
             hline = Span(location=0, dimension='width', line_color='black', line_width=2)
             p.renderers.extend([hline])
@@ -1221,7 +1253,7 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
         show(column(p_list))
     return    
 
-def contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_space=False,plotwidth=800,plotheight=600):
+def contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_space=False,plotwidth=800,plotheight=600,xgrid=False):
     """
     Calculate contributions to diagnostics
     by Salvador Garcia-Munoz 
@@ -1325,7 +1357,11 @@ def contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,
     p = figure(x_range=XVar, plot_height=plotheight,plot_width=plotwidth, title="Contributions Plot"+from_txt+to_txt,
                     tools="save,box_zoom,pan,reset")
     p.vbar(x=XVar, top=Xconts[0].tolist(), width=0.5)
-    p.xgrid.grid_line_color = None
+    p.ygrid.grid_line_color = None    
+    if xgrid:
+        p.xgrid.grid_line_color = 'lightgray'
+    else:
+        p.xgrid.grid_line_color = None   
     p.yaxis.axis_label = 'Contributions to '+cont_type
     hline = Span(location=0, dimension='width', line_color='black', line_width=2)
     p.renderers.extend([hline])
@@ -1343,7 +1379,11 @@ def contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,
         p = figure(x_range=YVar, plot_height=plotheight,plot_width=plotwidth, title="Contributions Plot",
                     tools="save,box_zoom,pan,reset")
         p.vbar(x=YVar, top=Yconts[0].tolist(), width=0.5)
-        p.xgrid.grid_line_color = None
+        p.ygrid.grid_line_color = None    
+        if xgrid:
+            p.xgrid.grid_line_color = 'lightgray'
+        else:
+            p.xgrid.grid_line_color = None   
         p.yaxis.axis_label = 'Contributions to '+cont_type
         hline = Span(location=0, dimension='width', line_color='black', line_width=2)
         p.renderers.extend([hline])
