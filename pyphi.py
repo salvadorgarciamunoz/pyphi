@@ -3,6 +3,10 @@ Phi for Python (pyPhi)
 
 by Salvador Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
 
+Release Dec 5, 2021
+What was done:
+        *Added some small documentation to utilitie routines
+
 Release Jan 15, 2021
 What was done:
         * Added routine cat_2_matrix to conver categorical classifiers to matrices
@@ -1968,6 +1972,10 @@ def std(X):
     return x_std
    
 def meancenterscale(X,*,mcs=True):
+    '''
+    Inputs:
+        X: Matrix to be meancenterd ONLY works with Numpy matrices
+    '''
     if isinstance(mcs,bool):
         if mcs:
             x_mean = mean(X)
@@ -2478,6 +2486,12 @@ def contributions(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_sp
             return contsX
 
 def clean_empty_rows(X,*,shush=False):
+    '''
+    Input: 
+        X: Matrix to be cleaned of empty rows (all np.nan)
+    Output:
+        X: Without observations removed
+    '''
     if isinstance(X,np.ndarray):
         X_     = X.copy()
         ObsID_ = []
@@ -2511,6 +2525,14 @@ def clean_empty_rows(X,*,shush=False):
         
         
 def clean_low_variances(X,*,shush=False):
+    '''
+ Input:
+     X: Matrix to be cleaned for columns of low variance
+     shush: 'True' disables output to console
+Returns:     
+X_clean:  Matrix without low variance columns
+cols_removed:  Columns removed
+    '''
     cols_removed=[]
     if isinstance(X,pd.DataFrame):
         X_=np.array(X.values[:,1:]).astype(float)
