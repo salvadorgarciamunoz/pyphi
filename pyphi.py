@@ -3,6 +3,11 @@ Phi for Python (pyPhi)
 
 by Salvador Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
 
+Update on March 28 2022
+What was done:
+        * Added the varimax algorithm, still need to embed it within the pca/pls calculations
+        
+
 Release Dec 5, 2021
 What was done:
         *Added some small documentation to utilitie routines
@@ -47,6 +52,8 @@ import pandas as pd
 import datetime
 from scipy.special import factorial
 from scipy import interpolate
+from numpy import eye, asarray, dot, sum, diag
+from numpy.linalg import svd
 try:
     from pyomo.environ import *
     pyomo_ok = True
@@ -3060,3 +3067,17 @@ def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=F
     if isinstance(YMB,dict):
         pls_obj_['Yblocknames']=YMB['blknames']
     return pls_obj_
+
+
+def varimax(X, gamma = 1.0, q = 20, tol = 1e-6):
+    p,k = X.shape
+    R = eye(k)
+    d=0
+    for i in range(q):
+        d_ = d
+        Lambda = dot(X, R)
+        u,s,vh = svd(dot(X.T,asarray(Lambda)**3 - (gamma/p) * dot(Lambda, diag(diag(dot(Lambda.T,Lambda))))))
+        R = dot(u,vh)
+        d = sum(s)
+        if d_!=0 and d/d_ < 1 + tol: break
+    return dot(X, R)
