@@ -3,10 +3,12 @@ Phi for Python (pyPhi)
 
 by Salvador Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
 
-Update on March 28 2022
+Release TBD
 What was done:
-        * Added the varimax algorithm, still need to embed it within the pca/pls calculations
-        
+        * Fixed a bug in kernel PCA calculations
+        * Changed the syntax of MBPLS arguments
+        * Corrected a pretty severe error in pls_pred
+        * Fixed a really bizzare one in mbpls
 
 Release Dec 5, 2021
 What was done:
@@ -52,8 +54,6 @@ import pandas as pd
 import datetime
 from scipy.special import factorial
 from scipy import interpolate
-from numpy import eye, asarray, dot, sum, diag
-from numpy.linalg import svd
 try:
     from pyomo.environ import *
     pyomo_ok = True
@@ -320,7 +320,7 @@ def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
              [U,S,Th]   = np.linalg.svd(X_ @ X_.T)
              T          = Th.T 
              T          = T[:,0:A]
-             P          = X.T @ T
+             P          = X_.T @ T
              for a in list(range(A)):
                  P[:,a] = P[:,a]/np.linalg.norm(P[:,a])
              T          = X_ @ P
@@ -1262,6 +1262,8 @@ def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,sh
             r2Y[a]     = r2Y[a]-r2Y[a-1]
             r2Ypv[:,a] = r2Ypv[:,a]-r2Ypv[:,a-1]
         Ws=W @ np.linalg.pinv(P.T @ W)
+        #Adjustment
+        Ws[:,0]=W[:,0]
         eigs = np.var(T,axis=0);
         r2xc = np.cumsum(r2X)
         r2yc = np.cumsum(r2Y)
@@ -1419,6 +1421,8 @@ def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,sh
                  r2Ypv[:,a] = r2Ypv[:,a]-r2Ypv[:,a-1]
              
              Ws=W @ np.linalg.pinv(P.T @ W)
+             #Adjustment
+             Ws[:,0]=W[:,0]
              eigs = np.var(T,axis=0);
              r2xc = np.cumsum(r2X)
              r2yc = np.cumsum(r2Y)
@@ -1820,6 +1824,7 @@ def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
         not_Xmiss = (np.logical_not(X_nan_map))*1
         X_,dummy=n2z(X_)
         Xmcs=((X_-np.tile(pcaobj['mx'],(X_.shape[0],1)))/(np.tile(pcaobj['sx'],(X_.shape[0],1))))
+        Xmcs,dummy=n2z(Xmcs)
         for i in list(range(Xmcs.shape[0])):
             row_missing_map=not_Xmiss[[i],:]
             tempP = pcaobj['P'] * np.tile(row_missing_map.T,(1,pcaobj['P'].shape[1]))
@@ -1837,16 +1842,42 @@ def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
         xpred={'Xhat':xhat,'Tnew':tnew, 'speX':spe,'T2':htt2}
     return xpred
 
-def pls_pred(Xnew,plsobj,*,algorithm='p2mp'):
+def pls_pred(Xnew,plsobj,*,algorithm='p2mp',force_deflation=False):
     if isinstance(Xnew,np.ndarray):
         X_=Xnew.copy()
         if X_.ndim==1:
             X_=np.reshape(X_,(1,-1))
     elif isinstance(Xnew,pd.DataFrame):
         X_=np.array(Xnew.values[:,1:]).astype(float)
+    elif isinstance(Xnew,dict):
+        data_=[]
+        names_=[]
+        for k in Xnew.keys():
+            data_.append(Xnew[k])
+            names_.append(k)
+        XMB={'data':data_,'blknames':names_}
+        
+        c=0
+        for i,x in enumerate(XMB['data']):        
+            x_=x.values[:,1:].astype(float)         
+            mx_        = plsobj['x_means'][i]   
+            sx_        = plsobj['x_stds'][i]
+            blck_scale = plsobj['Xblk_scales'][i]
+            x_ = x_ - np.tile(mx_,(x_.shape[0],1))
+            x_ = x_ / np.tile(sx_,(x_.shape[0],1))
+            x_ = x_/blck_scale
+            if c==0:
+                X_=x_.copy() 
+            else:    
+                X_=np.hstack((X_,x_))
+            c=c+1
+                    
     X_nan_map = np.isnan(X_)    
-    if not(X_nan_map.any()):
-        tnew = ((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1)))) @ plsobj['Ws']
+    if not(X_nan_map.any()) and not(force_deflation):
+        if isinstance(Xnew,dict):
+            tnew = X_ @ plsobj['Ws']
+        else:
+            tnew = ((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1)))) @ plsobj['Ws']
         yhat = (tnew @ plsobj['Q'].T) * np.tile(plsobj['sy'],(X_.shape[0],1)) + np.tile(plsobj['my'],(X_.shape[0],1))
         xhat = (tnew @ plsobj['P'].T) * np.tile(plsobj['sx'],(X_.shape[0],1)) + np.tile(plsobj['mx'],(X_.shape[0],1))
         var_t = (plsobj['T'].T @ plsobj['T'])/plsobj['T'].shape[0]
@@ -1857,15 +1888,20 @@ def pls_pred(Xnew,plsobj,*,algorithm='p2mp'):
     elif algorithm=='p2mp':
         X_nan_map = np.isnan(X_)
         not_Xmiss = (np.logical_not(X_nan_map))*1
-        X_,dummy=n2z(X_)
-        Xmcs=((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1))))
+        #X_,dummy=n2z(X_)
+        if isinstance(Xnew,dict):
+            Xmcs=X_
+        else:
+            Xmcs=((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1))))
+        Xmcs,dummy=n2z(Xmcs)
         for i in list(range(Xmcs.shape[0])):
             row_missing_map=not_Xmiss[[i],:]
-            tempWs = plsobj['Ws'] * np.tile(row_missing_map.T,(1,plsobj['Ws'].shape[1]))
+            tempW = plsobj['W'] * np.tile(row_missing_map.T,(1,plsobj['W'].shape[1]))
             
-            for a in list(range(plsobj['Ws'].shape[1])):
-                WsTWs    = tempWs[:,[a]].T @ tempWs[:,[a]]
-                tnew_aux = np.linalg.inv(WsTWs) @ tempWs[:,[a]].T  @ Xmcs[[i],:].T
+            for a in list(range(plsobj['W'].shape[1])):
+                WTW    = tempW[:,[a]].T @ tempW[:,[a]]
+                #tnew_aux = np.linalg.inv(WTW) @ tempW[:,[a]].T  @ Xmcs[[i],:].T
+                tnew_aux,resid,rank,s = np.linalg.lstsq(WTW,(tempW[:,[a]].T  @ Xmcs[[i],:].T),rcond=None)
                 Xmcs[[i],:] = (Xmcs[[i],:] - tnew_aux @ plsobj['P'][:,[a]].T) * row_missing_map
                 if a==0:
                     tnew_=tnew_aux
@@ -2806,9 +2842,8 @@ def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=F
     Parameters
     ----------
     XMB : Dictionary or PandasDataFrame
-        Multi-block entity with two fields:
-            data: List of dataframes with data
-            blknames: List of block names
+        {'BlockName1':block_1_data_pd,
+         'BlockName2':block_2_data_pd}
 
 
     YMB : Dictionary or PandasDataFrame
@@ -2830,6 +2865,14 @@ def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=F
     obsids=[]
     
     if isinstance(XMB,dict):
+        data_=[]
+        names_=[]
+        for k in XMB.keys():
+            data_.append(XMB[k])
+            names_.append(k)
+        XMB={'data':data_,'blknames':names_}
+        
+        
         x=XMB['data'][0]        
         columns=x.columns.tolist()
         obsid_column_name=columns[0]        
@@ -2876,9 +2919,7 @@ def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=F
         for i,h in enumerate(columns):
             if i!=0:
                 X_var_names.append(h)
-        
         x_=XMB.values[:,1:].astype(float)
-        
         if isinstance(mcsX,bool):
             if mcsX:
                 #Mean center and autoscale  
@@ -2971,15 +3012,13 @@ def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=F
     Y_pd=pd.DataFrame(Y_,columns=Y_var_names)
     Y_pd.insert(0,obsid_column_name,obsids)
 
-     
     pls_obj_=pls(X_pd,Y_pd,A,mcsX=False,mcsY=False,md_algorithm=md_algorithm_,force_nipals=force_nipals_,shush=shush_,cross_val=cross_val_,cross_val_X=cross_val_X_)          
     
     #Calculate block loadings, scores, weights
     Wsb=[]
     Wb=[]
     Tb=[]
-    
-    
+     
     for i,c in enumerate(Xcols_per_block):
         if i==0:
             start_index=0
@@ -2988,12 +3027,12 @@ def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=F
             start_index=np.sum(Xcols_per_block[0:i])
             end_index = start_index + c
 
-        wsb_=pls_obj_['Ws'][start_index:end_index,:]
+        wsb_=pls_obj_['Ws'][start_index:end_index,:].copy()
         for j in list(range(wsb_.shape[1])):
             wsb_[:,j]=wsb_[:,j]/np.linalg.norm(wsb_[:,j])
         Wsb.append(wsb_)
         
-        wb_=pls_obj_['W'][start_index:end_index,:]
+        wb_=pls_obj_['W'][start_index:end_index,:].copy()
         for j in list(range(wb_.shape[1])):
             wb_[:,j]=wb_[:,j]/np.linalg.norm(wb_[:,j])
         Wb.append(wb_)
@@ -3034,7 +3073,7 @@ def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=F
         Tb.append(tb)
     for a in list(range(A)):
         T_a=[]
-        u=pls_obj_['U'][:,[a]]
+        u=pls_obj_['U'][:,[a]].copy()
         for i,c in enumerate(Xcols_per_block):
             if i==0:
                 T_a = Tb[i][:,[a]]
@@ -3054,30 +3093,45 @@ def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=F
     pls_obj_['Yblk_scales']=Yblk_scales
     pls_obj_['Wsb']=Wsb
     pls_obj_['Wt']=Wt
+    mx_=[]
+    for i,l in enumerate(x_means):
+        for j in l[0]:
+            mx_.append(j)
+    pls_obj_['mx']=np.array(mx_)    
+    sx_=[]
+    for i,l in enumerate(x_stds):
+        for j in l[0]:
+            sx_.append(j*Xblk_scales[i])
+    pls_obj_['sx']=np.array(sx_)
+    my_=[]
+    for i,l in enumerate(y_means):
+        for j in l[0]:
+            my_.append(j)
+    pls_obj_['my']=np.array(my_)    
+    sy_=[]
+    for i,l in enumerate(y_stds):
+        for j in l[0]:
+            sy_.append(j*Yblk_scales[i])
+    pls_obj_['sy']=np.array(sy_)
     
-    for a in list(range(A-1,0,-1)):
-         r2pbX[:,[a]]     = r2pbX[:,[a]]-r2pbX[:,[a-1]]
-    r2pbXc = np.cumsum(r2pbX,axis=1)
-
-    pls_obj_['r2pbX']=r2pbX
-    pls_obj_['r2pbXc']=r2pbXc
+    
+    if isinstance(XMB,dict):
+        for a in list(range(A-1,0,-1)):
+             r2pbX[:,[a]]     = r2pbX[:,[a]]-r2pbX[:,[a-1]]
+        r2pbXc = np.cumsum(r2pbX,axis=1)
+    
+        pls_obj_['r2pbX']=r2pbX
+        pls_obj_['r2pbXc']=r2pbXc
+    else:
+        for a in list(range(A-1,0,-1)):
+             r2pbX[a]     = r2pbX[a]-r2pbX[a-1]
+        r2pbXc = np.cumsum(r2pbX)
+    
+        pls_obj_['r2pbX']=r2pbX
+        pls_obj_['r2pbXc']=r2pbXc
 
     if isinstance(XMB,dict):
         pls_obj_['Xblocknames']=XMB['blknames']
     if isinstance(YMB,dict):
         pls_obj_['Yblocknames']=YMB['blknames']
     return pls_obj_
-
-
-def varimax(X, gamma = 1.0, q = 20, tol = 1e-6):
-    p,k = X.shape
-    R = eye(k)
-    d=0
-    for i in range(q):
-        d_ = d
-        Lambda = dot(X, R)
-        u,s,vh = svd(dot(X.T,asarray(Lambda)**3 - (gamma/p) * dot(Lambda, diag(diag(dot(Lambda.T,Lambda))))))
-        R = dot(u,vh)
-        d = sum(s)
-        if d_!=0 and d/d_ < 1 + tol: break
-    return dot(X, R)
