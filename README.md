@@ -2,6 +2,8 @@
 ## pyphi
 Phi toolbox for multivariate analysis by Sal Garcia (salvadorgarciamunoz@gmail.com, sgarciam@ic.ac.uk)
 
+Version 2.0 includes: Batch Analysis
+
 Version 1.0 includes: Principal Components Analysis (PCA), Projection to Latent Structures (PLS), Locally Weighted PLS (LWPLS), Savitzy-Golay derivative and Standard Normal Variate pre-processing for spectra.
 
 ## pyphi_plots
