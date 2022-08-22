@@ -38,7 +38,10 @@ Adding a folder to your system path:
  - Both via Conda: after activating your environment, use ```conda env config vars set``` and your OS-specific set or export command.
 
 # What is New
-
+#### Aug 22 2022
+* Added batch predict and data replicator to phi
+* I realize I had not updated this section in a long while (sorry)
+* 
 #### Jan 15, 2021
 * Added routine cat_2_matrix to conver categorical classifiers to matrices
 * Added Multi-block PLS model
