@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+
+
 Created on Mon Apr 11 14:58:35 2022
 
 Batch data is assumed to come in an excel file 
@@ -8,14 +10,20 @@ being process variables.
 Optionally the second column labeled 'PHASE' indicating
 the phase of exceution
 
+* added Jul 20  Distribution of number of samples per phase plot
+* added Aug 10  refold_horizontal | clean_empty_rows | predict 
+* added Aug 12  replicate_batch
 
 @author: S. Garcia-Munoz sgarciam@ic.ak.uk salg@andrew.cmu.edu
 """
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import pyphi as phi
-
+# Sequence of color blind friendly colors.
+cb_color_seq=['b','r','m','navy','bisque','silver','aqua','pink','gray']
+mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=cb_color_seq) 
 
 def simple_align(bdata,nsamples):
     '''
@@ -36,8 +44,9 @@ def simple_align(bdata,nsamples):
         phase=True
     else:
         phase = False
- 
-    for b in np.unique(bdata[bdata.columns[0]]):
+    aux=bdata.drop_duplicates(subset=bdata.columns[0],keep='first')
+    unique_batches=aux[aux.columns[0]].values.tolist()
+    for b in unique_batches:
         data_=bdata[bdata[bdata.columns[0]]==b]
         indx=np.arange(data_.shape[0])
         new_indx=np.linspace(0,data_.shape[0]-1,nsamples)
@@ -93,8 +102,10 @@ def phase_simple_align(bdata,nsamples):
     else:
         phase = False
     if phase:
+        aux=bdata.drop_duplicates(subset=bdata.columns[0],keep='first')
+        unique_batches=aux[aux.columns[0]].values.tolist()
         
-        for b in np.unique(bdata[bdata.columns[0]]):
+        for b in unique_batches:
             data_=bdata[bdata[bdata.columns[0]]==b]
             vals_rs=[]
             bname_rs=[]
@@ -223,7 +234,9 @@ def unfold_horizontal(bdata):
     firstone=True
     clbl=[]
     bid=[]
-    for b in np.unique(bdata[bdata.columns[0]]):
+    aux=bdata.drop_duplicates(subset=bdata.columns[0],keep='first')
+    unique_batches=aux[aux.columns[0]].values.tolist()
+    for b in unique_batches:
         data_=bdata[bdata[bdata.columns[0]]==b]
         if phase:
             vals=data_.values[:,2:]
@@ -251,35 +264,28 @@ def unfold_horizontal(bdata):
         else:
            bdata_hor=np.vstack((bdata_hor,row_))     
     bdata_hor= pd.DataFrame(bdata_hor,columns=clbl)
-    bdata_hor.insert(0, bdata.columns[0],np.unique(bdata[bdata.columns[0]]))
+    bdata_hor.insert(0, bdata.columns[0],unique_batches)
     return bdata_hor,clbl,bid
             
-  
-            
-# def _unfold_horizontal_monitoring(bdata):
-#      if (bdata.columns[1]=='PHASE') or \
-#          (bdata.columns[1]=='phase') or \
-#          (bdata.columns[1]=='Phase'):
-#          phase=True
-#      else:
-#          phase = False
-#      firstone=True
-#      for b in np.unique(bdata[bdata.columns[0]]):
-#          data_=bdata[bdata[bdata.columns[0]]==b]
-#          if phase:
-#              vals=data_.values[:,2:]
-#          else:
-#              vals=data_.values[:,1:]
-#          row_=[]
-
-#          vals=vals.reshape(1,-1)
-#          if firstone:
-#             bdata_hor_mon=row_    
-#             firstone=False
-#          else:
-#             bdata_hor_mon=np.vstack((bdata_hor_mon,row_))    
-#      return bdata_hor_mon        
-            
+def refold_horizontal(xuf,nvars,nsamples):
+    #xuf is strictly numberical
+    Xb=[]
+    for i in np.arange(xuf.shape[0]):
+        r=xuf[i,:]
+        for v in np.arange(nvars):
+            var=r[:nsamples]
+            var=var.reshape(-1,1)
+            if v<(nvars-1):
+                r=r[nsamples:]
+            if v==0:
+                batch=var
+            else:
+                batch=np.hstack((batch,var))
+        if i==0:
+            Xb=batch
+        else:
+            Xb=np.vstack((Xb,batch))
+    return Xb       
  
 def _uf_l(L,spb,vpb):
     first_=True
@@ -351,11 +357,15 @@ def _uf_hor_mon_loadings(mvmobj):
     
     return mvmobj
 
-def loadings(mmvm_obj,dim):
+def loadings(mmvm_obj,dim,*,r2_weighted=False):
     dim=dim-1
     if 'Q' in mmvm_obj:
         if mmvm_obj['ninit']==0:
-            aux_df=pd.DataFrame(mmvm_obj['Ws'])
+            if r2_weighted:
+                aux_df=pd.DataFrame(mmvm_obj['Ws']*mmvm_obj['r2xpv'])
+            else:
+                aux_df=pd.DataFrame(mmvm_obj['Ws'])
+            
             aux_df.insert(0,'bid',mmvm_obj['bid'])
            
             for i,v in enumerate(np.unique(mmvm_obj['bid'])):
@@ -364,7 +374,10 @@ def loadings(mmvm_obj,dim):
             
                 plt.fill_between(np.arange(mmvm_obj['nsamples']), dat )
                 plt.xlabel('sample')
-                plt.ylabel('$W^*$ ['+str(dim+1)+']')
+                if r2_weighted:
+                    plt.ylabel('$W^* * R^2$ ['+str(dim+1)+']')
+                else:
+                    plt.ylabel('$W^*$ ['+str(dim+1)+']')
                 plt.title(v)
                 
                 plt.ylim(mmvm_obj['Ws'][:,dim].min()*1.2,mmvm_obj['Ws'][:,dim].max()*1.2 )
@@ -382,17 +395,27 @@ def loadings(mmvm_obj,dim):
                         s_txt+=phase_samples[p]
                 plt.tight_layout()   
         else:
-            z_loadings= mmvm_obj['Ws'] [np.arange(mmvm_obj['ninit']),dim]
+            z_loadings= mmvm_obj['Ws'] [np.arange(mmvm_obj['ninit'])]
+            r2pvz     = mmvm_obj['r2xpv'] [np.arange(mmvm_obj['ninit']),:]
+            if r2_weighted:
+                z_loadings = z_loadings *r2pvz
+                
             zvars     = mmvm_obj['varidX'][0:mmvm_obj['ninit']]
             plt.figure()
-            plt.bar(zvars,z_loadings )
+            plt.bar(zvars,z_loadings[:,dim] )
             plt.xticks(rotation=90)
-            plt.ylabel('$W^*$ ['+str(dim+1)+']')
+            if r2_weighted:
+                plt.ylabel('$W^* * R^2$ ['+str(dim+1)+']')
+            else:
+                plt.ylabel('$W^*$ ['+str(dim+1)+']')
             plt.title('Loadings for Initial Conditions')
             plt.tight_layout()
             
             rows_=np.arange( mmvm_obj['nsamples']*mmvm_obj['nvars'])+mmvm_obj['ninit']
-            aux_df=pd.DataFrame(mmvm_obj['Ws'][rows_,:] )
+            if r2_weighted:
+                aux_df=pd.DataFrame(mmvm_obj['Ws'][rows_,:]*mmvm_obj['r2xpv'][rows_,:] )
+            else:
+                aux_df=pd.DataFrame(mmvm_obj['Ws'][rows_,:] )
             aux_df.insert(0,'bid',mmvm_obj['bid'])
            
             for i,v in enumerate(np.unique(mmvm_obj['bid'])):
@@ -401,7 +424,10 @@ def loadings(mmvm_obj,dim):
             
                 plt.fill_between(np.arange(mmvm_obj['nsamples']), dat )
                 plt.xlabel('sample')
-                plt.ylabel('$W^*$ ['+str(dim+1)+']')
+                if r2_weighted:
+                    plt.ylabel('$W^* * R^2$ ['+str(dim+1)+']')
+                else:
+                    plt.ylabel('$W^*$ ['+str(dim+1)+']')
                 plt.title(v)
                 
                 plt.ylim(mmvm_obj['Ws'][:,dim].min()*1.2,mmvm_obj['Ws'][:,dim].max()*1.2 )
@@ -419,7 +445,11 @@ def loadings(mmvm_obj,dim):
                         s_txt+=phase_samples[p]
                 plt.tight_layout()            
     else:
-        aux_df=pd.DataFrame(mmvm_obj['P'])
+        if r2_weighted:
+            aux_df=pd.DataFrame(mmvm_obj['P']*mmvm_obj['r2xpv'])
+        else:
+            aux_df=pd.DataFrame(mmvm_obj['P'])
+            
         aux_df.insert(0,'bid',mmvm_obj['bid'])
        
         for i,v in enumerate(np.unique(mmvm_obj['bid'])):
@@ -428,7 +458,10 @@ def loadings(mmvm_obj,dim):
         
             plt.fill_between(np.arange(mmvm_obj['nsamples']), dat )
             plt.xlabel('sample')
-            plt.ylabel('P ['+str(dim+1)+']')
+            if r2_weighted:
+                plt.ylabel('P * $R^2$ ['+str(dim+1)+']')
+            else:
+                plt.ylabel('P ['+str(dim+1)+']')
             plt.title(v)
             
             plt.ylim(mmvm_obj['P'][:,dim].min()*1.2,mmvm_obj['P'][:,dim].max()*1.2 )
@@ -446,7 +479,111 @@ def loadings(mmvm_obj,dim):
                     s_txt+=phase_samples[p]
             plt.tight_layout()   
         
-     
+def r2pv(mmvm_obj):
+
+    if mmvm_obj['ninit']==0:
+        aux_df=pd.DataFrame(mmvm_obj['r2xpv'])
+        aux_df.insert(0,'bid',mmvm_obj['bid'])
+       
+        for i,v in enumerate(np.unique(mmvm_obj['bid'])):
+            
+            dat=aux_df[aux_df['bid']==v].values*100
+            dat=dat[:,1:].astype(float)               
+            dat=np.cumsum(dat,axis=1)
+            dat=np.hstack((np.zeros((dat.shape[0],1)) ,dat))
+            plt.figure()
+            for a in np.arange(mmvm_obj['A'])+1:
+                plt.fill_between(np.arange(mmvm_obj['nsamples']), dat[:,a],dat[:,a-1],label='LV #'+str(a) )
+            plt.xlabel('sample')
+            plt.ylabel('$R^2$pvX (%)')
+            plt.legend()
+            plt.title(v)                
+            plt.ylim(0,100)
+            ylim_=plt.ylim()
+            phase_samples=mmvm_obj['phase_samples']
+            if not(isinstance(phase_samples,bool)):   
+                 s_txt=0
+                 s_lin=0
+                 plt.axvline(x=0,color='black',alpha=0.2)
+                 for p in phase_samples.keys():
+                     s_lin+=phase_samples[p]
+                     plt.axvline(x=s_lin,color='black',alpha=0.2)
+                     plt.annotate(p, (s_txt,ylim_[0]),rotation=90,alpha=0.5,color='black')
+                     s_txt+=phase_samples[p]
+            plt.tight_layout()   
+        if 'Q' in mmvm_obj:    
+            r2pvy = mmvm_obj['r2ypv']*100    
+            #yvars=mmvm_obj['varidY']
+            lbls=[]
+            for a in np.arange(1,mmvm_obj['A']+1):
+                lbls.append('LV #'+str(a))
+                
+            r2pvy_pd=pd.DataFrame(r2pvy,index=mmvm_obj['varidY'],columns=lbls)
+            fig1,ax1=plt.subplots()
+            r2pvy_pd.plot(kind='bar', stacked=True,ax=ax1)            
+            #ax.set_xticks(rotation=90)
+            ax1.set_ylabel('$R^2$pvY')
+            ax1.set_title('$R^2$ per LV for Y-Space')
+            fig1.tight_layout()
+        
+    else:
+        r2pvz     = mmvm_obj['r2xpv'] [np.arange(mmvm_obj['ninit']),:]*100
+        zvars     = mmvm_obj['varidX'][0:mmvm_obj['ninit']]
+        lbls=[]
+        for a in np.arange(1,mmvm_obj['A']+1):
+            lbls.append('LV #'+str(a))
+        r2pvz_pd=pd.DataFrame(r2pvz,index=zvars,columns=lbls)
+        fig2,ax2=plt.subplots()
+        r2pvz_pd.plot(kind='bar', stacked=True,ax=ax2)                    
+        ax2.set_ylabel('$R^2$pvZ')
+        ax2.set_title('$R^2$ Initial Conditions')
+        fig2.tight_layout()
+        
+        rows_=np.arange( mmvm_obj['nsamples']*mmvm_obj['nvars'])+mmvm_obj['ninit']
+        aux_df=pd.DataFrame(mmvm_obj['r2xpv'][rows_,:] )
+        aux_df.insert(0,'bid',mmvm_obj['bid'])
+       
+        for i,v in enumerate(np.unique(mmvm_obj['bid'])):
+            
+            dat=aux_df[aux_df['bid']==v].values*100
+            dat=dat[:,1:].astype(float)               
+            dat=np.cumsum(dat,axis=1)
+            dat=np.hstack((np.zeros((dat.shape[0],1)) ,dat))
+            plt.figure()
+            for a in np.arange(mmvm_obj['A'])+1:
+                plt.fill_between(np.arange(mmvm_obj['nsamples']), dat[:,a],dat[:,a-1],label='LV #'+str(a) )
+            plt.xlabel('sample')
+            plt.ylabel('$R^2$pvX (%)')
+            plt.legend()
+            plt.title(v)                
+            plt.ylim(0,100)
+            ylim_=plt.ylim()
+            phase_samples=mmvm_obj['phase_samples']
+            if not(isinstance(phase_samples,bool)):   
+                 s_txt=0
+                 s_lin=0
+                 plt.axvline(x=0,color='black',alpha=0.2)
+                 for p in phase_samples.keys():
+                     s_lin+=phase_samples[p]
+                     plt.axvline(x=s_lin,color='black',alpha=0.2)
+                     plt.annotate(p, (s_txt,ylim_[0]),rotation=90,alpha=0.5,color='black')
+                     s_txt+=phase_samples[p]
+            plt.tight_layout()   
+            
+        if 'Q' in mmvm_obj:
+            r2pvy = mmvm_obj['r2ypv']*100    
+            #yvars=mmvm_obj['varidY']
+            lbls=[]
+            for a in np.arange(1,mmvm_obj['A']+1):
+                lbls.append('LV #'+str(a))
+                
+            r2pvy_pd=pd.DataFrame(r2pvy,index=mmvm_obj['varidY'],columns=lbls)
+            fig1,ax1=plt.subplots()
+            r2pvy_pd.plot(kind='bar', stacked=True,ax=ax1)            
+            ax1.set_ylabel('$R^2$pvY')
+            ax1.set_title('$R^2$ per LV for Y-Space')
+            fig1.tight_layout()            
+    
 def mpca(xbatch,a,*,unfolding='batch wise',phase_samples=False,cross_val=0):
     '''
     Multi-way PCA for batch analysis
@@ -520,14 +657,14 @@ def mpca(xbatch,a,*,unfolding='batch wise',phase_samples=False,cross_val=0):
         else:
              xbatch_=xbatch.copy()
         xbatch_,colsrem = phi.clean_low_variances(xbatch_) # colsrem are columns removed
-        
-        mpca_obj=phi.pca(xbatch_,a)
-        
+        xbatch_ = phi.clean_empty_rows(xbatch_)
+        mpca_obj=phi.pca(xbatch_,a)        
         mpca_obj['uf']            ='variable wise'
         mpca_obj['phase_samples'] = phase_samples
         mpca_obj['nvars']    = nvars
         mpca_obj['nbatches'] = nbatches
         mpca_obj['nsamples'] = nsamples
+        mpca_obj['ninit']    = 0
         mpca_obj['A']        = a
     else:
         mpca_obj=[]
@@ -690,6 +827,9 @@ def monitor(mmvm_obj,bdata,*,which_batch=False,zinit=False,build_ci=True,shush=F
     mmvm_obj_f['mx'] = mmvm_obj_f['mx_ufm']
     mmvm_obj_f['sx'] = mmvm_obj_f['sx_ufm']
     mmvm_obj_f['P']  = mmvm_obj_f['P_ufm']
+    aux=bdata.drop_duplicates(subset=bdata.columns[0],keep='first')
+    unique_batches=aux[aux.columns[0]].values.tolist()
+    
     if 'Q' in mmvm_obj:
         mmvm_obj_f['W']   = mmvm_obj_f['W_ufm']
         mmvm_obj_f['Ws']  = mmvm_obj_f['Ws_ufm']
@@ -702,7 +842,7 @@ def monitor(mmvm_obj,bdata,*,which_batch=False,zinit=False,build_ci=True,shush=F
             #build confidence intervals and update model
             if not(shush):
                 print('Building real_time confidence intervals')
-            for i,b in enumerate(np.unique(bdata[bdata.columns[0]])):
+            for i,b in enumerate(unique_batches):
                 diags = _mimic_monitoring(mmvm_obj_f,bdata,b,zinit=zinit)
                 SPE.append(diags['spe_mon'])
                 SPEi.append(diags['spei_mon'])
@@ -878,8 +1018,11 @@ def mpls(xbatch,y,a,*,zinit=False,phase_samples=False,mb_each_var=False,cross_va
     aux               = np.array([colnames,bid_o])
     col_names_bid_pd  = pd.DataFrame(aux.T,columns=['col name','bid'])
     col_names_bid_pd_ = col_names_bid_pd[col_names_bid_pd['col name'].isin(x_uf.columns[1:].tolist())]
-    bid               = col_names_bid_pd_['bid'].values # bid is vector indicating to what variable each col belongs 
-                                                        # useful in figuring out the blocks
+    #bid               = col_names_bid_pd_['bid'].values # bid is vector indicating to what variable each col belongs 
+    #                                                   # useful in figuring out the blocks
+    aux=col_names_bid_pd_.drop_duplicates(subset='bid',keep='first')
+    unique_bid=aux['bid'].values.tolist()                                                   
+    
     if not(isinstance(zinit,bool)):
         zinit,rc=phi.clean_low_variances(zinit)
         zcols=zinit.columns[1:].tolist()
@@ -888,7 +1031,7 @@ def mpls(xbatch,y,a,*,zinit=False,phase_samples=False,mb_each_var=False,cross_va
         XMB=dict()
     
     if mb_each_var:
-        for v in np.unique(bid):
+        for v in unique_bid:
            these_cols=[x_uf.columns[0]]
            these_cols.extend(col_names_bid_pd_['col name'][col_names_bid_pd_['bid']==v].values.tolist())
            varblock=x_uf[these_cols]
@@ -900,10 +1043,13 @@ def mpls(xbatch,y,a,*,zinit=False,phase_samples=False,mb_each_var=False,cross_va
             XMB = x_uf
             
     if not(isinstance(XMB,dict)):
-        mpls_obj=phi.pls(XMB,y,a,cross_val=cross_val,cross_val_X=cross_val_X)
+        mpls_obj=phi.pls(XMB,y,a,cross_val=cross_val,cross_val_X=cross_val_X,force_nipals=True)
+        yhat=phi.pls_pred(XMB,mpls_obj)
+        yhat=yhat['Yhat']
     else:    
-        mpls_obj=phi.mbpls(XMB,y,a,cross_val_=cross_val,cross_val_X_=cross_val_X)    
-        
+        mpls_obj=phi.mbpls(XMB,y,a,cross_val_=cross_val,cross_val_X_=cross_val_X,force_nipals_=True)    
+        yhat=phi.pls_pred(XMB,mpls_obj)
+        yhat=yhat['Yhat']
     if len(colsrem)>0:    
         if not(isinstance(zinit,bool)):
             ninit_vars=zinit.shape[1]-1
@@ -978,7 +1124,7 @@ def mpls(xbatch,y,a,*,zinit=False,phase_samples=False,mb_each_var=False,cross_va
              aux_new           = aux_new[a:,:]
              r2xpv_            = aux_new[0:a,:]
              mpls_obj['r2xpv'] = r2xpv_.T
-
+        mpls_obj['Yhat']          = yhat
         mpls_obj['varidX']        = colnames
         mpls_obj['bid']           = bid_o
         mpls_obj['uf']            ='batch wise'
@@ -986,11 +1132,191 @@ def mpls(xbatch,y,a,*,zinit=False,phase_samples=False,mb_each_var=False,cross_va
         mpls_obj['nbatches']      = int(nbatches)
         mpls_obj['nsamples']      = int(nsamples)
         mpls_obj['A']             = a
-        mpls_obj['phase_samples'] = phase_samples      
+        mpls_obj['phase_samples'] = phase_samples  
+        mpls_obj['mb_each_var']   = mb_each_var
         
         if not(isinstance(zinit,bool)):
             mpls_obj['ninit']=int(zinit.shape[1]-1)
         else:
             mpls_obj['ninit']=0
             
-    return mpls_obj            
+    return mpls_obj       
+
+def find(a, func):
+    return [i for (i, val) in enumerate(a) if func(val)]
+     
+def clean_empty_rows(X,*,shush=False):
+    '''
+    Input: 
+        X: Batch data to be cleaned of empty rows (all np.nan) DATAFRAME
+    Output:
+        X: Batch data Without observations removed
+    '''
+
+    if  (X.columns[1]=='PHASE') or \
+        (X.columns[1]=='phase') or \
+        (X.columns[1]=='Phase'): 
+            X_     = np.array(X.values[:,2:]).astype(float)
+            ObsID_ = X.values[:,0].astype(str)
+            ObsID_ = ObsID_.tolist()
+    else:
+            X_     = np.array(X.values[:,1:]).astype(float)
+            ObsID_ = X.values[:,0].astype(str)
+            ObsID_ = ObsID_.tolist()
+                      
+    #find rows with all data missing
+    X_nan_map = np.isnan(X_)
+    Xmiss = X_nan_map*1
+    Xmiss = np.sum(Xmiss,axis=1)
+    indx = find(Xmiss, lambda x: x==X_.shape[1])
+       
+    if len(indx)>0:
+        for i in indx:
+            if not(shush):
+                print('Removing row from ', ObsID_[i], ' due to 100% missing data')
+
+        X_=X.drop(X.index.values[indx].tolist())
+
+        return X_
+    else:
+        return X
+    
+def phase_sampling_dist(bdata):    
+    if bdata.columns[1]=='phase' or bdata.columns[1]=='Phase' or bdata.columns[1]=='PHASE':        
+        bids=np.unique(bdata[bdata.columns[0]]).tolist()
+        phases=np.unique(bdata[bdata.columns[1]]).tolist()
+        #samps_per_phase=[]
+        fig,ax=plt.subplots(1,len(phases)+1)
+        totsamps=[]
+        for i,p in enumerate(phases):
+            samps_=[]
+            for b in bids:
+              bdat= bdata[ (bdata[bdata.columns[1]]==p) & (bdata[bdata.columns[0]]==b)]
+              samps_.append(len(bdat))
+              totsamps.append(len(bdata[(bdata[bdata.columns[0]]==b)]))
+            ax[i].hist(samps_)
+            ax[i].set_xlabel('# Samples')
+            ax[i].set_ylabel('Count')
+            ax[i].set_title(p)
+        ax[-1].hist(totsamps)
+        ax[-1].set_xlabel('# Samples')
+        ax[-1].set_ylabel('Count')
+        ax[-1].set_title('Total')
+        fig.tight_layout()                        
+    else:
+        print('Data is missing phase information or phase column is nor properly labeled')
+        
+def predict(xbatch,mmvm_obj,*,zinit=False):    
+    if 'Q' in mmvm_obj:    
+        x_uf,colnames,bid_o = unfold_horizontal(xbatch)  # colnames is original set of columns        
+        aux                 = np.array([colnames,bid_o])
+        col_names_bid_pd    = pd.DataFrame(aux.T,columns=['col name','bid'])        
+        #bid                 = col_names_bid_pd['bid'].values # bid is vector indicating to what variable each col belongs 
+        #                                                    # useful in figuring out the blocks
+        aux=col_names_bid_pd.drop_duplicates(subset='bid',keep='first')
+        unique_bid=aux['bid'].values.tolist()   
+            
+        if not(isinstance(zinit,bool)):
+            XMB={'Initial Conditions':zinit}
+        else:
+            XMB=dict()
+        
+        if mmvm_obj['mb_each_var']:
+            
+            for v in unique_bid:
+               these_cols=[x_uf.columns[0]]
+               these_cols.extend(col_names_bid_pd['col name'][col_names_bid_pd['bid']==v].values.tolist())
+               varblock=x_uf[these_cols]
+               XMB[v]=varblock
+        else:
+            if not(isinstance(zinit,bool)):
+                XMB['Trajectories']=x_uf
+            else:
+                XMB = x_uf           
+        pred=phi.pls_pred(XMB,mmvm_obj)
+        
+        if not(isinstance(zinit,bool)):
+            Zhat=pred['Xhat'][:,:mmvm_obj['ninit']]            
+            Xhat=pred['Xhat'][:,mmvm_obj['ninit']:]
+            Xb=refold_horizontal(Xhat,mmvm_obj['nvars'],mmvm_obj['nsamples'] )
+            if  (xbatch.columns[1]=='PHASE') or \
+                (xbatch.columns[1]=='phase') or \
+                (xbatch.columns[1]=='Phase'): 
+                Xb=pd.DataFrame(Xb,columns=xbatch.columns[2:])
+                Xb.insert(0,xbatch.columns[1],xbatch[xbatch.columns[1]].values)
+                Xb.insert(0,xbatch.columns[0],xbatch[xbatch.columns[0]].values)
+            else:
+                Xb=pd.DataFrame(Xb,columns=xbatch.columns[1:])                
+                Xb.insert(0,xbatch.columns[0],xbatch[xbatch.columns[0]].values)                
+            pred['Xhat']=Xb
+            
+            
+            Zhat_df=pd.DataFrame(Zhat,columns=zinit.columns[1:].tolist())
+            Zhat_df.insert(0,zinit.columns[0],zinit[zinit.columns[0]].values.astype(str).tolist())    
+            pred['Zhat']=Zhat_df
+            
+            test=xbatch.drop_duplicates(subset=xbatch.columns[0],keep='first')            
+            Y_df=pd.DataFrame(pred['Yhat'],columns=mmvm_obj['varidY'])                
+            Y_df.insert(0,test.columns[0],test[test.columns[0]].values.astype(str).tolist())                
+            pred['Yhat']=Y_df
+            
+        else:
+            Xb=refold_horizontal(pred['Xhat'],mmvm_obj['nvars'],mmvm_obj['nsamples'] )
+            if  (xbatch.columns[1]=='PHASE') or \
+                (xbatch.columns[1]=='phase') or \
+                (xbatch.columns[1]=='Phase'): 
+                Xb=pd.DataFrame(Xb,columns=xbatch.columns[2:])
+                Xb.insert(0,xbatch.columns[1],xbatch[xbatch.columns[1]].values)
+                Xb.insert(0,xbatch.columns[0],xbatch[xbatch.columns[0]].values)
+            else:
+                Xb=pd.DataFrame(Xb,columns=xbatch.columns[1:])                
+                Xb.insert(0,xbatch.columns[0],xbatch[xbatch.columns[0]].values)                
+            pred['Xhat']=Xb
+            test=xbatch.drop_duplicates(subset=xbatch.columns[0],keep='first')
+            Y_df=pd.DataFrame(pred['Yhat'],columns=mmvm_obj['varidY'])                
+            Y_df.insert(0,test.columns[0],test[test.columns[0]].values.astype(str).tolist())                
+            pred['Yhat']=Y_df
+
+    else:
+        if mmvm_obj['uf'] =='batch wise':
+            x_uf,colnames,bid_o = unfold_horizontal(xbatch)              
+            pred=phi.pca_pred(x_uf,mmvm_obj)               
+            Xb=refold_horizontal(pred['Xhat'],mmvm_obj['nvars'],mmvm_obj['nsamples'] )
+            if  (xbatch.columns[1]=='PHASE') or \
+                (xbatch.columns[1]=='phase') or \
+                (xbatch.columns[1]=='Phase'): 
+                Xb=pd.DataFrame(Xb,columns=xbatch.columns[2:])
+                Xb.insert(0,xbatch.columns[1],xbatch[xbatch.columns[1]].values)
+                Xb.insert(0,xbatch.columns[0],xbatch[xbatch.columns[0]].values)
+            else:
+                Xb=pd.DataFrame(Xb,columns=xbatch.columns[1:])                
+                Xb.insert(0,xbatch.columns[0],xbatch[xbatch.columns[0]].values)                
+            pred['Xhat']=Xb
+        if mmvm_obj['uf'] =='variable wise':
+            if  (xbatch.columns[1]=='PHASE') or \
+                (xbatch.columns[1]=='phase') or \
+                (xbatch.columns[1]=='Phase'):    
+                 xbatch_=xbatch.copy()
+                 xbatch_.drop(xbatch.columns[1],axis=1,inplace=True)
+            else:
+                 xbatch_=xbatch.copy()            
+            pred=phi.pca_pred(xbatch_,mmvm_obj)    
+            Xb=pred['Xhat']
+            if  (xbatch.columns[1]=='PHASE') or \
+                (xbatch.columns[1]=='phase') or \
+                (xbatch.columns[1]=='Phase'): 
+                Xb=pd.DataFrame(Xb,columns=xbatch.columns[2:])
+                Xb.insert(0,xbatch.columns[1],xbatch[xbatch.columns[1]].values)
+                Xb.insert(0,xbatch.columns[0],xbatch[xbatch.columns[0]].values)
+            else:
+                Xb=pd.DataFrame(Xb,columns=xbatch.columns[1:])                
+                Xb.insert(0,xbatch.columns[0],xbatch[xbatch.columns[0]].values)      
+            pred['Xhat']=Xb                   
+    return pred
+            
+
+
+
+             
+             
+             

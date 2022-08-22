@@ -2,8 +2,17 @@
 Phi for Python (pyPhi)
 
 by Salvador Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
+Release as of Aug 12
+What was done:        
+        * Fixed the SPE calculations in pls_pred and pca_pred
+        * Changed to a more efficient inversion in pca_pred (=pls_pred)
+        * Added a pseudo-inverse option in pmp for pca_pred
+        
+Relase as of now Aug 2 2022
+What was done:
+        *Added replicate_data
 
-Release TBD
+Release Unknown
 What was done:
         * Fixed a bug in kernel PCA calculations
         * Changed the syntax of MBPLS arguments
@@ -12,7 +21,7 @@ What was done:
 
 Release Dec 5, 2021
 What was done:
-        *Added some small documentation to utilitie routines
+        *Added some small documentation to utilities routines
 
 Release Jan 15, 2021
 What was done:
@@ -54,6 +63,8 @@ import pandas as pd
 import datetime
 from scipy.special import factorial
 from scipy import interpolate
+from statsmodels.distributions.empirical_distribution import ECDF
+
 try:
     from pyomo.environ import *
     pyomo_ok = True
@@ -1791,7 +1802,6 @@ def lwpls(xnew,loc_par,mvmobj,X,Y,*,shush=False):
         q = Yi.T @ OMEGA @ t / (t.T @ OMEGA @ t)
         
         tnew = xnewi.T @ w
-#        yhat =yhat + tnew @ q
         yhat  = yhat + q @ tnew         
         Xi    = Xi - t @ p.T
         Yi    = Yi - t @ q.T
@@ -1807,8 +1817,7 @@ def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
     elif isinstance(Xnew,pd.DataFrame):
         X_=np.array(Xnew.values[:,1:]).astype(float)
 
-    X_nan_map = np.isnan(X_)
-    #not_Xmiss = (np.logical_not(X_nan_map))*1
+    X_nan_map = np.isnan(X_)    
     if not(X_nan_map.any()):
         X_mcs= X_- np.tile(pcaobj['mx'],(X_.shape[0],1))
         X_mcs= X_mcs/(np.tile(pcaobj['sx'],(X_.shape[0],1)))      
@@ -1816,20 +1825,24 @@ def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
         xhat = (tnew @ pcaobj['P'].T) * np.tile(pcaobj['sx'],(X_.shape[0],1)) + np.tile(pcaobj['mx'],(X_.shape[0],1))
         var_t = (pcaobj['T'].T @ pcaobj['T'])/pcaobj['T'].shape[0]
         htt2 = np.sum((tnew @ np.linalg.inv(var_t)) * tnew,axis=1)
-        spe  = ((X_-np.tile(pcaobj['mx'],(X_.shape[0],1)))/(np.tile(pcaobj['sx'],(X_.shape[0],1))))-(tnew @ pcaobj['P'].T)
+        spe   = X_mcs -(tnew @ pcaobj['P'].T)
         spe  = np.sum(spe**2,axis=1,keepdims=True) 
         xpred={'Xhat':xhat,'Tnew':tnew, 'speX':spe,'T2':htt2}
     elif algorithm=='p2mp':  # Using Projection to the model plane method for missing data    
         X_nan_map = np.isnan(X_)
         not_Xmiss = (np.logical_not(X_nan_map))*1
-        X_,dummy=n2z(X_)
+        
         Xmcs=((X_-np.tile(pcaobj['mx'],(X_.shape[0],1)))/(np.tile(pcaobj['sx'],(X_.shape[0],1))))
         Xmcs,dummy=n2z(Xmcs)
         for i in list(range(Xmcs.shape[0])):
             row_missing_map=not_Xmiss[[i],:]
             tempP = pcaobj['P'] * np.tile(row_missing_map.T,(1,pcaobj['P'].shape[1]))
-            PTP = tempP.T @ tempP
-            tnew_ = np.linalg.inv(PTP) @ tempP.T  @ Xmcs[[i],:].T
+            PTP = tempP.T @ tempP  
+            try:
+                #tnew_ =    np.linalg.inv(PTP) @ tempP.T         @ Xmcs[[i],:].T                #inneficient  
+                tnew_,resid,rank,s = np.linalg.lstsq(PTP,(tempP.T  @ Xmcs[[i],:].T),rcond=None) #better 
+            except:
+                tnew_ = np.linalg.pinv(PTP) @ tempP.T  @ Xmcs[[i],:].T                          #if the sh** hits the fan
             if i==0:
                 tnew = tnew_.T
             else:
@@ -1837,7 +1850,8 @@ def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
         xhat = (tnew @ pcaobj['P'].T) * np.tile(pcaobj['sx'],(X_.shape[0],1)) + np.tile(pcaobj['mx'],(X_.shape[0],1))        
         var_t = (pcaobj['T'].T @ pcaobj['T'])/pcaobj['T'].shape[0]
         htt2 = np.sum((tnew @ np.linalg.inv(var_t)) * tnew,axis=1)
-        spe  = ((X_-np.tile(pcaobj['mx'],(X_.shape[0],1)))/(np.tile(pcaobj['sx'],(X_.shape[0],1))))-(tnew @ pcaobj['P'].T)
+        spe   = Xmcs -(tnew @ pcaobj['P'].T)
+        spe  = spe * not_Xmiss
         spe  = np.sum(spe**2,axis=1,keepdims=True) 
         xpred={'Xhat':xhat,'Tnew':tnew, 'speX':spe,'T2':htt2}
     return xpred
@@ -1856,28 +1870,19 @@ def pls_pred(Xnew,plsobj,*,algorithm='p2mp',force_deflation=False):
             data_.append(Xnew[k])
             names_.append(k)
         XMB={'data':data_,'blknames':names_}
-        
+
         c=0
         for i,x in enumerate(XMB['data']):        
-            x_=x.values[:,1:].astype(float)         
-            mx_        = plsobj['x_means'][i]   
-            sx_        = plsobj['x_stds'][i]
-            blck_scale = plsobj['Xblk_scales'][i]
-            x_ = x_ - np.tile(mx_,(x_.shape[0],1))
-            x_ = x_ / np.tile(sx_,(x_.shape[0],1))
-            x_ = x_/blck_scale
+            x_=x.values[:,1:].astype(float)                     
             if c==0:
                 X_=x_.copy() 
             else:    
                 X_=np.hstack((X_,x_))
-            c=c+1
-                    
+            c=c+1        
+       
     X_nan_map = np.isnan(X_)    
     if not(X_nan_map.any()) and not(force_deflation):
-        if isinstance(Xnew,dict):
-            tnew = X_ @ plsobj['Ws']
-        else:
-            tnew = ((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1)))) @ plsobj['Ws']
+        tnew = ((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1)))) @ plsobj['Ws']
         yhat = (tnew @ plsobj['Q'].T) * np.tile(plsobj['sy'],(X_.shape[0],1)) + np.tile(plsobj['my'],(X_.shape[0],1))
         xhat = (tnew @ plsobj['P'].T) * np.tile(plsobj['sx'],(X_.shape[0],1)) + np.tile(plsobj['mx'],(X_.shape[0],1))
         var_t = (plsobj['T'].T @ plsobj['T'])/plsobj['T'].shape[0]
@@ -1888,12 +1893,8 @@ def pls_pred(Xnew,plsobj,*,algorithm='p2mp',force_deflation=False):
     elif algorithm=='p2mp':
         X_nan_map = np.isnan(X_)
         not_Xmiss = (np.logical_not(X_nan_map))*1
-        #X_,dummy=n2z(X_)
-        if isinstance(Xnew,dict):
-            Xmcs=X_
-        else:
-            Xmcs=((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1))))
-        Xmcs,dummy=n2z(Xmcs)
+        Xmcs=((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1))))
+        Xmcs,dummy=n2z(Xmcs)        
         for i in list(range(Xmcs.shape[0])):
             row_missing_map=not_Xmiss[[i],:]
             tempW = plsobj['W'] * np.tile(row_missing_map.T,(1,plsobj['W'].shape[1]))
@@ -1916,7 +1917,9 @@ def pls_pred(Xnew,plsobj,*,algorithm='p2mp',force_deflation=False):
         xhat = (tnew @ plsobj['P'].T) * np.tile(plsobj['sx'],(X_.shape[0],1)) + np.tile(plsobj['mx'],(X_.shape[0],1))
         var_t = (plsobj['T'].T @ plsobj['T'])/plsobj['T'].shape[0]
         htt2 = np.sum((tnew @ np.linalg.inv(var_t)) * tnew,axis=1)
+        X_,dummy=n2z(X_)
         speX  = ((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1))))-(tnew @ plsobj['P'].T)
+        speX  = speX*not_Xmiss
         speX  = np.sum(speX**2,axis=1,keepdims=True) 
         ypred ={'Yhat':yhat,'Xhat':xhat,'Tnew':tnew,'speX':speX,'T2':htt2}     
     return ypred
@@ -2018,7 +2021,9 @@ def meancenterscale(X,*,mcs=True):
     '''
     Inputs:
         X: Matrix to be meancenterd ONLY works with Numpy matrices
+        mcs = True | center | autoscale        
     '''
+        
     if isinstance(mcs,bool):
         if mcs:
             x_mean = mean(X)
@@ -2562,12 +2567,8 @@ def clean_empty_rows(X,*,shush=False):
         return X_
     else:
         return X
-
-
-        
-        
-        
-def clean_low_variances(X,*,shush=False):
+    
+def clean_low_variances(X,*,shush=False,min_var=1E-10):
     '''
  Input:
      X: Matrix to be cleaned for columns of low variance
@@ -2588,12 +2589,15 @@ cols_removed:  Columns removed
         for n in list(np.arange(X.shape[1])+1):
             varidX.append('Var #'+str(n))   
             
-    #find columns with all data missing
+    #find columns with all data missing, a column must have at least 3 samples
     X_nan_map = np.isnan(X_)
     Xmiss = X_nan_map*1
     Xmiss = np.sum(Xmiss,axis=0)
-    indx = find(Xmiss, lambda x: x==X_.shape[0])
-       
+    
+    #indx = find(Xmiss, lambda x: x==X_.shape[0])
+    indx = find(Xmiss, lambda x: (x>=(X_.shape[0]-3)))
+    
+    
     if len(indx)>0:
         for i in indx:
             if not(shush):
@@ -2612,18 +2616,18 @@ cols_removed:  Columns removed
     else:
         X_pd=X.copy()
         
-        
+    new_cols=X_pd.columns[1:].tolist() 
     std_x=std(X_)
     std_x=std_x.flatten()
     
-    indx = find(std_x, lambda x: x<1E-10)
+    indx = find(std_x, lambda x: x<min_var)
     if len(indx)>0:
         for i in indx:
             if not(shush):
-                print('Removing variable ', varidX[i], ' due to low variance')
+                print('Removing variable ', new_cols[i], ' due to low variance')
         if isinstance(X_pd,pd.DataFrame):
             for i in indx:
-                cols_removed.append(varidX[i])
+                cols_removed.append(new_cols[i])
             indx = np.array(indx)
             indx = indx +1
             X_=X_pd.drop(X_pd.columns[indx],axis=1)
@@ -3135,3 +3139,62 @@ def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=F
     if isinstance(YMB,dict):
         pls_obj_['Yblocknames']=YMB['blknames']
     return pls_obj_
+
+def replicate_data(mvm_obj,X,num_replicates,*,as_set=False):
+    
+    if 'Q' in mvm_obj:
+        pls_preds=pls_pred(X,mvm_obj)
+        xhat=pls_preds['Xhat']
+        tnew=pls_preds['Tnew']
+    else:
+        pca_preds=pca_pred(X,mvm_obj)
+        xhat=pca_preds['Xhat']
+        tnew=pca_preds['Tnew']
+    xhat = (xhat - np.tile(mvm_obj['mx'],(xhat.shape[0],1)))/np.tile(mvm_obj['sx'],(xhat.shape[0],1))
+    xhat = tnew @ mvm_obj['P'].T
+    xmcs = (X.values[:,1:] - np.tile(mvm_obj['mx'],(xhat.shape[0],1)))/np.tile(mvm_obj['sx'],(xhat.shape[0],1))
+    data_residuals=xmcs-xhat
+
+    if not(as_set):
+        if np.mod(num_replicates,X.shape[0])==0:
+            reps=num_replicates/X.shape[0]            
+            new_set=np.tile(xhat,(int(reps),1))
+        else:
+            reps=np.floor(num_replicates/X.shape[0])
+            new_set=np.tile(xhat,(int(reps),1))
+            reps=np.mod(num_replicates,X.shape[0])
+            new_set=np.vstack((new_set,xhat[:reps,:]))                
+        obsids=[]
+        for i in np.arange(new_set.shape[0])+1:
+            obsids.append('clone'+str(i))
+            
+    else:            
+        new_set=np.tile(xhat,(num_replicates,1))
+        obsids=[]
+        obsid_o=X[X.columns[0]].values.astype(str).tolist()
+        for i in np.arange(num_replicates)+1:
+            post_fix=['_clone'+str(i)]*X.shape[0]
+            obsids_=[m+n for m,n in zip(obsid_o,post_fix)]
+            obsids.extend(obsids_)
+            
+    for i in list(range(0,data_residuals.shape[1])):
+#        plt.figure()
+#        plt.hist(data_residuals[:,i])
+#        plt.title('Original Residual Distribution')
+        ecdf = ECDF(data_residuals[:,i])
+        new_residual= np.random.uniform(0,1,new_set.shape[0])
+        y=np.array(ecdf.y.tolist())
+        x=np.array(ecdf.x.tolist())
+        new_residual=np.interp(new_residual,y[1:],x[1:])
+        
+        if i==0:
+            uncertainty_matrix=np.reshape(new_residual,(-1,1))
+        else:
+            uncertainty_matrix=np.hstack((uncertainty_matrix,np.reshape(new_residual,(-1,1))))
+    new_set=new_set+uncertainty_matrix
+    new_set=(new_set * np.tile(mvm_obj['sx'],(new_set.shape[0],1)))+np.tile(mvm_obj['mx'],(new_set.shape[0],1))
+    new_set_pd=pd.DataFrame(new_set,columns=X.columns[1:].tolist())
+    new_set_pd.insert(0,X.columns[0],obsids)
+    
+    return new_set_pd
+
