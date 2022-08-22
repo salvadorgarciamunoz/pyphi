@@ -64,21 +64,27 @@ import datetime
 from scipy.special import factorial
 from scipy import interpolate
 from statsmodels.distributions.empirical_distribution import ECDF
+from shutil import which
+import os
+os.environ['NEOS_EMAIL'] = 'pyphi_helpdesk@onmail.com' 
 
 try:
     from pyomo.environ import *
     pyomo_ok = True
 except ImportError:
     pyomo_ok = False
+
+if bool(which('gams')):
+    gams_ok = True    
+else:
     gams_ok = False             # GAMS is run via pyomo
 
 # Check if an IPOPT binary available is availbale
 # shutil was introduced in Python 3.2
-from shutil import which
 ipopt_ok = bool(which('ipopt'))
 
 # Check for Pyomo/GAMS interface is available
-if pyomo_ok:
+if pyomo_ok and gams_ok:
     from pyomo.solvers.plugins.solvers.GAMS import GAMSDirect, GAMSShell
     # exeption_flag = True (default) will throw an exception if GAMS
     # is not available
@@ -114,6 +120,10 @@ if pyomo_ok and ipopt_ok:
     ma57_ok = ma57_dummy_check()
 else:
     ma57_ok = False
+
+if not(pyomo_ok) or (not(ipopt_ok) and not(gams_ok)):
+    print('Will be using the NEOS server in the absence of IPOPT and GAMS')
+    
 
 
 def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cross_val=0):
@@ -529,8 +539,7 @@ def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
 
             def _eq_20a_obj(model):
                 return sum(sum((model.X[o,n]- model.psi[o,n] * sum(model.T[o,a] * model.P[n,a] for a in model.A))**2 for n in model.N) for o in model.O)
-            model.obj = Objective(rule=_eq_20a_obj)
-
+            model.obj = Objective(rule=_eq_20a_obj)            
             # Setup our solver as either local ipopt, gams:ipopt, or neos ipopt:
             if (ipopt_ok):
                 print("Solving NLP using local IPOPT executable")
@@ -547,7 +556,7 @@ def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
 
                 # It doesn't seem to notice the opt file when I write it
                 results = solver.solve(model, tee=True)
-            else:
+            else:                
                 print("Solving NLP using IPOPT on remote NEOS server")
                 solver_manager = SolverManagerFactory('neos')
                 results = solver_manager.solve(model, opt='ipopt', tee=True)
