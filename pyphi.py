@@ -2,7 +2,15 @@
 Phi for Python (pyPhi)
 
 by Salvador Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
-Release as of Aug 12
+
+Release as of Nov 23 2022
+        * Added a function to export PLS model to gPROMS code
+
+Release as of Aug 22 2022
+What was done:
+        *Fixed access to NEOS server and use of GAMS instead of IPOPT
+        
+Release as of Aug 12 2022
 What was done:        
         * Fixed the SPE calculations in pls_pred and pca_pred
         * Changed to a more efficient inversion in pca_pred (=pls_pred)
@@ -66,7 +74,7 @@ from scipy import interpolate
 from statsmodels.distributions.empirical_distribution import ECDF
 from shutil import which
 import os
-os.environ['NEOS_EMAIL'] = 'pyphi_helpdesk@onmail.com' 
+os.environ['NEOS_EMAIL'] = 'pyphisoftware@gmail.com' 
 
 try:
     from pyomo.environ import *
@@ -641,7 +649,7 @@ def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
             pca_obj=1
             return pca_obj
   
-def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shush=False,cross_val=0,cross_val_X=False):
+def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=True,shush=False,cross_val=0,cross_val_X=False):
     """ Projection to  Latent Structures routine
     
     by Salvador Garcia-Munoz 
@@ -3207,3 +3215,111 @@ def replicate_data(mvm_obj,X,num_replicates,*,as_set=False):
     
     return new_set_pd
 
+def export_2_gproms(mvmobj,*,fname='phi_export.txt'):
+    top_lines=[     
+    'PARAMETER',
+    'X_VARS AS ORDERED_SET',
+    'Y_VARS AS ORDERED_SET',
+    'A      AS INTEGER',
+    'VARIABLE',
+    'X_MEANS as ARRAY(X_VARS)    OF no_type',
+    'X_STD   AS ARRAY(X_VARS)    OF no_type',
+    'Y_MEANS as ARRAY(Y_VARS)    OF no_type',
+    'Y_STD   AS ARRAY(Y_VARS)    OF no_type',
+    'Ws      AS ARRAY(X_VARS,A)  OF no_type',
+    'Q       AS ARRAY(Y_VARS,A)  OF no_type',
+    'P       AS ARRAY(X_VARS,A)  OF no_type',
+    'T       AS ARRAY(A)         OF no_type',
+    'Tvar    AS ARRAY(A)         OF no_type',
+    'X_HAT   AS ARRAY(X_VARS)    OF no_type # Mean-centered and scaled',
+    'Y_HAT   AS ARRAY(Y_VARS)    OF no_type # Mean-centered and scaled',
+    'X_PRED  AS ARRAY(X_VARS)    OF no_type # In original units',
+    'Y_PRED  AS ARRAY(Y_VARS)    OF no_type # In original units',
+    'X_NEW   AS ARRAY(X_VARS)    OF no_type # In original units',
+    'X_MCS   AS ARRAY(X_VARS)    OF no_type # Mean-centered and scaled',
+    'HT2                         AS no_type',
+    'SPEX                        AS no_type',
+    'SET']
+    
+    x_var_line="X_VARS:=['" + mvmobj['varidX'][0] + "'"
+    for v in mvmobj['varidX'][1:]:
+        x_var_line=x_var_line+",'"+v+"'"
+    x_var_line=x_var_line+'];'
+
+    y_var_line="Y_VARS:=['" + mvmobj['varidY'][0] + "'"
+    if len(mvmobj['varidY']) > 1:
+        for v in mvmobj['varidY'][1:]:
+            y_var_line=y_var_line+",'"+v+"'"
+    y_var_line=y_var_line+'];'
+    
+
+    top_lines.append(x_var_line)
+    top_lines.append(y_var_line)
+    top_lines.append('A:='+str(mvmobj['T'].shape[1])+';')
+    
+    mid_lines=[
+    'EQUATION',
+    'X_MCS * X_STD = (X_NEW-X_MEANS);',
+    'FOR j:=1 TO A DO',
+    'T(j) = SIGMA(X_MCS*Ws(,j));',
+    'END',
+    'FOR i IN Y_VARS DO',
+    'Y_HAT(i) = SIGMA(T*Q(i,));',
+    'END',
+    'FOR i IN X_VARS DO',
+    'X_HAT(i) = SIGMA(T*P(i,));',
+    'END',
+    '(X_HAT * X_STD) + X_MEANS = X_PRED;',
+    '(Y_HAT * Y_STD) + Y_MEANS = Y_PRED;',
+    'HT2  = SIGMA ((T^2)/Tvar);',
+    'SPEX = SIGMA ((X_MCS - X_HAT)^2);']
+
+    assign_lines=['ASSIGN']
+    for i,xvar in enumerate(mvmobj['varidX']):     
+        assign_lines.append("X_MEANS('"+xvar+"') := "+str(mvmobj['mx'][0,i])+";" )
+
+    for i,xvar in enumerate(mvmobj['varidX']):     
+        assign_lines.append("X_STD('"+xvar+"') := "+str(mvmobj['sx'][0,i])+";" )
+
+    for i,yvar in enumerate(mvmobj['varidY']):     
+        assign_lines.append("Y_MEANS('"+yvar+"') := "+str(mvmobj['my'][0,i])+";" )
+
+    for i,yvar in enumerate(mvmobj['varidY']):     
+        assign_lines.append("Y_STD('"+yvar+"') := "+str(mvmobj['sy'][0,i])+";" )
+
+    for i,xvar in enumerate(mvmobj['varidX']):     
+        for j in np.arange(mvmobj['Ws'].shape[1]):
+            assign_lines.append("Ws('"+xvar+"',"+str(j+1)+") := "+str(mvmobj['Ws'][i,j])+";")
+
+    for i,xvar in enumerate(mvmobj['varidX']):     
+        for j in np.arange(mvmobj['P'].shape[1]):
+            assign_lines.append("P('"+xvar+"',"+str(j+1)+") := "+str(mvmobj['P'][i,j])+";")
+    
+    for i,yvar in enumerate(mvmobj['varidY']):     
+        for j in np.arange(mvmobj['Q'].shape[1]):
+            assign_lines.append("Q('"+yvar+"',"+str(j+1)+") := "+str(mvmobj['Q'][i,j])+";")
+    tvar=np.std(mvmobj['T'],axis=0,ddof=1)
+    for j in np.arange(mvmobj['T'].shape[1]):
+        assign_lines.append("Tvar("+str(j+1)+") := "+str(tvar[j])+";" ) 
+ 
+    lines=top_lines
+    lines.extend(mid_lines)
+    lines.extend(assign_lines)
+
+    with open(fname, "w") as outfile:
+        outfile.write("\n".join(lines))
+
+        return
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
