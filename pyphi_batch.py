@@ -7,12 +7,30 @@ Created on Mon Apr 11 14:58:35 2022
 Batch data is assumed to come in an excel file 
 with first column being batch identifier and following columns
 being process variables.
-Optionally the second column labeled 'PHASE' indicating
+Optionally the second column labeled 'PHASE','Phase' or 'phase' indicating
 the phase of exceution
 
-* added Jul 20  Distribution of number of samples per phase plot
-* added Aug 10  refold_horizontal | clean_empty_rows | predict 
-* added Aug 12  replicate_batch
+Change log:
+    
+* added Apr 18 2023 Added descriptors routine to obtain landmarks of the batch
+                    such as min,max,ave of a variable [during a phase if indicated so]    
+                    Modifed plot_var_all_batches to plot against the values in a Time column
+                    and also add the legend for the BatchID
+                    
+* added Apr 10 2023 Added batch contribution plots
+                    Added build_rel_time to create a tag of relative 
+                    run time from a timestamp
+                    
+* added Apr 7 2023  Added alignment using indicator variable per phase
+
+
+* added Apr 5 2023  Added the capability to monitor a variable in "Soft Sensor" mode
+                    which implies there are no measurements for it (pure prediction)
+                    as oppose to a forecast where there are new measurments coming in time.
+                    
+* added Jul 20 2022 Distribution of number of samples per phase plot
+* added Aug 10 2022 refold_horizontal | clean_empty_rows | predict 
+* added Aug 12 2022 replicate_batch
 
 @author: S. Garcia-Munoz sgarciam@ic.ak.uk salg@andrew.cmu.edu
 """
@@ -24,6 +42,36 @@ import pyphi as phi
 # Sequence of color blind friendly colors.
 cb_color_seq=['b','r','m','navy','bisque','silver','aqua','pink','gray']
 mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=cb_color_seq) 
+
+def unique(df,colid):    
+    '''
+    replacement of the np.unique routine, specifically for dataframes
+    returns unique values in the order found in the dataframe
+    df:     A pandas dataframe
+    colid:  Column identifier 
+    
+    '''
+    aux=df.drop_duplicates(subset=colid,keep='first')
+    unique_entries=aux[colid].values.tolist()
+    return unique_entries
+    
+def mean(X,axis):
+    X_nan_map = np.isnan(X)
+    X_ = X.copy()
+    if X_nan_map.any():
+        X_nan_map       = X_nan_map*1
+        X_[X_nan_map==1] = 0
+       
+        #Calculate mean without accounting for NaN'
+        if axis==0:
+            aux             = np.sum(X_nan_map,axis=0)
+            x_mean = np.sum(X_,axis=0,keepdims=1)/(np.ones((1,X_.shape[1]))*X_.shape[0]-aux)
+        else:
+            aux             = np.sum(X_nan_map,axis=1)
+            x_mean = np.sum(X_,axis=1,keepdims=1)/(np.ones((X_.shape[0],1))*X_.shape[1]-aux)
+    else:
+        x_mean = np.mean(X_,axis=axis,keepdims=1)
+    return x_mean.reshape(-1)
 
 def simple_align(bdata,nsamples):
     '''
@@ -75,15 +123,14 @@ def simple_align(bdata,nsamples):
     bdata_a=pd.concat(bdata_a)    
     return bdata_a            
             
-            
+
 def phase_simple_align(bdata,nsamples):
     '''
     bdata is a Pandas DataFrame where 1st column is Batch Identifier
+          the second column is a phase indicator
           and following columns are variables, each row is a new
           time sample. Batches are concatenated vertically.
           
-    if nsamples is scalar : a the new number of samples to generate per batch 
-                            irrespective of phase
                             
     if nsamples is a dictionary: samples to generate per phase e.g.
     
@@ -139,8 +186,221 @@ def phase_simple_align(bdata,nsamples):
             bdata_a.append(df_)
         bdata_a=pd.concat(bdata_a)    
         return bdata_a            
+    
+def phase_iv_align(bdata,nsamples):
+    '''
+    bdata is a Pandas DataFrame where 1st column is Batch Identifier
+          the second column is a phase indicator
+          and following columns are variables, each row is a new
+          time sample. Batches are concatenated vertically.
+          
+                            
+    if nsamples is a dictionary: samples to generate per phase e.g.
+    
+    nsamples = {'Heating':100,'Reaction':200,'Cooling':10}
+    
+    * If an indicator variable is used, with known start and end values
+    indicate it with a list like this:
+    
+        [IVarID,num_samples,start_value,end_value]    
+    
+    example:
+        
+    nsamples = {'Heating':['TIC101',100,30,50],'Reaction':200,'Cooling':10}
+    
+    
+        During the 'Heating' phase use TIC101 as an indicator variable
+        take 100 samples equidistant from TIC101=30 to TIC101=50 
+        and align against that variable as a measure of batch evolution (instead of time)
+        
+    * If an indicator variable is used, with unknown start but known end values
+    indicate it with a list like this:
+    
+        [IVarID,num_samples,end_value]    
+    
+    example:
+        
+    nsamples = {'Heating':['TIC101',100,50],'Reaction':200,'Cooling':10}
+    
+    
+        During the 'Heating' phase use TIC101 as an indicator variable
+        take 100 samples equidistant from the value of TIC101 at the start of the phase
+        to the point when TIC101=50 and align against that variable as a measure 
+        of batch evolution (instead of time)    
+        
+     
+    Returns a pandas dataframe with batch data resampled (aligned)
+    
+    If no IV is sent, the resampling is linear with respect to row number per phase
 
-def plot_var_all_batches(bdata,*,var_list=False,plot_title='',phase_samples=False,alpha_=0.2):
+    '''
+    bdata_a=[]
+    if (bdata.columns[1]=='PHASE') or \
+        (bdata.columns[1]=='phase') or \
+        (bdata.columns[1]=='Phase'):
+        phase=True
+    else:
+        phase = False
+    if phase:
+        aux=bdata.drop_duplicates(subset=bdata.columns[0],keep='first')
+        unique_batches=aux[aux.columns[0]].values.tolist()
+        
+        for b in unique_batches:
+            data_=bdata[bdata[bdata.columns[0]]==b]
+            vals_rs=[]
+            bname_rs=[]
+            phase_rs=[]
+            firstone=True
+            for p in nsamples.keys():
+                p_data= data_[data_[data_.columns[1]]==p]
+                samps=nsamples[p]
+                
+                if not(isinstance(samps,list)):
+                    indx=np.arange(p_data.shape[0])
+                    new_indx=np.linspace(0,p_data.shape[0]-1,samps)
+                    bname_rs_=[p_data[p_data.columns[0]].values[0]]*samps
+                    phase_rs_=[p_data[p_data.columns[1]].values[0]]*samps
+    
+                    vals=p_data.values[:,2:]
+                    cols=p_data.columns[2:]
+                    vals_rs_=np.zeros((samps,vals.shape[1]))  
+                    for i in np.arange(vals.shape[1]):
+                        x_=indx.astype('float')
+                        y_=vals[:,i].astype('float')
+                        x_=x_[~np.isnan(y_)]
+                        y_=y_[~np.isnan(y_)]                        
+                        #vals_rs_[:,i]=np.interp(new_indx,indx.astype('float'),vals[:,i].astype('float'))
+                        if len(y_)==0:
+                            vals_rs_[:,i]=np.nan
+                        else:
+                            vals_rs_[:,i]=np.interp(new_indx,x_,y_,left=np.nan,right=np.nan)
+                elif isinstance(samps,list): #align this phase with IV
+                    if len(samps)==4:
+                        iv_id=samps[0]
+                        nsamp=samps[1]
+                        start=samps[2]
+                        end  =samps[3]
+                        new_indx=np.linspace(start,end,nsamp)
+                        iv = p_data[iv_id].values.astype(float)
+                    if len(samps)==3    :
+                        iv_id    = samps[0]
+                        nsamp    = samps[1]
+                        end      = samps[2]
+                        
+                        if (not( isinstance(end,int) or isinstance(end,float)) and (isinstance(end,dict))
+                           and not(firstone)):
+                            #end is  model to estimate the end value based on previous trajectory
+                            cols=p_data.columns[2:].tolist()
+                            fakebatch=pd.DataFrame(vals_rs,columns=cols)
+                            fakebatch.insert(0,'phase',[p]*vals_rs.shape[0])
+                            fakebatch.insert(0,'BatchID',[b]*vals_rs.shape[0])
+                            preds=predict(fakebatch, end)
+                            end_hat=preds['Yhat'][preds['Yhat'].columns[1]].values[0]                                     
+                            iv = p_data[iv_id].values.astype(float)
+                            end_hat = end_hat + iv[0]
+                            new_indx=np.linspace(iv[0],end_hat,nsamp)                        
+                        else:    
+                            iv = p_data[iv_id].values.astype(float)
+                            new_indx=np.linspace(iv[0],end,nsamp)                        
+                    
+                    cols=p_data.columns[2:].tolist()
+                    indx_2_iv=cols.index(iv_id)
+                    bname_rs_=[p_data[p_data.columns[0]].values[0]]*nsamp
+                    phase_rs_=[p_data[p_data.columns[1]].values[0]]*nsamp      
+                    
+                    #Check monotonicity
+                    if (np.all(np.diff(iv)<0) or np.all(np.diff(iv)>0)):
+                        indx=iv                                          
+                        vals=p_data.values[:,2:]                              
+                        #replace the IV with a linear variable (time surrogate)
+                        linear_indx=np.arange(vals.shape[0])
+                        vals[:,indx_2_iv]=linear_indx
+                        vals_rs_=np.zeros((nsamp,vals.shape[1])) 
+                        for i in np.arange(vals.shape[1]):
+                            x_=indx.astype('float')
+                            y_=vals[:,i].astype('float')
+                            x_=x_[~np.isnan(y_)]
+                            y_=y_[~np.isnan(y_)]                        
+                            #vals_rs_[:,i]=np.interp(new_indx,indx.astype('float'),vals[:,i].astype('float'))
+                            #vals_rs_[:,i]=np.interp(new_indx,indx                ,vals[:,i].astype('float'),left=np.nan,right=np.nan)
+                            if len(y_)==0:
+                                vals_rs_[:,i]=np.nan
+                            else:                            
+                                vals_rs_[:,i]=np.interp(new_indx,x_,y_,left=np.nan,right=np.nan)
+                            
+                        
+                    else: #if monotonicity fails try to remove non-monotonic vals
+                        print('Indicator variable '+iv_id+' for batch '+ b +' is not monotinic')
+                        print('this is not ideal, maybe rethink your IV')
+                        print('trying to remove non-monotonic samples')  
+                        x=np.arange(0,len(iv))
+                        m=(1/sum(x**2))*sum(x*(iv-iv[0]))
+                      
+                        #if iv[0]-iv[-1] > 0 :
+                        if m<0:    
+                            expected_direction = -1 #decreasing IV
+                        else:
+                            expected_direction = 1  #increasing IV                            
+                        vals=p_data.values[:,2:]                        
+                        new_vals=vals[0,:]
+                        prev_iv=iv[0]
+                        mon_iv=[iv[0]]
+                        for i in np.arange(1,vals.shape[0]):
+                            if (np.sign(iv[i] - prev_iv) * expected_direction)==1: #monotonic
+                                new_vals=np.vstack((new_vals,vals[i,:]))
+                                prev_iv=iv[i]
+                                mon_iv.append(iv[i])                        
+                        indx=np.array(mon_iv)    
+                        vals=new_vals.copy()
+                        #replace the IV with a linear variable (time surrogate)
+                        linear_indx=np.arange(vals.shape[0])
+                        vals[:,indx_2_iv]=linear_indx
+                        vals_rs_=np.zeros((nsamp,vals.shape[1])) 
+                        for i in np.arange(vals.shape[1]):
+                            x_=indx.astype('float')
+                            y_=vals[:,i].astype('float')
+                            x_=x_[~np.isnan(y_)]
+                            y_=y_[~np.isnan(y_)]                               
+                            #vals_rs_[:,i]=np.interp(new_indx,indx,vals[:,i].astype('float'),left=np.nan,right=np.nan)    
+                            if len(y_)==0:
+                                vals_rs_[:,i]=np.nan
+                            else:
+                                vals_rs_[:,i]=np.interp(new_indx,x_,y_,left=np.nan,right=np.nan)                                                
+                if firstone:
+                    vals_rs=vals_rs_
+                    firstone=False
+                else:
+                    vals_rs=np.vstack((vals_rs,vals_rs_))
+                bname_rs.extend(bname_rs_)
+                phase_rs.extend(phase_rs_)
+                 
+                
+            df_=pd.DataFrame(vals_rs,columns=cols)
+            df_.insert(0,bdata.columns[1],phase_rs)
+            df_.insert(0,bdata.columns[0],bname_rs)
+            bdata_a.append(df_)
+        bdata_a=pd.concat(bdata_a)    
+        return bdata_a    
+    
+def plot_var_all_batches(bdata,*,which_var=False,plot_title='',mkr_style='.-',
+                         phase_samples=False,alpha_=0.2,timecolumn=False,lot_legend=False):
+    '''
+    Plotting routine for batch data
+    bdata: Batch data organized as: column[0] = Batch Identifier column name is unrestricted
+                                    column[1] = Phase information per sample must be called 'Phase','phase', or 'PHASE'
+                                                this information is optional
+                                    column[2:]= Variables measured throughout the batch
+                                    
+                                    The data for each batch is one on top of the other in a vertical matrix
+    which_var:     Which variables are to be plotted, if not sent, all are.
+    plot_title:    Optional text to be used as the title of all figures
+    phase_samples: information used to align the batch, so that phases are marked in the plot
+    alpha_:        Transparency for the phase dividing line
+    timecolumn:    Name of the column that indicates time, if given all data is plotted against time
+    lot_legend:    Flag to add a legend for the batch identifiers
+    '''
+    
+    var_list=which_var
     if (bdata.columns[1]=='PHASE') or \
         (bdata.columns[1]=='phase') or \
         (bdata.columns[1]=='Phase'):
@@ -154,25 +414,67 @@ def plot_var_all_batches(bdata,*,var_list=False,plot_title='',phase_samples=Fals
          
     for v in var_list:
         plt.figure()
-        dat=bdata[[bdata.columns[0],v]]
+        if not(isinstance(timecolumn,bool)):
+            dat=bdata[[bdata.columns[0],timecolumn,v]]
+        else:    
+            dat=bdata[[bdata.columns[0],v]]
         for b in np.unique(dat[bdata.columns[0]]):
             data_=dat[v][dat[dat.columns[0]]==b]
-            plt.plot(data_.values)
-            plt.xlabel('Sample')
+            if not(isinstance(timecolumn,bool)):
+                tim=dat[timecolumn][dat[dat.columns[0]]==b]
+                if lot_legend:
+                    plt.plot(tim.values,data_.values,mkr_style,label=b)
+                else:    
+                    plt.plot(tim.values,data_.values,mkr_style)
+                plt.xlabel(timecolumn)                
+            else:
+                if lot_legend:
+                    plt.plot(data_.values,mkr_style,label=b)
+                else:
+                    plt.plot(data_.values,mkr_style)
+                plt.xlabel('Sample')
             plt.ylabel(v)
+        if lot_legend:
+            plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         if not(isinstance(phase_samples,bool)):   
             s_txt=0
             s_lin=0
             plt.axvline(x=0,color='magenta',alpha=alpha_)
-            for p in phase_samples.keys():
-                s_lin+=phase_samples[p]
+            for p in phase_samples.keys():                
+                if isinstance(phase_samples[p],list):
+                    s_lin+=phase_samples[p][1]-1
+                else:                    
+                    s_lin+=phase_samples[p]-1
                 plt.axvline(x=s_lin,color='magenta',alpha=alpha_)
                 ylim_=plt.ylim()
                 plt.annotate(p, (s_txt,ylim_[0]),rotation=90,alpha=0.5,color='magenta')
-                s_txt+=phase_samples[p]
+                if isinstance(phase_samples[p],list):
+                    s_txt+=phase_samples[p][1]
+                else:                                    
+                    s_txt+=phase_samples[p]
         plt.title(plot_title)  
+        plt.tight_layout()
         
-def plot_batch(bdata,which_batch,which_var,*,include_mean_exc=False,include_set=False,phase_samples=False,single_plot=False):
+def plot_batch(bdata,which_batch,which_var,*,include_mean_exc=False,include_set=False,
+               phase_samples=False,single_plot=False,plot_title=''):
+    '''
+       Plotting routine for batch data
+       bdata: Batch data organized as: column[0] = Batch Identifier column name is unrestricted
+                                       column[1] = Phase information per sample must be called 'Phase','phase', or 'PHASE'
+                                                   this information is optional
+                                       column[2:]= Variables measured throughout the batch
+                                       
+                                       The data for each batch is one on top of the other in a vertical matrix
+       
+       which_batch:      Which batches to plot
+       which_var:        Which variables are to be plotted, if not sent, all are.       
+       include_mean_exc: Include the mean trajectory of the set EXCLUDING the one batch being plotted
+       include_set:      Include all other trajectories (will be colored in light gray)
+       phase_samples:    Information used to align the batch, so that phases are marked in the plot
+       single_plot:      If True => Plot everything in a single axis
+       plot_title:       Optional text to be added to the title of all figures
+    '''
+
     if isinstance(which_batch,str) and not(isinstance(which_batch,list)):
         which_batch=[which_batch]
     if isinstance(which_var,str) and not(isinstance(which_var,list)):
@@ -192,32 +494,44 @@ def plot_batch(bdata,which_batch,which_var,*,include_mean_exc=False,include_set=
                 this_var_all_others=[]
                 for bb in np.unique(all_others[bdata.columns[0]]):
                     this_var_all_others.append(all_others[v][all_others[bdata.columns[0]]==bb ].values)
-                    this_var_all_others_=np.array(this_var_all_others)
+                #Apr 11 SGMNote I think the below line was indented one level in    
+                this_var_all_others_=np.array(this_var_all_others)
                 if not(single_plot):
                     if include_set:
-                        plt.plot(this_var_all_others_.T,'m',alpha=0.1)
-                        plt.plot(this_var_all_others_[0,:],'m',alpha=0.1,label='rest of set')
+                        try:
+                            plt.plot(this_var_all_others_.T,'m',alpha=0.1)
+                            plt.plot(this_var_all_others_[0,:],'m',alpha=0.1,label='rest of set')
+                        except:
+                            for t in this_var_all_others_:
+                                plt.plot(t,'m',alpha=0.1)
+                            plt.plot(this_var_all_others_[-1],'m',alpha=0.1,label='rest of set')
                     if include_mean_exc:
-                        plt.plot(np.mean(this_var_all_others_,axis=0),'r',label='Mean without '+b )    
+                        plt.plot(mean(this_var_all_others_,axis=0),'r',label='Mean without '+b )    
                 else:
                     if first_pass:
                         if include_set:
                             plt.plot(this_var_all_others_.T,'m',alpha=0.1)
                             plt.plot(this_var_all_others_[0,:],'m',alpha=0.1,label='rest of set')
                         if include_mean_exc:
-                            plt.plot(np.mean(this_var_all_others_,axis=0),'r',label='Mean without '+b )
+                            plt.plot(mean(this_var_all_others_,axis=0),'r',label='Mean without '+b )
                         first_pass=False
             if not(isinstance(phase_samples,bool)):   
                 s_txt=0
                 s_lin=0
                 plt.axvline(x=0,color='magenta',alpha=0.2)
                 for p in phase_samples.keys():
-                    s_lin+=phase_samples[p]
+                    if isinstance(phase_samples[p],list):
+                        s_lin+=phase_samples[p][1]-1
+                    else:                    
+                        s_lin+=phase_samples[p]-1                    
                     plt.axvline(x=s_lin,color='magenta',alpha=0.2)
                     ylim_=plt.ylim()
                     plt.annotate(p, (s_txt,ylim_[0]),rotation=90,alpha=0.5,color='magenta')
-                    s_txt+=phase_samples[p]     
-            plt.title(b)
+                    if isinstance(phase_samples[p],list):
+                        s_txt+=phase_samples[p][1]
+                    else:                                    
+                        s_txt+=phase_samples[p]     
+            plt.title(b+' ' + plot_title)
             plt.xlabel('sample')
             plt.ylabel(v)
             plt.legend(bbox_to_anchor=(1.04,1), borderaxespad=0)
@@ -357,8 +671,17 @@ def _uf_hor_mon_loadings(mvmobj):
     
     return mvmobj
 
-def loadings(mmvm_obj,dim,*,r2_weighted=False):
+def loadings(mmvm_obj,dim,*,r2_weighted=False,which_var=False):
+    '''
+    Plot batch loadings for variables as a function of time/sample
+    
+    mmvm_obj:    Multiway PCA or PLS object
+    dim:         What component or latent variable to plot
+    r2_weighted: If True => weight the loading by the R2pv
+    which_var:   Variable for which the plot is done, if not sent all are plotted
+    '''
     dim=dim-1
+    
     if 'Q' in mmvm_obj:
         if mmvm_obj['ninit']==0:
             if r2_weighted:
@@ -367,8 +690,14 @@ def loadings(mmvm_obj,dim,*,r2_weighted=False):
                 aux_df=pd.DataFrame(mmvm_obj['Ws'])
             
             aux_df.insert(0,'bid',mmvm_obj['bid'])
-           
-            for i,v in enumerate(np.unique(mmvm_obj['bid'])):
+            if isinstance(which_var,bool):
+                vars_to_plot=enumerate(unique(aux_df,'bid'))
+            else:
+                if isinstance(which_var,str):
+                    vars_to_plot=[which_var]
+                if isinstance(which_var,list):
+                    vars_to_plot=which_var
+            for i,v in enumerate(vars_to_plot):
                 plt.figure()
                 dat=aux_df[dim][aux_df['bid']==v].values
             
@@ -388,11 +717,17 @@ def loadings(mmvm_obj,dim,*,r2_weighted=False):
                     s_lin=0
                     plt.axvline(x=0,color='magenta',alpha=0.2)
                     for p in phase_samples.keys():
-                        s_lin+=phase_samples[p]
+                        if isinstance(phase_samples[p],list):
+                            s_lin+=phase_samples[p][1]-1
+                        else:                    
+                            s_lin+=phase_samples[p] -1
                         plt.axvline(x=s_lin,color='magenta',alpha=0.2)
                        # ylim_=[mmvm_obj['Ws'][dim,:].min()*1.2,mmvm_obj['Ws'][dim,:].max()*1.2  ]
                         plt.annotate(p, (s_txt,ylim_[0]),rotation=90,alpha=0.5,color='magenta')
-                        s_txt+=phase_samples[p]
+                        if isinstance(phase_samples[p],list):
+                            s_txt+=phase_samples[p][1]
+                        else:                                    
+                            s_txt+=phase_samples[p]
                 plt.tight_layout()   
         else:
             z_loadings= mmvm_obj['Ws'] [np.arange(mmvm_obj['ninit'])]
@@ -417,8 +752,15 @@ def loadings(mmvm_obj,dim,*,r2_weighted=False):
             else:
                 aux_df=pd.DataFrame(mmvm_obj['Ws'][rows_,:] )
             aux_df.insert(0,'bid',mmvm_obj['bid'])
-           
-            for i,v in enumerate(np.unique(mmvm_obj['bid'])):
+            if isinstance(which_var,bool):
+                vars_to_plot=enumerate(unique(aux_df,'bid'))
+            else:
+                if isinstance(which_var,str):
+                    vars_to_plot=[which_var]
+                if isinstance(which_var,list):
+                    vars_to_plot=which_var
+                    
+            for i,v in enumerate(vars_to_plot):
                 plt.figure()
                 dat=aux_df[dim][aux_df['bid']==v].values
             
@@ -438,11 +780,17 @@ def loadings(mmvm_obj,dim,*,r2_weighted=False):
                     s_lin=0
                     plt.axvline(x=0,color='magenta',alpha=0.2)
                     for p in phase_samples.keys():
-                        s_lin+=phase_samples[p]
+                        if isinstance(phase_samples[p],list):
+                            s_lin+=phase_samples[p][1]-1
+                        else:                    
+                            s_lin+=phase_samples[p] -1
                         plt.axvline(x=s_lin,color='magenta',alpha=0.2)
                        # ylim_=[mmvm_obj['Ws'][dim,:].min()*1.2,mmvm_obj['Ws'][dim,:].max()*1.2  ]
                         plt.annotate(p, (s_txt,ylim_[0]),rotation=90,alpha=0.5,color='magenta')
-                        s_txt+=phase_samples[p]
+                        if isinstance(phase_samples[p],list):
+                            s_txt+=phase_samples[p][1]
+                        else:                                    
+                            s_txt+=phase_samples[p]
                 plt.tight_layout()            
     else:
         if r2_weighted:
@@ -451,11 +799,17 @@ def loadings(mmvm_obj,dim,*,r2_weighted=False):
             aux_df=pd.DataFrame(mmvm_obj['P'])
             
         aux_df.insert(0,'bid',mmvm_obj['bid'])
-       
-        for i,v in enumerate(np.unique(mmvm_obj['bid'])):
+        if isinstance(which_var,bool):
+            vars_to_plot=enumerate(unique(aux_df,'bid'))
+        else:
+            if isinstance(which_var,str):
+                vars_to_plot=[which_var]
+            if isinstance(which_var,list):
+                vars_to_plot=which_var
+        for i,v in enumerate(vars_to_plot):
             plt.figure()
             dat=aux_df[dim][aux_df['bid']==v].values
-        
+            
             plt.fill_between(np.arange(mmvm_obj['nsamples']), dat )
             plt.xlabel('sample')
             if r2_weighted:
@@ -472,20 +826,111 @@ def loadings(mmvm_obj,dim,*,r2_weighted=False):
                 s_lin=0
                 plt.axvline(x=0,color='magenta',alpha=0.2)
                 for p in phase_samples.keys():
-                    s_lin+=phase_samples[p]
+                    if isinstance(phase_samples[p],list):
+                        s_lin+=phase_samples[p][1]-1
+                    else:                    
+                        s_lin+=phase_samples[p] -1
                     plt.axvline(x=s_lin,color='magenta',alpha=0.2)
                     #ylim_=[mmvm_obj['P'][dim,:].min()*1.2,mmvm_obj['P'][dim,:].max()*1.2 ]
                     plt.annotate(p, (s_txt,ylim_[0]),rotation=90,alpha=0.5,color='magenta')
-                    s_txt+=phase_samples[p]
+                    if isinstance(phase_samples[p],list):
+                        s_txt+=phase_samples[p][1]
+                    else:                                    
+                        s_txt+=phase_samples[p]
             plt.tight_layout()   
-        
-def r2pv(mmvm_obj):
+            
+def loadings_abs_integral(mmvm_obj,*,r2_weighted=False,addtitle=False):
+    '''
+    plot the integral of the absolute value of loadings for a batch
+    Inputs:
+        mmvm_obj: A multiway PCA or PLS model
+        r2_weighted: Boolean flag, if True then in weights the loading by the R2pv
+        addtitle: Text to place in the title of the figure
+    '''
 
+    if 'Q' in mmvm_obj:
+        if mmvm_obj['ninit']==0:
+            if r2_weighted:
+                aux_df=pd.DataFrame(mmvm_obj['Ws']*mmvm_obj['r2xpv'])
+            else:
+                aux_df=pd.DataFrame(mmvm_obj['Ws'])
+            
+            aux_df.insert(0,'bid',mmvm_obj['bid'])
+        else:
+            rows_=np.arange( mmvm_obj['nsamples']*mmvm_obj['nvars'])+mmvm_obj['ninit']
+            if r2_weighted:
+                aux_df=pd.DataFrame(mmvm_obj['Ws'][rows_,:]*mmvm_obj['r2xpv'][rows_,:] )
+            else:
+                aux_df=pd.DataFrame(mmvm_obj['Ws'][rows_,:] )
+            aux_df.insert(0,'bid',mmvm_obj['bid'])
+            
+        integral_of_loadings=[]
+        aux_vname=[]
+        for i,v in enumerate(unique(aux_df,'bid')):                
+            dat=aux_df[aux_df['bid']==v].values[:,1:]
+            integral_of_loadings.append(np.sum(np.abs(dat),axis=0,keepdims=True)[0])
+            aux_vname.append(v)
+        integral_of_loadings=np.array(integral_of_loadings)
+        
+        for a in np.arange(mmvm_obj['T'].shape[1]):
+            plt.figure()
+            plt.bar(aux_vname,integral_of_loadings[:,a])
+            if r2_weighted:
+                plt.ylabel(r'$\sum (|W^*| * R^2$ ['+str(a+1)+'])')
+            else:
+                plt.ylabel(r'$\sum (|W^*|$ ['+str(a+1)+'])')
+            plt.xticks(rotation=75)
+            if not(isinstance(addtitle,bool)) and isinstance(addtitle,str):
+                plt.title(addtitle)
+            plt.tight_layout()   
+                
+    else:
+        if r2_weighted:
+            aux_df=pd.DataFrame(mmvm_obj['P']*mmvm_obj['r2xpv'])
+        else:
+            aux_df=pd.DataFrame(mmvm_obj['P'])
+            
+        aux_df.insert(0,'bid',mmvm_obj['bid'])
+       
+        integral_of_loadings=[]
+        aux_vname=[]
+        for i,v in enumerate(unique(aux_df,'bid')):                  
+            dat=aux_df[aux_df['bid']==v].values[:,1:]
+            integral_of_loadings.append(np.sum(np.abs(dat),axis=0,keepdims=True)[0])
+            aux_vname.append(v)
+        integral_of_loadings=np.array(integral_of_loadings)
+        
+        for a in np.arange(mmvm_obj['T'].shape[1]):
+            plt.figure()
+            plt.bar(aux_vname,integral_of_loadings[:,a])
+            if r2_weighted:
+                plt.ylabel(r'$\sum (|P| * R^2$ ['+str(a+1)+'])')
+            else:
+                plt.ylabel(r'$\sum$ (|P| ['+str(a+1)+'])')
+            plt.xticks(rotation=75)
+            if not(isinstance(addtitle,bool)) and isinstance(addtitle,str):
+                plt.title(addtitle)
+            plt.tight_layout()   
+            
+def r2pv(mmvm_obj,*,which_var=False):
+    '''
+    Plot batch r2 for variables as a function of time/sample
+    
+    mmvm_obj:    Multiway PCA or PLS object
+    which_var:   Variable for which the plot is done, if not sent all are plotted
+    '''
+    
     if mmvm_obj['ninit']==0:
         aux_df=pd.DataFrame(mmvm_obj['r2xpv'])
         aux_df.insert(0,'bid',mmvm_obj['bid'])
-       
-        for i,v in enumerate(np.unique(mmvm_obj['bid'])):
+        if isinstance(which_var,bool):
+            vars_to_plot=enumerate(unique(aux_df,'bid'))
+        else:
+            if isinstance(which_var,str):
+                vars_to_plot=[which_var]
+            if isinstance(which_var,list):
+                vars_to_plot=which_var
+        for i,v in enumerate(vars_to_plot):
             
             dat=aux_df[aux_df['bid']==v].values*100
             dat=dat[:,1:].astype(float)               
@@ -506,10 +951,16 @@ def r2pv(mmvm_obj):
                  s_lin=0
                  plt.axvline(x=0,color='black',alpha=0.2)
                  for p in phase_samples.keys():
-                     s_lin+=phase_samples[p]
+                     if isinstance(phase_samples[p],list):
+                         s_lin+=phase_samples[p][1]-1
+                     else:                    
+                         s_lin+=phase_samples[p] -1
                      plt.axvline(x=s_lin,color='black',alpha=0.2)
                      plt.annotate(p, (s_txt,ylim_[0]),rotation=90,alpha=0.5,color='black')
-                     s_txt+=phase_samples[p]
+                     if isinstance(phase_samples[p],list):
+                         s_txt+=phase_samples[p][1]
+                     else:                                    
+                         s_txt+=phase_samples[p]
             plt.tight_layout()   
         if 'Q' in mmvm_obj:    
             r2pvy = mmvm_obj['r2ypv']*100    
@@ -542,8 +993,15 @@ def r2pv(mmvm_obj):
         rows_=np.arange( mmvm_obj['nsamples']*mmvm_obj['nvars'])+mmvm_obj['ninit']
         aux_df=pd.DataFrame(mmvm_obj['r2xpv'][rows_,:] )
         aux_df.insert(0,'bid',mmvm_obj['bid'])
-       
-        for i,v in enumerate(np.unique(mmvm_obj['bid'])):
+        if isinstance(which_var,bool):
+            vars_to_plot=enumerate(unique(aux_df,'bid'))
+        else:
+            if isinstance(which_var,str):
+                vars_to_plot=[which_var]
+            if isinstance(which_var,list):
+                vars_to_plot=which_var
+                
+        for i,v in enumerate(vars_to_plot):
             
             dat=aux_df[aux_df['bid']==v].values*100
             dat=dat[:,1:].astype(float)               
@@ -564,10 +1022,16 @@ def r2pv(mmvm_obj):
                  s_lin=0
                  plt.axvline(x=0,color='black',alpha=0.2)
                  for p in phase_samples.keys():
-                     s_lin+=phase_samples[p]
+                     if isinstance(phase_samples[p],list):
+                         s_lin+=phase_samples[p][1]-1
+                     else:                    
+                         s_lin+=phase_samples[p] -1
                      plt.axvline(x=s_lin,color='black',alpha=0.2)
                      plt.annotate(p, (s_txt,ylim_[0]),rotation=90,alpha=0.5,color='black')
-                     s_txt+=phase_samples[p]
+                     if isinstance(phase_samples[p],list):
+                         s_txt+=phase_samples[p][1]
+                     else:                                    
+                         s_txt+=phase_samples[p]
             plt.tight_layout()   
             
         if 'Q' in mmvm_obj:
@@ -670,7 +1134,7 @@ def mpca(xbatch,a,*,unfolding='batch wise',phase_samples=False,cross_val=0):
         mpca_obj=[]
     return mpca_obj
             
-def _mimic_monitoring(mmvm_obj_f,bdata,which_batch,*,zinit=False,shush=False):
+def _mimic_monitoring(mmvm_obj_f,bdata,which_batch,*,zinit=False,shush=False,soft_sensor=False):
     if (not(isinstance(zinit,bool)) and mmvm_obj_f['ninit']==0) |   \
         ((isinstance(zinit,bool)) and mmvm_obj_f['ninit']>0):
         print ('Model and data do not correspond')
@@ -686,23 +1150,49 @@ def _mimic_monitoring(mmvm_obj_f,bdata,which_batch,*,zinit=False,shush=False):
         if 'Q' in mmvm_obj_f:
             forecast_y=[]
         this_batch=bdata[bdata[bdata.columns[0]]==which_batch]
+        
+        if (bdata.columns[1]=='PHASE') or \
+            (bdata.columns[1]=='phase') or \
+            (bdata.columns[1]=='Phase'):
+            colnames=this_batch.columns[2:].tolist()
+        else:
+            colnames=this_batch.columns[1:].tolist()
+            
+        ss_indx=[]    
+        #Make soft_sensor var all missing data
+        if not(isinstance(soft_sensor,bool)):            
+            if isinstance(soft_sensor,list):
+                for v in soft_sensor:
+                    if not(v in colnames):
+                        print('Soft sensor '+v+' is not a variable in this dataset')
+                    else:
+                        ss_indx.append(colnames.index(v))
+            elif isinstance(soft_sensor,str):
+                if not(soft_sensor in colnames):
+                    print('Soft sensor '+soft_sensor+' is not a variable in this dataset')
+                else:
+                    ss_indx=[colnames.index(soft_sensor)]
+
         if not(isinstance(zinit,bool)):
             this_z = zinit[zinit[zinit.columns[0]]==which_batch]
             vals_z = this_z.values[:,1:]
             cols_z = this_z.columns[1:]
             vals_z = np.array(vals_z,dtype=np.float64)
             vals_z = vals_z.reshape(-1)
-            
+
         if (bdata.columns[1]=='PHASE') or \
             (bdata.columns[1]=='phase') or \
             (bdata.columns[1]=='Phase'):
             vals=this_batch.values[:,2:]
-            colnames=this_batch.columns[2:]
         else:
             vals=this_batch.values[:,1:]
-            colnames=this_batch.columns[1:]
-        
+
+            
         vals=np.array(vals,dtype=np.float64)
+        
+        if len(ss_indx)>0:
+            vals[:,ss_indx]=np.nan
+        
         if not(shush):
             print('Running batch: '+which_batch)
         
@@ -821,7 +1311,24 @@ def _mimic_monitoring(mmvm_obj_f,bdata,which_batch,*,zinit=False,shush=False):
                 diags['cont_ht2_z']      = conts_ht2_z
         return diags  
    
-def monitor(mmvm_obj,bdata,*,which_batch=False,zinit=False,build_ci=True,shush=False):
+def monitor(mmvm_obj,bdata,*,which_batch=False,zinit=False,build_ci=True,shush=False,soft_sensor=False):
+    '''
+     usage: monitor(mmvm_obj,bdata)  
+                to mimic monitoring for all bdata batches and build CI
+                
+            monitor(mmvm,bdata,which_batch=your_batchid) 
+                to mimic monitoring for your_batchid and will produce all dynamic metrics
+                and forecasts
+                
+            monitor(mmvm,bdata,which_batch=your_batchid,zinit=your_z_data)  
+                to mimic monitoring for your_batchid  using initial conditions
+                will produce all dynamic metrics and forecasts 
+                
+            monitor(mmvm,bdata,which_batch=your_batchid,soft_sensor=your_variable)  
+                to mimic monitoring for your_batchid will produce all dynamic metrics 
+                and forecasts and produce soft-sensor predictions for your_variable
+                
+    '''
     mmvm_obj_f       = mmvm_obj.copy()
     mmvm_obj_f       = _uf_hor_mon_loadings(mmvm_obj_f)
     mmvm_obj_f['mx'] = mmvm_obj_f['mx_ufm']
@@ -843,7 +1350,7 @@ def monitor(mmvm_obj,bdata,*,which_batch=False,zinit=False,build_ci=True,shush=F
             if not(shush):
                 print('Building real_time confidence intervals')
             for i,b in enumerate(unique_batches):
-                diags = _mimic_monitoring(mmvm_obj_f,bdata,b,zinit=zinit)
+                diags = _mimic_monitoring(mmvm_obj_f,bdata,b,zinit=zinit,soft_sensor=soft_sensor)
                 SPE.append(diags['spe_mon'])
                 SPEi.append(diags['spei_mon'])
                 T[:,:,i]=diags['t_mon']
@@ -893,7 +1400,7 @@ def monitor(mmvm_obj,bdata,*,which_batch=False,zinit=False,build_ci=True,shush=F
             mmvm_obj['spei_mon_ci_99'] = spei_mon_ci_99
             if not(shush):
                 print('Done')
-            return mmvm_obj
+            #return mmvm_obj
         else:
             print("This ain't the data this model was trained on")
     else:
@@ -911,7 +1418,7 @@ def monitor(mmvm_obj,bdata,*,which_batch=False,zinit=False,build_ci=True,shush=F
         for b in which_batch:
             if b in bdata[bdata.columns[0]].values.tolist():
             #run monitoring on a batch
-                diags_ =_mimic_monitoring(mmvm_obj_f,bdata,b,zinit=zinit)
+                diags_ =_mimic_monitoring(mmvm_obj_f,bdata,b,zinit=zinit,soft_sensor=soft_sensor)
                 diags.append(diags_)
             else:
                 print('Batch not found in data set')
@@ -928,9 +1435,12 @@ def monitor(mmvm_obj,bdata,*,which_batch=False,zinit=False,build_ci=True,shush=F
                     plt.plot(mmvm_obj['t_mon_ci_99'][a],'r',alpha=0.3)
                     plt.plot(-mmvm_obj['t_mon_ci_99'][a],'r',alpha=0.3)
                 plt.xlabel('sample')
-                plt.ylabel('$t_'+str(a+1)+'$')
-                plt.title('Real time monitoring: Score plot $t_'+str(a+1)+'$')
-                plt.legend()    
+                plt.ylabel('$t_'+str(a+1)+'$')     
+                plt.title('Real time monitoring: Score plot $t_'+str(a+1)+'$')                                
+                box = plt.gca().get_position()
+                plt.gca().set_position([box.x0, box.y0, box.width * 0.8, box.height])
+                plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))   
+
                 
             #plot ht2
             plt.figure()
@@ -943,7 +1453,9 @@ def monitor(mmvm_obj,bdata,*,which_batch=False,zinit=False,build_ci=True,shush=F
             plt.xlabel('sample')
             plt.ylabel("Hotelling's $T^2$")
             plt.title("Real time monitoring: Hotelling's $T^2$")
-            plt.legend()              
+            box = plt.gca().get_position()
+            plt.gca().set_position([box.x0, box.y0, box.width * 0.8, box.height])
+            plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))             
             
             #plot spe
             plt.figure()
@@ -956,7 +1468,10 @@ def monitor(mmvm_obj,bdata,*,which_batch=False,zinit=False,build_ci=True,shush=F
             plt.xlabel('sample')
             plt.ylabel("Global SPE")
             plt.title("Real time monitoring: Global SPE")
-            plt.legend() 
+            
+            box = plt.gca().get_position()
+            plt.gca().set_position([box.x0, box.y0, box.width * 0.8, box.height])
+            plt.legend(loc='center left', bbox_to_anchor=(1, 0.5)) 
             #plot spei
             plt.figure()
             for i,b in enumerate(which_batch):
@@ -968,7 +1483,9 @@ def monitor(mmvm_obj,bdata,*,which_batch=False,zinit=False,build_ci=True,shush=F
             plt.xlabel('sample')
             plt.ylabel("Instantaneous SPE")
             plt.title("Real time monitoring: Instantaneous SPE")
-            plt.legend() 
+            box = plt.gca().get_position()
+            plt.gca().set_position([box.x0, box.y0, box.width * 0.8, box.height])
+            plt.legend(loc='center left', bbox_to_anchor=(1, 0.5)) 
             
             if 'Q' in mmvm_obj:
                 for v in diags[0]['forecast y'].columns:
@@ -978,6 +1495,8 @@ def monitor(mmvm_obj,bdata,*,which_batch=False,zinit=False,build_ci=True,shush=F
                     plt.xlabel('sample')
                     plt.ylabel(v)
                     plt.title('Dynamic forecast of Y')
+            if len(diags)==1:
+                diags=diags[0]
             return diags
         else:
             return 'error batch not found'
@@ -1124,21 +1643,21 @@ def mpls(xbatch,y,a,*,zinit=False,phase_samples=False,mb_each_var=False,cross_va
              aux_new           = aux_new[a:,:]
              r2xpv_            = aux_new[0:a,:]
              mpls_obj['r2xpv'] = r2xpv_.T
-        mpls_obj['Yhat']          = yhat
-        mpls_obj['varidX']        = colnames
-        mpls_obj['bid']           = bid_o
-        mpls_obj['uf']            ='batch wise'
-        mpls_obj['nvars']         = int(nvars)
-        mpls_obj['nbatches']      = int(nbatches)
-        mpls_obj['nsamples']      = int(nsamples)
-        mpls_obj['A']             = a
-        mpls_obj['phase_samples'] = phase_samples  
-        mpls_obj['mb_each_var']   = mb_each_var
+    mpls_obj['Yhat']          = yhat
+    mpls_obj['varidX']        = colnames
+    mpls_obj['bid']           = bid_o
+    mpls_obj['uf']            ='batch wise'
+    mpls_obj['nvars']         = int(nvars)
+    mpls_obj['nbatches']      = int(nbatches)
+    mpls_obj['nsamples']      = int(nsamples)
+    mpls_obj['A']             = a
+    mpls_obj['phase_samples'] = phase_samples  
+    mpls_obj['mb_each_var']   = mb_each_var
         
-        if not(isinstance(zinit,bool)):
-            mpls_obj['ninit']=int(zinit.shape[1]-1)
-        else:
-            mpls_obj['ninit']=0
+    if not(isinstance(zinit,bool)):
+        mpls_obj['ninit']=int(zinit.shape[1]-1)
+    else:
+        mpls_obj['ninit']=0
             
     return mpls_obj       
 
@@ -1181,32 +1700,85 @@ def clean_empty_rows(X,*,shush=False):
     else:
         return X
     
-def phase_sampling_dist(bdata):    
+def phase_sampling_dist(bdata,time_column=False,addtitle=False,use_phases=False):    
+    '''
+    Count and plot a histogram of the distribution of  samples (or time if time_column is indicated)
+    consumed per phase on a batch dataset
+    
+    bdata: Batch data organized as: column[0] = Batch Identifier column name is unrestricted
+                                    column[1] = Phase information per sample must be called 'Phase','phase', or 'PHASE'
+                                                this information is optional
+                                    column[2:]= Variables measured throughout the batch
+    time_column: Indicates the name of the column with time, if not sent, counting is done in terms samples
+    
+    add_title:  Optional text to be placed as the figure title
+    use_phases: In case the user wants to only do counting for a subset of phases
+    
+    '''
+    data={}
     if bdata.columns[1]=='phase' or bdata.columns[1]=='Phase' or bdata.columns[1]=='PHASE':        
-        bids=np.unique(bdata[bdata.columns[0]]).tolist()
-        phases=np.unique(bdata[bdata.columns[1]]).tolist()
+        bids   = unique(bdata,bdata.columns[0])
+        if isinstance(use_phases,bool):
+            phases = unique(bdata,bdata.columns[1])
+        else:
+            phases = use_phases
+        
         #samps_per_phase=[]
         fig,ax=plt.subplots(1,len(phases)+1)
-        totsamps=[]
+        
         for i,p in enumerate(phases):
+            totsamps=[]
             samps_=[]
+            samps_ind={}
             for b in bids:
               bdat= bdata[ (bdata[bdata.columns[1]]==p) & (bdata[bdata.columns[0]]==b)]
-              samps_.append(len(bdat))
-              totsamps.append(len(bdata[(bdata[bdata.columns[0]]==b)]))
+              if len(bdat)==0:
+                  samps_.append(0)
+                  samps_ind[b]=0
+              elif not(isinstance(time_column,bool)):
+                  samps_.append(bdat[time_column].values[-1]-bdat[time_column].values[0] )
+                  totsamps.append(bdata[time_column][(bdata[bdata.columns[0]]==b)].values[-1])
+                  samps_ind[b]=bdat[time_column].values[-1]-bdat[time_column].values[0]
+              else:    
+                  samps_.append(len(bdat))
+                  totsamps.append(len(bdata[(bdata[bdata.columns[0]]==b)]))                  
+                  samps_ind[b]=len(bdat)                  
             ax[i].hist(samps_)
-            ax[i].set_xlabel('# Samples')
+            data[p]=samps_ind
+            if not(isinstance(time_column,bool)):
+                ax[i].set_xlabel(time_column)
+            else:    
+                ax[i].set_xlabel('# Samples')
             ax[i].set_ylabel('Count')
             ax[i].set_title(p)
         ax[-1].hist(totsamps)
-        ax[-1].set_xlabel('# Samples')
+        if not(isinstance(time_column,bool)):
+            ax[-1].set_xlabel(time_column)
+        else:    
+            ax[-1].set_xlabel('# Samples')
+        
         ax[-1].set_ylabel('Count')
         ax[-1].set_title('Total')
-        fig.tight_layout()                        
+        if not(isinstance(addtitle,bool)):
+            fig.suptitle(addtitle)
+        fig.tight_layout()           
+        return data            
     else:
         print('Data is missing phase information or phase column is nor properly labeled')
         
 def predict(xbatch,mmvm_obj,*,zinit=False):    
+    '''
+    Generate predictions for a Multi-way PCA/PLS model
+    
+    Input:
+        xbatch:   Batch data with same variables and alignment as model will generate predictions for all batches
+        mmvm_obj: Multi-way PLS or PCA
+        zinit:    Initial conditions [if any]
+    Output:
+        
+        preds: A dictionary with keys ['Yhat', 'Xhat', 'Tnew', 'speX', 'T2']
+    
+    '''
     if 'Q' in mmvm_obj:    
         x_uf,colnames,bid_o = unfold_horizontal(xbatch)  # colnames is original set of columns        
         aux                 = np.array([colnames,bid_o])
@@ -1313,10 +1885,243 @@ def predict(xbatch,mmvm_obj,*,zinit=False):
                 Xb.insert(0,xbatch.columns[0],xbatch[xbatch.columns[0]].values)      
             pred['Xhat']=Xb                   
     return pred
+
+def plot_contribs(bdata,ylims,*,var_list=False,plot_title='',phase_samples=False,alpha_=0.2):
+    '''
+    Internal routine please use : contributions
+    '''
+    if (bdata.columns[1]=='PHASE') or \
+        (bdata.columns[1]=='phase') or \
+        (bdata.columns[1]=='Phase'):
+        if isinstance(var_list,bool):    
+            var_list=bdata.columns[2:].tolist()
+    else:
+        if isinstance(var_list,bool):
+            var_list=bdata.columns[1:].tolist()
+    if isinstance(var_list,str) and not(isinstance(var_list,list)):
+         var_list=[var_list]    
+         
+    for v in var_list:
+        plt.figure()
+        dat=bdata[[bdata.columns[0],v]]
+        for b in np.unique(dat[bdata.columns[0]]):
+            data_=dat[v][dat[dat.columns[0]]==b]
+            plt.fill_between(np.arange(len(data_.values)),data_.values)
+            plt.xlabel('Sample')
+            plt.ylabel(v)
+        if not(isinstance(phase_samples,bool)):   
+            s_txt=0
+            s_lin=0
+            plt.axvline(x=0,color='magenta',alpha=alpha_)
+            for p in phase_samples.keys():                
+                if isinstance(phase_samples[p],list):
+                    s_lin+=phase_samples[p][1]-1
+                else:                    
+                    s_lin+=phase_samples[p]-1
+                plt.axvline(x=s_lin,color='magenta',alpha=alpha_)
+                ylim_=plt.ylim()
+                plt.annotate(p, (s_txt,ylim_[0]),rotation=90,alpha=0.5,color='magenta')
+                if isinstance(phase_samples[p],list):
+                    s_txt+=phase_samples[p][1]
+                else:                                    
+                    s_txt+=phase_samples[p]
+        plt.ylim(ylims)
+        plt.tight_layout()
+        plt.title(plot_title)             
+
+def contributions (mmvmobj,X,cont_type,*,to_obs=False,from_obs=False,
+                   lv_space=False,phase_samples=False,dyn_conts=False,which_var=False):
+    '''
+    Batch contribution plots to Scores, HT2 or SPE
+    mmvmobj= Multiway Model
+    X      = batch data
+    cont_type = 'scores' | 'ht2' | 'spe'
+    to_obs    = Observation to calculate contributions to
+    from_obs  = Relative basis to calculate contributions to [for 'scores' and 'ht2' only]
+                if not sent the origin of the model us used as the base.
+    
+    Returns:
+        contribution_vector
+    '''
+    #translate from batch numbers to indexes
+    #Check logic and warn user
+    if (X.columns[1]=='PHASE') or \
+        (X.columns[1]=='phase') or \
+            (X.columns[1]=='Phase'):
+        bvars = X.columns[2:]
+    else:
+        bvars = X.columns[1:]
+    
+    allok=True
+    if  isinstance(to_obs,bool):
+        print('Contribution calculations need a "to_obs" argument at minimum')
+        allok=False
+    if cont_type=='spe' and not(isinstance(from_obs,bool)):
+        print('For SPE contributions the "from_obs" argument is ignored')
+    if (isinstance(to_obs,list) and len(to_obs)>1) or (isinstance(from_obs,list) and len(from_obs)>1):
+        print('Contributions for groups of observations will be averaged')
+    if (cont_type=='scores') and isinstance(lv_space,bool):
+        print('No dimensions specified, doing contributions across all dimensions')
+    if allok:
+        #find indexes to batch names
+        Xuf,var1,var2=unfold_horizontal(X)
+        bnames=Xuf[Xuf.columns[0]].values.tolist()
+        to_o=[bnames.index(to_obs[i]) for i in np.arange(len(to_obs))]
+        if (cont_type=='scores') or (cont_type=='ht2'):
+            if not(isinstance(from_obs,bool)):
+                   from_o = [bnames.index(from_obs[i]) for i in np.arange(len(from_obs))]
+            else:
+                    from_o =False
+            cont_vec=phi.contributions(mmvmobj,Xuf,cont_type,Y=False,from_obs=from_o,to_obs=to_o,lv_space=lv_space)
+        elif cont_type=='spe':
+            cont_vec=phi.contributions(mmvmobj,Xuf,cont_type,Y=False,from_obs=False,to_obs=to_o)
+        ymin=cont_vec.min()
+        ymax=cont_vec.max()
+        #Plot contributions
+        if dyn_conts:
+            batch_contribs=refold_horizontal(cont_vec, mmvmobj['nvars'],mmvmobj['nsamples'])
+            batch_contribs = pd.DataFrame(batch_contribs,columns=bvars)
+            oids=['Batch Contributions']*batch_contribs.shape[0]
+            batch_contribs.insert(0,'BatchID',oids)
+            plot_contribs(batch_contribs,(ymin, ymax),phase_samples=phase_samples,var_list=which_var)
             
+        batch_contribs=refold_horizontal(abs(cont_vec), mmvmobj['nvars'],mmvmobj['nsamples'])
+        batch_contribs=np.sum(batch_contribs,axis=0)
+        plt.figure()
+        plt.bar(bvars, batch_contribs)
+        plt.xticks(rotation=75)
+        plt.ylabel(r'$\Sigma$ (|Contribution to '+cont_type+'| )' )
+        plt.tight_layout()
+        
+def build_rel_time(bdata,*,time_unit='min'):
+    '''
+     Converts the column 'Timestamp' into 'Time' in time_units relative to
+     the start of each batch
+    '''
+    
+    aux=bdata.drop_duplicates(subset=bdata.columns[0],keep='first')
+    unique_batches=aux[aux.columns[0]].values.tolist()
+    bdata_n=[]
+    for b in unique_batches:
+        this_batch=bdata[bdata[bdata.columns[0]]==b]
+        ts=this_batch['Timestamp'].values
+        deltat=ts-ts[0]
+        tim=[np.timedelta64(deltat[i],'s').astype(float) for i in np.arange(len(deltat))]
+        tim=np.array(tim)
+        if time_unit == 'min':
+            tim=tim/60
+        if time_unit == 'hr':
+            tim=tim/3600
+        cols=this_batch.columns.tolist()
+        this_batch.insert(cols.index('Timestamp'),'Time ('+time_unit+')' ,tim)
+        this_batch=this_batch.drop('Timestamp',axis=1)
+        bdata_n.append(this_batch)
+    bdata_n = pd.concat(bdata_n,axis=0)
+    return bdata_n
 
+def descriptors(bdata,which_var,desc,*,phase=False):
+    '''
+    Get descriptor values for a batch trajectory
+    Inputs:
+        bdata: Dataframe of batch data, first column is batch ID, second column can be phase id
+        
+        which_var: List of variables to get descriptors for
+        
+        desc: List of descriptors to calculate, options are:
+                'min'
+                'max'
+                'mean'
+                'median'
+                'std'
+                'var'
+                'range'
+                'ave_slope'
+                
+        phase: to specify what phases to do this for
+        
+    Outputs:
+        descriptors: A dataframe with the descriptors per batch
 
-
-             
-             
-             
+    '''
+    has_phase=False
+    if ((bdata.columns[1]=='Phase') or 
+        (bdata.columns[1]=='phase') or 
+        (bdata.columns[1]=='PHASE')):
+           has_phase=True
+           phase_col=bdata.columns[1]
+    if not(has_phase) and not(isinstance(phase,bool)):
+        print('Cannot process phase flag without phase id in data')
+        phase=False
+    desc_val=[]
+    desc_lbl=[]    
+    
+    for i,b in enumerate(unique(bdata,bdata.columns[0])):
+        this_batch=bdata[bdata[bdata.columns[0]]==b]
+        desc_val_=[]
+        for v in which_var:
+            if not(isinstance(phase,bool)): # by phase
+                for p in phase:
+                    values=this_batch[v][this_batch[phase_col]==p].values.astype(float)
+                    values=values[~(np.isnan(values))]
+                    for d in desc:
+                        if d=='min':
+                            desc_val_.append(values.min())                           
+                        if d=='max':
+                            desc_val_.append(values.max())                                                 
+                        if d=='mean':
+                            desc_val_.append(values.mean())
+                        if d=='median':
+                            desc_val_.append(np.median(values))
+                        if d=='std':
+                            desc_val_.append(np.std(values,ddof=1))
+                        if d=='var':
+                            desc_val_.append(np.var(values,ddof=1))
+                        if d=='range':
+                            desc_val_.append(values.max()-values.min() )
+                        if d=='ave_slope':
+                            x=np.arange(0,len(values))
+                            m=(1/sum(x**2))*sum(x*(values-values[0]))
+                            desc_val_.append(m)
+                        if i==0:    
+                            desc_lbl.append(v +'_'+ p +'_'+ d)   
+            else:
+                values=this_batch[v].values.astype(float)
+                values=values[~(np.isnan(values))]                
+                for d in desc:
+                    if d=='min':
+                        desc_val_.append(values.min())                           
+                    if d=='max':
+                        desc_val_.append(values.max())                                                 
+                    if d=='mean':
+                        desc_val_.append(values.mean())
+                    if d=='median':
+                        desc_val_.append(np.median(values))
+                    if d=='std':
+                        desc_val_.append(np.std(values,ddof=1))
+                    if d=='var':
+                        desc_val_.append(np.var(values,ddof=1))
+                    if d=='range':
+                        desc_val_.append(values.max()-values.min() )
+                    if d=='ave-slope':
+                        x=np.arange(0,len(values))
+                        m=(1/sum(x**2))*sum(x*(values-values[0]))
+                        desc_val.apend(m)
+                    if i==0:    
+                        desc_lbl.append(v +'_' + d) 
+                
+        desc_val.append(desc_val_)   
+    bnames = unique(bdata,bdata.columns[0])  
+    desc_val=np.array(desc_val)
+    descriptors_df=pd.DataFrame(desc_val,columns=desc_lbl )     
+    descriptors_df.insert(0,bdata.columns[0],bnames )
+    return descriptors_df                         
+                                
+                        
+                    
+            
+        
+        
+        
+        
+        
+        
