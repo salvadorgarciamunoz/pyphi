@@ -11,6 +11,7 @@ Optionally the second column labeled 'PHASE','Phase' or 'phase' indicating
 the phase of exceution
 
 Change log:
+* added Apr 23 2023  Corrected a very dumb mistake I made coding when tired    
     
 * added Apr 18 2023 Added descriptors routine to obtain landmarks of the batch
                     such as min,max,ave of a variable [during a phase if indicated so]    
@@ -691,7 +692,7 @@ def loadings(mmvm_obj,dim,*,r2_weighted=False,which_var=False):
             
             aux_df.insert(0,'bid',mmvm_obj['bid'])
             if isinstance(which_var,bool):
-                vars_to_plot=enumerate(unique(aux_df,'bid'))
+                vars_to_plot=unique(aux_df,'bid')
             else:
                 if isinstance(which_var,str):
                     vars_to_plot=[which_var]
@@ -753,7 +754,7 @@ def loadings(mmvm_obj,dim,*,r2_weighted=False,which_var=False):
                 aux_df=pd.DataFrame(mmvm_obj['Ws'][rows_,:] )
             aux_df.insert(0,'bid',mmvm_obj['bid'])
             if isinstance(which_var,bool):
-                vars_to_plot=enumerate(unique(aux_df,'bid'))
+                vars_to_plot=unique(aux_df,'bid')
             else:
                 if isinstance(which_var,str):
                     vars_to_plot=[which_var]
@@ -800,7 +801,7 @@ def loadings(mmvm_obj,dim,*,r2_weighted=False,which_var=False):
             
         aux_df.insert(0,'bid',mmvm_obj['bid'])
         if isinstance(which_var,bool):
-            vars_to_plot=enumerate(unique(aux_df,'bid'))
+            vars_to_plot=unique(aux_df,'bid')
         else:
             if isinstance(which_var,str):
                 vars_to_plot=[which_var]
@@ -924,7 +925,7 @@ def r2pv(mmvm_obj,*,which_var=False):
         aux_df=pd.DataFrame(mmvm_obj['r2xpv'])
         aux_df.insert(0,'bid',mmvm_obj['bid'])
         if isinstance(which_var,bool):
-            vars_to_plot=enumerate(unique(aux_df,'bid'))
+            vars_to_plot=unique(aux_df,'bid')
         else:
             if isinstance(which_var,str):
                 vars_to_plot=[which_var]
@@ -994,7 +995,7 @@ def r2pv(mmvm_obj,*,which_var=False):
         aux_df=pd.DataFrame(mmvm_obj['r2xpv'][rows_,:] )
         aux_df.insert(0,'bid',mmvm_obj['bid'])
         if isinstance(which_var,bool):
-            vars_to_plot=enumerate(unique(aux_df,'bid'))
+            vars_to_plot=unique(aux_df,'bid')
         else:
             if isinstance(which_var,str):
                 vars_to_plot=[which_var]
