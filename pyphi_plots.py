@@ -4,6 +4,16 @@
 Plots for pyPhi
 
 @author: Sal Garcia <sgarciam@ic.ac.uk> <salvadorgarciamunoz@gmail.com>
+Addition on Apr 23 2023  also added the text_alpha flag to loadings map for PCA models
+Addition on Apr 22 2023  added tooltips to contribution plots and VIP
+                         implemented multiple columns in score scatter (yay!)
+
+Addition on Apr 17 2023  added tpls to the supported models in all loadings, vip, r2pv 
+                         and score_scatter plots
+Addition on Apr 15 2023, made all loadings, vip, r2pv and score_scatter compatible with
+                         lpls and jrpls models
+Addition on April 9 2023,  added legends and pan tools to r2pv (yay!)
+Addition on April 8 2023, fixed predvsobs to take MB data
 
 Release Nov 15 2021
     * Added "xgrid" flag to all plots using bar plots (loadings, weighted loadings, contributions) to add the Xgrid lines to the plot
@@ -31,16 +41,27 @@ import pandas as pd
 
 import matplotlib.cm as cm
 
-def r2pv(mvmobj,*,plotwidth=600,plotheight=400):
+def r2pv(mvm_obj,*,plotwidth=600,plotheight=400,addtitle='',material=False,zspace=False):
     """
     R2 per variable plots
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     
-    mvmobj: A model created with phi.pca or phi.pls
+    mvm_obj: A model created with phi.pca or phi.pls
     """
+    mvmobj=mvm_obj.copy()
     A= mvmobj['T'].shape[1]
-    num_varX=mvmobj['P'].shape[0]
+    yaxlbl='X'
+    if (mvmobj['type']=='lpls') or (mvmobj['type']=='jrpls') or (mvmobj['type']=='tpls'):
+        if ((mvmobj['type']=='jrpls') or (mvmobj['type']=='tpls')) and not(isinstance(material, bool) ):
+            mvmobj['r2xpv']=mvmobj['r2xpvi'][mvmobj['materials'].index(material)]
+            mvmobj['varidX']=mvmobj['varidXi'][mvmobj['materials'].index(material) ]
+        elif (mvmobj['type']=='tpls') and zspace :
+            mvmobj['r2xpv']=mvmobj['r2zpv']
+            mvmobj['varidX']=mvmobj['varidZ']
+            yaxlbl='Z'
+    else:
+        num_varX=mvmobj['P'].shape[0]
     
     if 'Q' in mvmobj:
         is_pls=True
@@ -82,27 +103,31 @@ def r2pv(mvmobj,*,plotwidth=600,plotheight=400):
     
     if is_pls:
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("r2xypv_"+rnd_num+".html",title="R2XYPV") 
+        output_file("r2xypv_"+rnd_num+".html",title="R2"+ yaxlbl+ "YPV") 
         colormap =cm.get_cmap("rainbow")
         different_colors=A
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
         bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]  
-               
-        px = figure(x_range=XVar, title="R2X Per Variable",
-             tools="save,box_zoom,hover,reset", tooltips="$name @XVar: @$name",plot_width=plotwidth,plot_height=plotheight)
         
-        px.vbar_stack(lv_labels, x='XVar', width=0.9,color=bokeh_palette,source=r2pvX_dict)
+        
+            
+        px = figure(x_range=XVar, title="R2"+ yaxlbl+" Per Variable "+addtitle,
+             tools="save,box_zoom,xpan,hover,reset", tooltips="$name @XVar: @$name",plot_width=plotwidth,plot_height=plotheight)
+        
+        v=px.vbar_stack(lv_labels, x='XVar', width=0.9,color=bokeh_palette,source=r2pvX_dict)
         px.y_range.range_padding = 0.1
         px.ygrid.grid_line_color = None
         px.xgrid.grid_line_color = None
         px.axis.minor_tick_line_color = None
         px.outline_line_color = None
-        px.yaxis.axis_label = 'R2X'
+        px.yaxis.axis_label = 'R2'+ yaxlbl
         px.xaxis.major_label_orientation = 45
-        py = figure(x_range=YVar, plot_height=plotheight, title="R2Y Per Variable",
-            tools="save,box_zoom,hover,reset", tooltips="$name @YVar: @$name",plot_width=plotwidth)
+        legend = Legend(items=[(x, [v[i]]) for i, x in enumerate(lv_labels)], location=(0, 0))
+        px.add_layout(legend, 'right')
+        py = figure(x_range=YVar, plot_height=plotheight, title="R2Y Per Variable "+addtitle,
+            tools="save,box_zoom,xpan,hover,reset", tooltips="$name @YVar: @$name",plot_width=plotwidth)
         
-        py.vbar_stack(lv_labels, x='YVar', width=0.9,color=bokeh_palette,source=r2pvY_dict)
+        v=py.vbar_stack(lv_labels, x='YVar', width=0.9,color=bokeh_palette,source=r2pvY_dict)
         py.y_range.range_padding = 0.1
         py.ygrid.grid_line_color = None
         py.axis.minor_tick_line_color = None
@@ -110,6 +135,8 @@ def r2pv(mvmobj,*,plotwidth=600,plotheight=400):
         py.outline_line_color = None
         py.yaxis.axis_label = 'R2Y'
         py.xaxis.major_label_orientation = 45
+        legend = Legend(items=[(x, [v[i]]) for i, x in enumerate(lv_labels)], location=(0, 0))
+        py.add_layout(legend, 'right')
         show(column(px,py))
         
         
@@ -121,31 +148,51 @@ def r2pv(mvmobj,*,plotwidth=600,plotheight=400):
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
         bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]  
                
-        p = figure(x_range=XVar, title="R2X Per Variable",
-             tools="save,box_zoom,hover,reset", tooltips="$name @XVar: @$name",plot_width=plotwidth,plot_height=plotheight)
+        p = figure(x_range=XVar, title="R2X Per Variable "+addtitle,
+             tools="save,box_zoom,xpan,hover,reset", tooltips="$name @XVar: @$name",plot_width=plotwidth,plot_height=plotheight)
         
-        p.vbar_stack(lv_labels, x='XVar', width=0.9,color=bokeh_palette,source=r2pvX_dict)
+        v=p.vbar_stack(lv_labels, x='XVar', width=0.9,color=bokeh_palette,source=r2pvX_dict)
+        legend = Legend(items=[(x, [v[i]]) for i, x in enumerate(lv_labels)], location=(0, 0))
         p.y_range.range_padding = 0.1
         p.ygrid.grid_line_color = None
         p.axis.minor_tick_line_color = None
         p.outline_line_color = None
         p.yaxis.axis_label = 'R2X'
         p.xaxis.major_label_orientation = 45
+        p.add_layout(legend, 'right')
         show(p)
     return
     
-def loadings(mvmobj,*,plotwidth=600,xgrid=False):
+def loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=False,zspace=False):
     """
     Column plots of loadings
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     
-    mvmobj: A model created with phi.pca or phi.pls
+    mvm_obj: A model created with phi.pca or phi.pls
     
     """
-    
+    mvmobj=mvm_obj.copy()
+    space_lbl='X'
     A= mvmobj['T'].shape[1]
-    num_varX=mvmobj['P'].shape[0]    
+    if (mvmobj['type']=='lpls') or (mvmobj['type']=='jrpls') or (mvmobj['type']=='tpls'):
+        loading_lbl='S*'
+        if (mvmobj['type']=='lpls'):
+            mvmobj['Ws']=mvmobj['Ss']
+        if isinstance(material, bool) and not(zspace):
+            mvmobj['Ws']=mvmobj['Ss']
+        if ((mvmobj['type']=='jrpls') or (mvmobj['type']=='tpls') ) and not(isinstance(material, bool) ):
+            mvmobj['Ws']=mvmobj['Ssi'][mvmobj['materials'].index(material)]
+            mvmobj['varidX']=mvmobj['varidXi'][mvmobj['materials'].index(material) ]
+            
+        elif (mvmobj['type']=='tpls') and zspace :
+            mvmobj['varidX']=mvmobj['varidZ']
+            loading_lbl='Wz*'
+            space_lbl='Z'
+        
+    else:
+        num_varX=mvmobj['P'].shape[0]    
+        loading_lbl='W*'
     if 'Q' in mvmobj:
         is_pls=True
         lv_prefix='LV #'
@@ -189,9 +236,9 @@ def loadings(mvmobj,*,plotwidth=600,xgrid=False):
       
     if is_pls:
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("Loadings X Space_"+rnd_num+".html",title='X Loadings PLS')
+        output_file("Loadings "+space_lbl+" Space_"+rnd_num+".html",title=space_lbl+' Loadings PLS')
         for i in list(np.arange(A)):
-            p = figure(x_range=XVar, title="X Space Loadings "+lv_labels[i],
+            p = figure(x_range=XVar, title=space_lbl+" Space Loadings "+lv_labels[i]+addtitle,
                     tools=TOOLS,tooltips=TOOLTIPS,plot_width=plotwidth)
             source1 = ColumnDataSource(data=dict(x_=XVar, y_=mvmobj['Ws'][:,i].tolist(),names=XVar)) 
             
@@ -204,7 +251,7 @@ def loadings(mvmobj,*,plotwidth=600,xgrid=False):
             else:
                 p.xgrid.grid_line_color = None    
                 
-            p.yaxis.axis_label = 'W* ['+str(i+1)+']'
+            p.yaxis.axis_label = loading_lbl+' ['+str(i+1)+']'
             hline = Span(location=0, dimension='width', line_color='black', line_width=2)
             p.renderers.extend([hline])
             p.xaxis.major_label_orientation = 45
@@ -216,7 +263,7 @@ def loadings(mvmobj,*,plotwidth=600,xgrid=False):
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
         output_file("Loadings Y Space_"+rnd_num+".html",title='Y Loadings PLS')
         for i in list(np.arange(A)):
-            p = figure(x_range=YVar, title="Y Space Loadings "+lv_labels[i],
+            p = figure(x_range=YVar, title="Y Space Loadings "+lv_labels[i]+addtitle,
                     tools="save,box_zoom,pan,reset",tooltips=TOOLTIPS,plot_width=plotwidth)
             
             source1 = ColumnDataSource(data=dict(x_=YVar, y_=mvmobj['Q'][:,i].tolist(),names=YVar)) 
@@ -242,7 +289,7 @@ def loadings(mvmobj,*,plotwidth=600,xgrid=False):
         for i in list(np.arange(A)):
             source1 = ColumnDataSource(data=dict(x_=XVar, y_=mvmobj['P'][:,i].tolist(),names=XVar))  
             
-            p = figure(x_range=XVar, title="X Space Loadings "+lv_labels[i],
+            p = figure(x_range=XVar, title="X Space Loadings "+lv_labels[i]+addtitle,
                     tools=TOOLS,tooltips=TOOLTIPS,plot_width=plotwidth)
             
             #p.vbar(x=XVar, top=mvmobj['P'][:,i].tolist(), width=0.5)
@@ -263,17 +310,32 @@ def loadings(mvmobj,*,plotwidth=600,xgrid=False):
         show(column(p_list))
     return    
 
-def loadings_map(mvmobj,dims,*,plotwidth=600):
+def loadings_map(mvm_obj,dims,*,plotwidth=600,addtitle='',material=False,zspace=False,textalpha=0.75):
     """
     Scatter plot overlaying X and Y loadings 
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     
-    mvmobj: A model created with phi.pca or phi.pls
+    mvm_obj: A model created with phi.pca or phi.pls
     dims: what latent spaces to plot in x and y axes e.g. dims=[1,2]
     """
+    mvmobj=mvm_obj.copy()
     A= mvmobj['T'].shape[1]
-    num_varX=mvmobj['P'].shape[0]    
+    if (mvmobj['type']=='lpls') or (mvmobj['type']=='jrpls') or (mvmobj['type']=='tpls'):
+     
+        if (mvmobj['type']=='lpls'):
+            mvmobj['Ws']=mvmobj['Ss']
+        if isinstance(material, bool) and not(zspace):
+            mvmobj['Ws']=mvmobj['Ss']
+        if ((mvmobj['type']=='jrpls') or (mvmobj['type']=='tpls')) and not(isinstance(material, bool) ):
+            mvmobj['Ws']=mvmobj['Ssi'][mvmobj['materials'].index(material)]
+            mvmobj['varidX']=mvmobj['varidXi'][mvmobj['materials'].index(material) ]
+        elif (mvmobj['type']=='tpls') and zspace :
+            mvmobj['varidX']=mvmobj['varidZ']
+            
+    else:
+        num_varX=mvmobj['P'].shape[0]
+   
     if 'Q' in mvmobj:
         lv_prefix='LV #'     
         lv_labels = []   
@@ -317,15 +379,21 @@ def loadings_map(mvmobj,dims,*,plotwidth=600):
     
         source1 = ColumnDataSource(data=dict(x=x_ws, y=y_ws,names=XVar))  
         source2 = ColumnDataSource(data=dict(x=x_q, y=y_q,names=YVar)) 
-        p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=plotwidth, title="Loadings Map LV["+str(dims[0])+"] - LV["+str(dims[1])+"]",
+        p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=plotwidth, title="Loadings Map LV["+str(dims[0])+"] - LV["+str(dims[1])+"] "+addtitle,
                                                                                                           x_range=(-1.5,1.5),y_range=(-1.5,1.5))
         p.circle('x', 'y', source=source1,size=10,color='darkblue')
         p.circle('x', 'y', source=source2,size=10,color='red')
         p.xaxis.axis_label = lv_labels [dims[0]-1]
         p.yaxis.axis_label = lv_labels [dims[1]-1]
         
-        labelsX = LabelSet(x='x', y='y', text='names', level='glyph',x_offset=5, y_offset=5, source=source1, render_mode='canvas',text_color='darkgray')
-        labelsY = LabelSet(x='x', y='y', text='names', level='glyph',x_offset=5, y_offset=5, source=source2, render_mode='canvas',text_color='darkgray')
+        labelsX = LabelSet(x='x', y='y', text='names', 
+                           level='glyph',x_offset=5, y_offset=5, 
+                           source=source1, render_mode='canvas',text_color='darkgray',
+                           text_alpha=textalpha )
+        labelsY = LabelSet(x='x', y='y', text='names', 
+                           level='glyph',x_offset=5, y_offset=5, 
+                           source=source2, render_mode='canvas',text_color='darkgray',
+                           text_alpha=textalpha )
         p.add_layout(labelsX)
         p.add_layout(labelsY)
 
@@ -357,11 +425,12 @@ def loadings_map(mvmobj,dims,*,plotwidth=600):
                 ]
     
         source1 = ColumnDataSource(data=dict(x=x_p, y=y_p,names=XVar))  
-        p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=plotwidth, title="Loadings Map PC["+str(dims[0])+"] - PC["+str(dims[1])+"]",                                                                                                         x_range=(-1.5,1.5),y_range=(-1.5,1.5))
+        p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=plotwidth, title="Loadings Map PC["+str(dims[0])+"] - PC["+str(dims[1])+"] "+addtitle,                                                                                                         x_range=(-1.5,1.5),y_range=(-1.5,1.5))
         p.circle('x', 'y', source=source1,size=10,color='darkblue')
         p.xaxis.axis_label = lv_labels [dims[0]-1]
         p.yaxis.axis_label = lv_labels [dims[1]-1]        
-        labelsX = LabelSet(x='x', y='y', text='names', level='glyph',x_offset=5, y_offset=5, source=source1, render_mode='canvas',text_color='darkgray')
+        labelsX = LabelSet(x='x', y='y', text='names', level='glyph',x_offset=5, y_offset=5, source=source1, 
+                           render_mode='canvas',text_color='darkgray',text_alpha=textalpha)
         p.add_layout(labelsX)
         vline = Span(location=0, dimension='height', line_color='black', line_width=2)
         # Horizontal line
@@ -370,17 +439,36 @@ def loadings_map(mvmobj,dims,*,plotwidth=600):
         show(p)            
     return  
 
-def weighted_loadings(mvmobj,*,plotwidth=600,xgrid=False):
+def weighted_loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=False,zspace=False):
     """
     Column plots of loadings weighted by r2x/r2y correspondingly
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     
-    mvmobj: A model created with phi.pca or phi.pls
+    mvm_obj: A model created with phi.pca or phi.pls
     
     """
+    mvmobj=mvm_obj.copy()
     A= mvmobj['T'].shape[1]
-    num_varX=mvmobj['P'].shape[0]    
+    space_lbl='X'
+    if (mvmobj['type']=='lpls') or (mvmobj['type']=='jrpls') or (mvmobj['type']=='tpls'):
+        loading_lbl='S*'
+        if (mvmobj['type']=='lpls'):
+            mvmobj['Ws']=mvmobj['Ss']
+        if isinstance(material, bool) and not(zspace):
+            mvmobj['Ws']=mvmobj['Ss']
+        if ((mvmobj['type']=='jrpls')  or (mvmobj['type']=='tpls')) and not(isinstance(material, bool) ):
+            mvmobj['Ws']=mvmobj['Ssi'][mvmobj['materials'].index(material)]
+            mvmobj['varidX']=mvmobj['varidXi'][mvmobj['materials'].index(material) ]
+            mvmobj['r2xpv']=mvmobj['r2xpvi'][mvmobj['materials'].index(material) ]
+        elif (mvmobj['type']=='tpls') and zspace:
+            mvmobj['varidX']=mvmobj['varidZ']
+            mvmobj['r2xpv']=mvmobj['r2zpv']
+            loading_lbl='Wz*'
+            space_lbl='Z'
+    else:
+        num_varX=mvmobj['P'].shape[0]     
+        loading_lbl='W*'
     if 'Q' in mvmobj:
         is_pls=True
         lv_prefix='LV #'
@@ -424,9 +512,9 @@ def weighted_loadings(mvmobj,*,plotwidth=600,xgrid=False):
     
     if is_pls:
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
-        output_file("Loadings X Space_"+rnd_num+".html",title='X Weighted Loadings PLS')
+        output_file("Loadings "+space_lbl+" Space_"+rnd_num+".html",title=space_lbl+' Weighted Loadings PLS')
         for i in list(np.arange(A)):
-            p = figure(x_range=XVar, title="X Space Weighted Loadings "+lv_labels[i],
+            p = figure(x_range=XVar, title=space_lbl+" Space Weighted Loadings "+lv_labels[i]+addtitle,
                      tools=TOOLS,tooltips=TOOLTIPS,plot_width=plotwidth)
             source1 = ColumnDataSource(data=dict(x_=XVar, y_=(mvmobj['r2xpv'][:,i] * mvmobj['Ws'][:,i]).tolist(),names=XVar)) 
              
@@ -438,7 +526,7 @@ def weighted_loadings(mvmobj,*,plotwidth=600,xgrid=False):
             else:
                 p.xgrid.grid_line_color = None    
 
-            p.yaxis.axis_label = 'W* ['+str(i+1)+']'
+            p.yaxis.axis_label = loading_lbl+' x R2'+space_lbl+' ['+str(i+1)+']'
             hline = Span(location=0, dimension='width', line_color='black', line_width=2)
             p.renderers.extend([hline])
             p.xaxis.major_label_orientation = 45
@@ -450,7 +538,7 @@ def weighted_loadings(mvmobj,*,plotwidth=600,xgrid=False):
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
         output_file("Loadings Y Space_"+rnd_num+".html",title='Y Weighted Loadings PLS')
         for i in list(np.arange(A)):
-            p = figure(x_range=YVar, title="Y Space Weighted Loadings "+lv_labels[i],
+            p = figure(x_range=YVar, title="Y Space Weighted Loadings "+lv_labels[i]+addtitle,
                      tools=TOOLS,tooltips=TOOLTIPS,plot_width=plotwidth)
             source1 = ColumnDataSource(data=dict(x_=YVar, y_=(mvmobj['r2ypv'][:,i] * mvmobj['Q'][:,i]).tolist(),names=YVar)) 
             
@@ -461,7 +549,7 @@ def weighted_loadings(mvmobj,*,plotwidth=600,xgrid=False):
                 p.xgrid.grid_line_color = 'lightgray'
             else:
                 p.xgrid.grid_line_color = None    
-            p.yaxis.axis_label = 'Q ['+str(i+1)+']'
+            p.yaxis.axis_label = 'Q x R2Y ['+str(i+1)+']'
             hline = Span(location=0, dimension='width', line_color='black', line_width=2)
             p.renderers.extend([hline])
             p.xaxis.major_label_orientation = 45
@@ -474,7 +562,7 @@ def weighted_loadings(mvmobj,*,plotwidth=600,xgrid=False):
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
         output_file("Loadings X Space_"+rnd_num+".html",title='X Weighted Loadings PCA') 
         for i in list(np.arange(A)):
-            p = figure(x_range=XVar, title="X Space Weighted Loadings "+lv_labels[i],
+            p = figure(x_range=XVar, title="X Space Weighted Loadings "+lv_labels[i]+addtitle,
                      tools=TOOLS,tooltips=TOOLTIPS,plot_width=plotwidth)
             source1 = ColumnDataSource(data=dict(x_=XVar, y_=(mvmobj['r2xpv'][:,i] * mvmobj['P'][:,i]).tolist(),names=XVar)) 
             
@@ -486,7 +574,7 @@ def weighted_loadings(mvmobj,*,plotwidth=600,xgrid=False):
             else:
                 p.xgrid.grid_line_color = None    
 
-            p.yaxis.axis_label = 'P ['+str(i+1)+']'
+            p.yaxis.axis_label = 'P x R2X['+str(i+1)+']'
             hline = Span(location=0, dimension='width', line_color='black', line_width=2)
             p.renderers.extend([hline])
             p.xaxis.major_label_orientation = 45
@@ -497,19 +585,32 @@ def weighted_loadings(mvmobj,*,plotwidth=600,xgrid=False):
         show(column(p_list))
     return  
  
-def vip(mvmobj,*,plotwidth=600):
+def vip(mvm_obj,*,plotwidth=600,material=False,zspace=False,addtitle=''):
     """
     Very Important to the Projection (VIP) plot
         by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     
-    mvmobj: A model created with phi.pls
+    mvm_obj: A model created with phi.pls
     """
-    
+    mvmobj=mvm_obj.copy()
     if 'Q' in mvmobj:  
+        if (mvmobj['type']=='lpls') or (mvmobj['type']=='jrpls') or (mvmobj['type']=='tpls'):
+            if (mvmobj['type']=='lpls'):
+                mvmobj['Ws']=mvmobj['Ss']
+            if isinstance(material, bool) and not(zspace):
+                mvmobj['Ws']=mvmobj['Ss']
+            if ((mvmobj['type']=='jrpls') or (mvmobj['type']=='tpls')) and not(isinstance(material, bool) ):
+                mvmobj['Ws']=mvmobj['Ssi'][mvmobj['materials'].index(material)]
+                mvmobj['varidX']=mvmobj['varidXi'][mvmobj['materials'].index(material) ]
+            elif (mvmobj['type']=='tpls') and zspace:
+                mvmobj['varidX']=mvmobj['varidZ']
+            
+        else:
+            num_varX=mvmobj['P'].shape[0] 
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
         output_file("VIP_"+rnd_num+".html",title='VIP Coefficient') 
-        num_varX=mvmobj['P'].shape[0]            
+                   
         if 'varidX' in mvmobj:
             XVar=mvmobj['varidX']
         else:
@@ -524,39 +625,92 @@ def vip(mvmobj,*,plotwidth=600):
         sorted_XVar=[]
         for i in sort_indx[:,0]:
             sorted_XVar.append(XVar[i])  
-        p = figure(x_range=sorted_XVar, title="VIP",
-            tools="save,box_zoom,pan,reset",plot_width=plotwidth)
-        p.vbar(x=sorted_XVar, top=vip.tolist(), width=0.5)
+            
+        TOOLTIPS = [
+                    ("Variable","@names")
+                    ]
+        
+        p = figure(x_range=sorted_XVar, title="VIP "+addtitle,
+            tools="save,box_zoom,pan,reset",tooltips=TOOLTIPS,plot_width=plotwidth)
+        source1 = ColumnDataSource(data=dict(x_=sorted_XVar, y_=vip.tolist(),names=sorted_XVar)) 
+        #p.vbar(x=sorted_XVar, top=vip.tolist(), width=0.5)
+        p.vbar(x='x_', top='y_', source=source1,width=0.5)
         p.xgrid.grid_line_color = None
         p.yaxis.axis_label = 'Very Important to the Projection'
         p.xaxis.major_label_orientation = 45
         show(p)
     return    
 
-def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False,add_labels=False,add_legend=True,plotwidth=600,plotheight=600):
+def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
+                  add_ci=False,add_labels=False,add_legend=True,legend_cols=1, 
+                  addtitle='',plotwidth=600,plotheight=600,
+                  rscores=False,material=False):
     '''
     Score scatter plot
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     
-    mvmobj     : PLS or PCA object from phyphi
+    mvm_obj     : PLS or PCA object from phyphi
     xydim      : LV to plot on x and y axes. eg [1,2] will plot t1 vs t2
     CLASSID    : Pandas DataFrame with CLASSIDS
     colorby    : Category (one of the CLASSIDS) to color by
     Xnew       : New data for which to make the score plot this routine evaluates and plots
     add_ci     : when = True will add confidence intervals
     add_labels : When = True labels each point with Obs ID
+    add_legend : When = True will add a legend with classid labels
+    legend_cols: Number of columns for legend
+    addtitle   : Additional text to be added to title
     plotwidth  : If omitted, width is 600
+    plotheight : If omitted, height is 600
+    rscores    : Plot scores for all material space in lpls|jrpls|tpls
+    material   : Label for specific material to plot scores for in lpls|jrpls|tpls 
     '''
-    
+    mvmobj=mvm_obj.copy()
+    if ((mvmobj['type']=='lpls') or  (mvmobj['type']=='jrpls')  or  (mvmobj['type']=='tpls')) and (not(isinstance(Xnew,bool))):    
+        Xnew=False
+        print('score scatter does not take Xnew for jrpls or lpls for now')
+        
     if isinstance(Xnew,bool):
+        
         if 'obsidX' in mvmobj:
             ObsID_=mvmobj['obsidX']
         else:
             ObsID_ = []
             for n in list(np.arange(mvmobj['T'].shape[0])+1):
                 ObsID_.append('Obs #'+str(n))  
-        T_matrix=mvmobj['T']
+        T_matrix=mvmobj['T']    
+        
+        if not(rscores):        
+            if (mvmobj['type']=='lpls'):
+                ObsID_=mvmobj['obsidR']
+            if (mvmobj['type']=='jrpls') or (mvmobj['type']=='tpls') :   
+                 ObsID_=mvmobj['obsidRi'][0]
+        else:
+            if (mvmobj['type']=='lpls'):
+                ObsID_=mvmobj['obsidX']
+                T_matrix=mvmobj['Rscores']
+            if (mvmobj['type']=='jrpls') or (mvmobj['type']=='tpls')  : 
+                if isinstance(material,bool):
+                    allobsids=[y for x in mvmobj['obsidXi'] for y in x]
+                    ObsID_=allobsids
+                    clssid_obs=[]
+                    clssid_class=[]
+                    for i,R_ in enumerate(mvmobj['Rscores']):
+                        clssid_obs.extend(mvmobj['obsidXi'][i])
+                        clssid_class.extend([mvmobj['materials'][i]]*len( mvmobj['obsidXi'][i]))
+                        if i==0:
+                            allrscores=R_
+                        else:
+                            allrscores=np.vstack((allrscores,R_))
+                    classid=pd.DataFrame(clssid_class,columns=['material'])
+                    classid.insert(0,'obs',clssid_obs)
+                    CLASSID=classid
+                    colorby='material'
+                    T_matrix=allrscores
+                else:
+                    ObsID_ = mvmobj['obsidXi'][mvmobj['materials'].index(material) ]
+                    T_matrix = mvmobj['Rscores'][mvmobj['materials'].index(material) ]
+
     else:
         if isinstance(Xnew,np.ndarray):
             X_=Xnew.copy()
@@ -576,7 +730,7 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=F
         
     ObsNum_=[]    
     for n in list(range(1,len(ObsID_)+1)):
-                ObsNum_.append('Obs #'+str(n))  
+                ObsNum_.append(str(n))  
     
     if isinstance(CLASSID,np.bool): # No CLASSIDS
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
@@ -594,7 +748,7 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=F
                 ("Obs: ","@ObsID")
                 ]
         
-        p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=plotwidth,plot_height=plotheight, title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ ']')
+        p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=plotwidth,plot_height=plotheight, title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ '] '+addtitle)
         p.circle('x', 'y', source=source,size=7)
         if add_ci:
             T_aux1=mvmobj['T'][:,[xydim[0]-1]]
@@ -610,8 +764,12 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=F
         if add_labels:
             labelsX = LabelSet(x='x', y='y', text='ObsID', level='glyph',x_offset=5, y_offset=5, source=source, render_mode='canvas')
             p.add_layout(labelsX)
-        p.xaxis.axis_label = 't ['+str(xydim[0])+']'
-        p.yaxis.axis_label = 't ['+str(xydim[1])+']'
+        if not(rscores):    
+            p.xaxis.axis_label = 't ['+str(xydim[0])+']'
+            p.yaxis.axis_label = 't ['+str(xydim[1])+']'
+        else:
+            p.xaxis.axis_label = 'r ['+str(xydim[0])+']'
+            p.yaxis.axis_label = 'r ['+str(xydim[1])+']'
         # Vertical line
         vline = Span(location=0, dimension='height', line_color='black', line_width=2)
         # Horizontal line
@@ -642,7 +800,7 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=F
         classid_=list(CLASSID[colorby])
         legend_it = []
         
-        p = figure(tools=TOOLS, tooltips=TOOLTIPS,toolbar_location="above",plot_width=plotwidth,plot_height=plotheight,title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ ']')
+        p = figure(tools=TOOLS, tooltips=TOOLTIPS,toolbar_location="above",plot_width=plotwidth,plot_height=plotheight,title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ '] '+addtitle)
 
         for classid_in_turn in Classes_:                      
             x_aux       = []
@@ -683,17 +841,33 @@ def score_scatter(mvmobj,xydim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=F
             p.line(xd95,yd95n,line_color="gold",line_dash='dashed')
             p.line(xd99,yd99p,line_color="red",line_dash='dashed')
             p.line(xd99,yd99n,line_color="red",line_dash='dashed') 
-        p.xaxis.axis_label = 't ['+str(xydim[0])+']'
-        p.yaxis.axis_label = 't ['+str(xydim[1])+']'
+        if not(rscores):    
+            p.xaxis.axis_label = 't ['+str(xydim[0])+']'
+            p.yaxis.axis_label = 't ['+str(xydim[1])+']'
+        else:
+            p.xaxis.axis_label = 'r ['+str(xydim[0])+']'
+            p.yaxis.axis_label = 'r ['+str(xydim[1])+']'
         # Vertical line
         vline = Span(location=0, dimension='height', line_color='black', line_width=2)
         # Horizontal line
         hline = Span(location=0, dimension='width', line_color='black', line_width=2)
         p.renderers.extend([vline, hline])
         if add_legend:
-            legend = Legend(items=legend_it, location='top_right')
-            p.add_layout(legend, 'right')
-            legend.click_policy="hide"
+            #legend_cols=1
+            ipc=[np.round(len(legend_it)/legend_cols)]*legend_cols              
+            ipc[-1]=len(legend_it)-sum(ipc[:-1])
+            pastit=0
+            for it in ipc:
+                leg_ = Legend(
+                    items=legend_it[int(0+pastit):int(pastit+it)])
+                    #location=(0,15+pastit*5))
+                pastit+=it
+                p.add_layout(leg_, 'right')
+                leg_.click_policy="hide"
+            #legend = Legend(items=legend_it, location='top_right')
+            #p.add_layout(legend, 'right')
+            
+            
         show(p)
     return    
 
@@ -1086,7 +1260,11 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
         X_=np.array(X.values[:,1:]).astype(float)
         ObsID_ = X.values[:,0].astype(str)
         ObsID_ = ObsID_.tolist()
-
+    elif isinstance(X,dict):
+        X_=X.copy()
+        k=list(X.keys())
+        ObsID_=X[k[0]].values[:,0].astype(str)
+        ObsID_ = ObsID_.tolist()
     if 'varidX' in mvmobj:
         XVar=mvmobj['varidX']
     else:
@@ -1111,6 +1289,7 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
 
             
     if 'Q' in mvmobj:  
+        
         pred=phi.pls_pred(X_,mvmobj)
         yhat=pred['Yhat']
         if x_space:
@@ -1353,10 +1532,18 @@ def contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,
         to_txt =", to obs: "+ str(to_obs)
     else:
         to_txt=""
-    
+        
+    TOOLTIPS = [
+                ("Variable","@names")
+                ]
     p = figure(x_range=XVar, plot_height=plotheight,plot_width=plotwidth, title="Contributions Plot"+from_txt+to_txt,
-                    tools="save,box_zoom,pan,reset")
-    p.vbar(x=XVar, top=Xconts[0].tolist(), width=0.5)
+                    tools="save,box_zoom,pan,reset",tooltips=TOOLTIPS)
+    
+    source1 = ColumnDataSource(data=dict(x_=XVar, y_=Xconts[0].tolist(),names=XVar)) 
+    #p.vbar(x=XVar, top=Xconts[0].tolist(), width=0.5)
+    p.vbar(x='x_', top='y_', source=source1,width=0.5)
+    
+    
     p.ygrid.grid_line_color = None    
     if xgrid:
         p.xgrid.grid_line_color = 'lightgray'
@@ -1378,7 +1565,10 @@ def contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,
         
         p = figure(x_range=YVar, plot_height=plotheight,plot_width=plotwidth, title="Contributions Plot",
                     tools="save,box_zoom,pan,reset")
-        p.vbar(x=YVar, top=Yconts[0].tolist(), width=0.5)
+        #p.vbar(x=YVar, top=Yconts[0].tolist(), width=0.5)
+        source1 = ColumnDataSource(data=dict(x_=YVar, y_=Yconts[0].tolist(),names=YVar)) 
+        p.vbar(x='x_', top='y_', source=source1,width=0.5)
+        
         p.ygrid.grid_line_color = None    
         if xgrid:
             p.xgrid.grid_line_color = 'lightgray'

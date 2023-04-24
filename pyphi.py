@@ -2,7 +2,22 @@
 Phi for Python (pyPhi)
 
 by Salvador Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
-
+Added Apr 21
+        * Re added varimax_rotation with complete model rotation for PCA and PLS
+        
+Added Apr 17 
+        * Added tpls and tpls_pred
+Added Apr 15 
+        * Added jrpls model and jrpls_pred
+        * Added routines to reconcile columns to rows identifier so that X and R materices
+          correspond correctly
+        * Added routines to reconcile rows across a list of dataframes and produces a list
+          of dataframes containing only those observations present in all dataframes
+          
+Added on Apr 9 2023
+        * Added lpls and lpls_pred routines
+        * Added parse_materials to read linear table and produce R or Ri
+        
 Release as of Nov 23 2022
         * Added a function to export PLS model to gPROMS code
 
@@ -74,6 +89,9 @@ from scipy import interpolate
 from statsmodels.distributions.empirical_distribution import ECDF
 from shutil import which
 import os
+from numpy import eye, asarray, dot, sum, diag
+from numpy.linalg import svd
+
 os.environ['NEOS_EMAIL'] = 'pyphisoftware@gmail.com' 
 
 try:
@@ -171,6 +189,7 @@ def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cro
         
     if cross_val==0:
         pcaobj= pca_(X,A,mcs=mcs,md_algorithm=md_algorithm,force_nipals=force_nipals,shush=shush)
+        pcaobj['type']='pca'
     elif (cross_val > 0) and (cross_val<100):
         if isinstance(X,np.ndarray):
             X_=X.copy()
@@ -303,7 +322,8 @@ def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cro
                 d2=r2xc[0]
                 d3=q2xc[0]
                 print("PC #"+str(a+1)+":   {:8.3f}    {:.3f}     {:.3f}       {:.3f}     {:.3f}".format(d1, r2, d2,q2,d3))
-            print('--------------------------------------------------------------')        
+            print('--------------------------------------------------------------')     
+        pcaobj['type']='pca'    
     else:
         pcaobj='Cannot cross validate  with those options'
     return pcaobj
@@ -438,10 +458,11 @@ def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
                       if num_it > maxit:
                           Converged=True
                       if Converged:
-                          if np.var(ti[ti<0]) > np.var(ti[ti>=0]):
-                             tn=-tn
-                             ti=-ti
-                             pi=-pi 
+                          if (len(ti[ti<0])>0) and (len(ti[ti>0])>0): #if scores are above and below zero
+                              if np.var(ti[ti<0]) > np.var(ti[ti>=0]):
+                                 tn=-tn
+                                 ti=-ti
+                                 pi=-pi 
                           if not(shush):
                               print('# Iterations for PC #'+str(a+1)+': ',str(num_it))
                           if a==0:
@@ -687,6 +708,7 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=True,shus
     """
     if cross_val==0:
         plsobj = pls_(X,Y,A,mcsX=mcsX,mcsY=mcsY,md_algorithm=md_algorithm,force_nipals=force_nipals,shush=shush)  
+        plsobj['type']='pls' 
     elif (cross_val > 0) and (cross_val<100):
         if isinstance(X,np.ndarray):
             X_=X.copy()
@@ -961,7 +983,10 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=True,shus
                     d5=q2yc[0]
                     print("PC #"+str(a+1)+":{:8.3f}    {:.3f}     {:.3f}       {:.3f}     {:.3f}       {:.3f}     {:.3f}       {:.3f}     {:.3f}".format(d1, r2X, d2,q2X,d3,r2Y,d4,q2Y,d5))
                 print('-------------------------------------------------------------------------------------------------------')   
+        plsobj['type']='pls'
     elif cross_val==100:
+    
+          
         if isinstance(X,np.ndarray):
             X_=X.copy()
         elif isinstance(X,pd.DataFrame):
@@ -1135,6 +1160,7 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=True,shus
         
         plsobj['q2Y']   = q2Y
         plsobj['q2Ypv'] = q2Ypv
+        plsobj['type']  = 'pls'
         if cross_val_X:
             plsobj['q2X']   = q2X
             plsobj['q2Xpv'] = q2Xpv
@@ -1167,6 +1193,7 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=True,shus
                     d5=q2yc[0]
                     print("PC #"+str(a+1)+":{:8.3f}    {:.3f}     {:.3f}       {:.3f}     {:.3f}       {:.3f}     {:.3f}       {:.3f}     {:.3f}".format(d1, r2X, d2,q2X,d3,r2Y,d4,q2Y,d5))
                 print('-------------------------------------------------------------------------------------------------------')   
+    
     else:
         plsobj='Cannot cross validate  with those options'
     return plsobj    
@@ -3034,7 +3061,7 @@ def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=F
     Y_pd.insert(0,obsid_column_name,obsids)
 
     pls_obj_=pls(X_pd,Y_pd,A,mcsX=False,mcsY=False,md_algorithm=md_algorithm_,force_nipals=force_nipals_,shush=shush_,cross_val=cross_val_,cross_val_X=cross_val_X_)          
-    
+    pls_obj_['type']='mbpls'
     #Calculate block loadings, scores, weights
     Wsb=[]
     Wb=[]
@@ -3311,15 +3338,1683 @@ def export_2_gproms(mvmobj,*,fname='phi_export.txt'):
 
         return
     
+def parse_materials(filename,sheetname):
+    '''
+    Routine to parse out compositions from linear table
+    This reads an excel file with four columns:
+        'Finished Product Lot'	'Material Lot'	'Ratio or Quantity'	'Material'
+        
+    where the usage per batch of finished product is recorded. e.g.
+
+'Finished Product Lot'	'Material Lot'	'Ratio or Quantity'	'Material'
+        A001                 A                0.75             Drug
+        A001                 B                0.25             Drug
+        A001                 Z                1.0              Excipient
+        .                    .                 .                 .
+        .                    .                 .                 .
+        .                    .                 .                 .
+        
+    Returns:
+        JR = Joint R matrix of material consumption, list of dataframes
+        materials_used = Names of materials 
+    '''
+    materials=pd.read_excel(filename,sheet_name=sheetname)
+
+    #Sanity Check
+    ok=True
+    for lot in np.unique(materials['Finished Product Lot']):
+        this_lot=materials[materials["Finished Product Lot"]==lot]
+        for mt,m in zip(this_lot['Material'].values, this_lot['Material Lot'].values):
+            try:
+               if np.isnan(m):
+                   print('Lot '+lot+' has no Material Lot for '+mt)
+                   ok=False
+                   break
+            except:
+                d=1
+        if not(ok):
+            break
+        print('Lot :'+lot+' ratio/qty adds to '+str(np.sum(this_lot['Ratio or Quantity'].values) ))
+    if ok:    
+        JR=[]
+        materials_used=np.unique(materials['Material'])
+        fp_lots=np.unique(materials['Finished Product Lot'])
+        for m in materials_used:
+            r_mat=[]
+            mat_lots=np.unique(materials['Material Lot'][materials['Material']==m]).tolist()
+            for lot in fp_lots:
+                rvec=np.zeros(len(mat_lots))
+                this_lot_this_mat=materials[(materials["Finished Product Lot"]==lot) &
+                                            (materials['Material']==m)]
+                for l,r in zip(this_lot_this_mat['Material Lot'].values,
+                               this_lot_this_mat['Ratio or Quantity'].values):
+                    rvec[mat_lots.index(l)]=r
+                r_mat.append(rvec)    
+            r_mat_pd=pd.DataFrame(np.array(r_mat),columns=mat_lots)
+            r_mat_pd.insert(0,'FPLot',fp_lots)    
+            JR.append(r_mat_pd)
+        return JR, materials_used
+    else:
+        print('Data needs revision')
+        return False,False
     
+def isin_ordered_col0(df,alist):
+    df_=df.copy()
+    df_=df[df[df.columns[0]].isin(alist)]
+    df_=df_.set_index(df_.columns[0] )
+    df_=df_.reindex(alist)
+    df_=df_.reset_index()
+    return df_
     
+def reconcile_rows(df_list):
+    all_rows=[]
+    for df in df_list:
+        all_rows.extend(df[df.columns[0]].values.tolist())
+    all_rows=np.unique(all_rows)    
+    for df in df_list:
+        rows=df[df.columns[0]].values.tolist()
+        rows_=[]
+        for r in all_rows:
+            if r in rows:
+                rows_.append(r)
+        all_rows=rows_.copy()
+    new_df_list=[]
+    for df in df_list:
+        df=isin_ordered_col0(df,all_rows)
+        new_df_list.append(df)
+    return new_df_list
     
+def reconcile_rows_to_columns(df_list_r,df_list_c): 
+    df_list_r_o=[]
+    df_list_c_o=[]
+    allids=[]
+    for dfr,dfc in zip(df_list_r,df_list_c ):
+        all_ids  = dfc.columns[1:].tolist()
+        all_ids.extend(dfr[dfr.columns[0]].values.tolist())
+        all_ids = np.unique(all_ids)
+        
+        all_ids_=[]
+        rows=dfr[dfr.columns[0]].values.tolist()
+        cols=dfc.columns[1:].tolist()
+        for i in all_ids:
+            if i in rows:
+                all_ids_.append(i)
+        all_ids=[]         
+        for i in all_ids_:
+            if i in cols:
+                all_ids.append(i)
+                
+        dfr_ =isin_ordered_col0(dfr,all_ids)
+        
+        dfc_=dfc[all_ids]
+        dfc_.insert(0,dfc.columns[0],dfc[dfc.columns[0]].values.tolist())
+        df_list_r_o.append(dfr_)
+        df_list_c_o.append(dfc_)
+        allids.append(all_ids)
+    return df_list_r_o,df_list_c_o
     
+def _Ab_btbinv(A,b,A_not_nan_map):
+    # project c = Ab/b'b
+    # A = [i x j]  b=[j x 1] c = [i x 1]
+    b_mat=np.tile(b.T,(A.shape[0],1))
+    c =(np.sum(A*b_mat,axis=1))/(np.sum((b_mat*A_not_nan_map)**2,axis=1))
+    return c.reshape(-1,1)    
+
+def lpls(X,R,Y,A,*,shush=False):
+    '''
+    #LPLS Algorithm per Muteki et. al Chemom.Intell.Lab.Syst.85(2007) 186 – 194
+    # X = [ m x p ] Phys. Prop. DataFrame of             materials x mat. properties
+    # R = [ b x m ] Blending ratios DataFrame of         blends    x materials
+    # Y = [ b x n ] Product characteristics DataFrame of blends    x prod. properties
+    #first column of all dataframes is an identifier string
+    '''
+    if isinstance(X,np.ndarray):
+        X_ = X.copy()
+        obsidX = False
+        varidX = False
+    elif isinstance(X,pd.DataFrame):
+        X_=np.array(X.values[:,1:]).astype(float)
+        obsidX = X.values[:,0].astype(str)
+        obsidX = obsidX.tolist()
+        varidX = X.columns.values
+        varidX = varidX[1:]
+        varidX = varidX.tolist()
+        
+    if isinstance(Y,np.ndarray):
+        Y_=Y.copy()
+        obsidY = False
+        varidY = False
+    elif isinstance(Y,pd.DataFrame):
+        Y_=np.array(Y.values[:,1:]).astype(float)
+        obsidY = Y.values[:,0].astype(str)
+        obsidY = obsidY.tolist()
+        varidY = Y.columns.values
+        varidY = varidY[1:]
+        varidY = varidY.tolist()    
+        
+    if isinstance(R,np.ndarray):
+        R_=R.copy()
+        obsidR = False
+        varidR = False
+    elif isinstance(R,pd.DataFrame):
+        R_=np.array(R.values[:,1:]).astype(float)
+        obsidR = R.values[:,0].astype(str)
+        obsidR = obsidR.tolist()
+        varidR = R.columns.values
+        varidR = varidR[1:]
+        varidR = varidR.tolist()  
+        
+    X_,x_mean,x_std = meancenterscale(X_)
+    Y_,y_mean,y_std = meancenterscale(Y_)
+    R_,r_mean,r_std = meancenterscale(R_)
     
+    #Generate Missing Data Map    
+    X_nan_map = np.isnan(X_)
+    not_Xmiss = (np.logical_not(X_nan_map))*1
+    Y_nan_map = np.isnan(Y_)
+    not_Ymiss = (np.logical_not(Y_nan_map))*1
+    R_nan_map = np.isnan(R_)
+    not_Rmiss = (np.logical_not(R_nan_map))*1
+
+    #use nipals
+    if not(shush):
+        print('phi.lpls using NIPALS executed on: '+ str(datetime.datetime.now()) )
+    X_,dummy=n2z(X_)
+    Xhat = np.zeros(X_.shape)
+    Y_,dummy=n2z(Y_)
+    R_,dummy=n2z(R_)
+    epsilon=1E-9
+    maxit=2000
+
+    TSSX   = np.sum(X_**2)
+    TSSXpv = np.sum(X_**2,axis=0)
+    TSSY   = np.sum(Y_**2)
+    TSSYpv = np.sum(Y_**2,axis=0)
+    TSSR   = np.sum(R_**2)
+    TSSRpv = np.sum(R_**2,axis=0)
     
+    #T=[];
+    #P=[];
+    #r2=[];
+    #r2pv=[];
+    #numIT=[];
+    for a in list(range(A)):
+        # Select column with largest variance in Y as initial guess
+        ui = Y_[:,[np.argmax(std(Y_))]]
+        Converged=False
+        num_it=0
+        while Converged==False:
+            
+     # _Ab_btbinv(A,b,A_not_nan_map):
+     #  project c = Ab/b'b
+
+             #Step 1. h=R'u/u'u
+             hi = _Ab_btbinv(R_.T,ui,not_Rmiss.T)
+             #print('step 1')
+             
+             #Step 2. s = X'h/(h'h)
+             si = _Ab_btbinv(X_.T, hi,not_Xmiss.T)
+             #print('step 2')
+                   
+             #Normalize s to unit length.
+             si=si/np.linalg.norm(si)
+             
+             #Step 3. ri= (Xs)/(s's)
+             ri = _Ab_btbinv(X_,si,not_Xmiss)
+             #print('step 3')
+             #Step 4. t = Rr/(r'r)
+             ti = _Ab_btbinv(R_,ri,not_Rmiss)
+             #print('step 4')
+             #Step 5 q=Y't/t't
+             qi = _Ab_btbinv(Y_.T,ti,not_Ymiss.T)
+             
+             #Step 5 un=(Yq)/(q'q)
+             un = _Ab_btbinv(Y_,qi,not_Ymiss)
+             #print('step 5')
+             
+             if abs((np.linalg.norm(ui)-np.linalg.norm(un)))/(np.linalg.norm(ui)) < epsilon:
+                 Converged=True
+                 
+             if num_it > maxit:
+                 Converged=True
+                 
+             if Converged:
+                 if not(shush):
+                     print('# Iterations for LV #'+str(a+1)+': ',str(num_it))
+                 # Calculate P's for deflation p=R't/(t't) 
+                 pi = _Ab_btbinv(R_.T,ti,not_Rmiss.T)
+                 # Calculate v's for deflation v=Xr/(r'r) 
+                 vi = _Ab_btbinv(X_.T,ri,not_Xmiss.T)
+                 
+                 # Deflate X leaving missing as zeros (important!)
+                 R_=(R_- ti @ pi.T)*not_Rmiss
+                 X_=(X_- ri @ vi.T)*not_Xmiss
+                 Y_=(Y_- ti @ qi.T)*not_Ymiss
+                 
+                 Xhat = Xhat + ri @ vi.T
+                 #print(R_.shape)
+                 #print(X_.shape)
+                 #print(Y_.shape)
+                 if a==0:
+                     T=ti
+                     P=pi
+                     S=si
+                     U=un
+                     Q=qi
+                     H=hi
+                     V=vi
+                     Rscores = ri
+                     
+                     r2X   = 1-np.sum(X_**2)/TSSX
+                     r2Xpv = 1-np.sum(X_**2,axis=0)/TSSXpv
+                     r2Xpv = r2Xpv.reshape(-1,1)
+                     r2Y   = 1-np.sum(Y_**2)/TSSY
+                     r2Ypv = 1-np.sum(Y_**2,axis=0)/TSSYpv
+                     r2Ypv = r2Ypv.reshape(-1,1)
+                     r2R   = 1-np.sum(R_**2)/TSSR
+                     r2Rpv = 1-np.sum(R_**2,axis=0)/TSSRpv
+                     r2Rpv = r2Rpv.reshape(-1,1)
+                                 
+                 else:
+                     T=np.hstack((T,ti.reshape(-1,1)))
+                     U=np.hstack((U,un.reshape(-1,1)))
+                     P=np.hstack((P,pi))   
+                     Q=np.hstack((Q,qi))
+                     S=np.hstack((S,si))
+                     H=np.hstack((H,hi))
+                     V=np.hstack((V,vi))
+                     Rscores=np.hstack((Rscores,ri ))
+                        
+                     r2X_   = 1-np.sum(X_**2)/TSSX
+                     r2Xpv_ = 1-np.sum(X_**2,axis=0)/TSSXpv
+                     r2Xpv_ = r2Xpv_.reshape(-1,1)
+                     r2X    = np.hstack((r2X,r2X_))
+                     r2Xpv  = np.hstack((r2Xpv,r2Xpv_))
+       
+                     r2Y_   = 1-np.sum(Y_**2)/TSSY
+                     r2Ypv_ = 1-np.sum(Y_**2,axis=0)/TSSYpv
+                     r2Ypv_ = r2Ypv_.reshape(-1,1)
+                     r2Y    = np.hstack((r2Y,r2Y_))
+                     r2Ypv  = np.hstack((r2Ypv,r2Ypv_))
+                     
+                     r2R_   = 1-np.sum(R_**2)/TSSR
+                     r2Rpv_ = 1-np.sum(R_**2,axis=0)/TSSRpv
+                     r2Rpv_ = r2Rpv_.reshape(-1,1)
+                     r2R    = np.hstack((r2R,r2R_))
+                     r2Rpv  = np.hstack((r2Rpv,r2Rpv_))
+             else:
+                 num_it = num_it + 1
+                 ui = un
+            
+        if a==0:
+            numIT=num_it
+        else:
+            numIT=np.hstack((numIT,num_it))
+    Xhat=Xhat*np.tile(x_std,(Xhat.shape[0],1))+np.tile(x_mean,(Xhat.shape[0],1) )      
+    for a in list(range(A-1,0,-1)):
+        r2X[a]     = r2X[a]-r2X[a-1]
+        r2Xpv[:,a] = r2Xpv[:,a]-r2Xpv[:,a-1]
+        r2Y[a]     = r2Y[a]-r2Y[a-1]
+        r2Ypv[:,a] = r2Ypv[:,a]-r2Ypv[:,a-1]
+        r2R[a]     = r2R[a]-r2R[a-1]
+        r2Rpv[:,a] = r2Rpv[:,a]-r2Rpv[:,a-1]
     
+    eigs = np.var(T,axis=0);
+    r2xc = np.cumsum(r2X)
+    r2yc = np.cumsum(r2Y)
+    r2rc = np.cumsum(r2R)
+    if not(shush):
+        print('--------------------------------------------------------------')
+        print('LV #     Eig       R2X       sum(R2X)   R2R       sum(R2R)   R2Y       sum(R2Y)')
+        if A>1:    
+            for a in list(range(A)):
+                print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(eigs[a], r2X[a], r2xc[a],r2R[a],r2rc[a],r2Y[a],r2yc[a]))
+        else:
+           d1=eigs[0]
+           d2=r2xc[0]
+           d3=r2rc[0]
+           d4=r2yc[0]
+           print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(d1, r2X, d2,r2R,d3,r2Y,d4))
+        print('--------------------------------------------------------------')   
+        
+    lpls_obj={'T':T,'P':P,'Q':Q,'U':U,'S':S,'H':H,'V':V,'Rscores':Rscores,
+              'r2x':r2X,'r2xpv':r2Xpv,'mx':x_mean,'sx':x_std,
+              'r2y':r2Y,'r2ypv':r2Ypv,'my':y_mean,'sy':y_std,
+              'r2r':r2R,'r2rpv':r2Rpv,'mr':r_mean,'sr':r_std,
+              'Xhat':Xhat}  
+    if not isinstance(obsidX,bool):
+        lpls_obj['obsidX']=obsidX
+        lpls_obj['varidX']=varidX
+    if not isinstance(obsidY,bool):
+       lpls_obj['obsidY']=obsidY
+       lpls_obj['varidY']=varidY    
+    if not isinstance(obsidR,bool):
+       lpls_obj['obsidR']=obsidR
+       lpls_obj['varidR']=varidR  
+          
+    T2 = hott2(lpls_obj,Tnew=T)
+    n  = T.shape[0]
+    T2_lim99 = (((n-1)*(n+1)*A)/(n*(n-A)))*f99(A,(n-A))
+    T2_lim95 = (((n-1)*(n+1)*A)/(n*(n-A)))*f95(A,(n-A))     
+    speX = np.sum(X_**2,axis=1,keepdims=1)
+    speX_lim95,speX_lim99 = spe_ci(speX)
+    speY = np.sum(Y_**2,axis=1,keepdims=1)
+    speY_lim95,speY_lim99 = spe_ci(speY)
+    speR = np.sum(R_**2,axis=1,keepdims=1)
+    speR_lim95,speR_lim99 = spe_ci(speR)
     
+    lpls_obj['T2']          = T2
+    lpls_obj['T2_lim99']    = T2_lim99
+    lpls_obj['T2_lim95']    = T2_lim95
+    lpls_obj['speX']        = speX
+    lpls_obj['speX_lim99']  = speX_lim99
+    lpls_obj['speX_lim95']  = speX_lim95
+    lpls_obj['speY']        = speY
+    lpls_obj['speY_lim99']  = speY_lim99
+    lpls_obj['speY_lim95']  = speY_lim95
+    lpls_obj['speR']        = speR
+    lpls_obj['speR_lim99']  = speR_lim99
+    lpls_obj['speR_lim95']  = speR_lim95
     
+    lpls_obj['Ss'] = S @ np.linalg.pinv(V.T @ S) #trick to plot the LPLS does not really have Ws
+    #Ws=W @ np.linalg.pinv(P.T @ W)
+    lpls_obj['type']='lpls'
+    return lpls_obj       
     
+def lpls_pred(rnew,lpls_obj):
+    '''
+    Do a prediction with an LPLS model
+    INPUTS:
+        rnew: np.array, list or dataframe with elements of rew
+              if multiple rows are passed, then multiple predictions are done
+        
+        lpls_obj: LPLS object built with pyphi.lpls routine
     
+    OUTPUTS:
+        pred: A dictionary {'Tnew':tnew,'Yhat':yhat,'speR':sper}   
+
+    '''
+    if isinstance(rnew,np.ndarray):
+        rnew__=[rnew.copy()]
+    elif isinstance(rnew,list):
+        rnew__=np.array(rnew)
+    elif isinstance(rnew,pd.DataFrame):
+        rnew__=rnew.values[:,1:].astype(float)
+    tnew=[]
+    sper=[]
+    for rnew_ in rnew__:
+        rnew_=(rnew_-lpls_obj['mr'])/lpls_obj['sr']
+        rnew_=rnew_.reshape(-1,1)
+        ti=[]
+        for a in np.arange(lpls_obj['T'].shape[1]):
+            ti_ =( rnew_.T@lpls_obj['Rscores'][:,a]/             
+                 (lpls_obj['Rscores'][:,a].T@lpls_obj['Rscores'][:,a]))
+            ti.append(ti_[0])
+            aux=ti_*lpls_obj['P'][:,a]
+            rnew_=rnew_-aux.reshape(-1,1)
+        tnew.append(np.array(ti))
+        sper.append(np.sum(rnew_**2))
+    tnew=np.array(tnew)
+    sper=np.array(sper)
+    yhat = tnew@lpls_obj['Q'].T
+    yhat = (yhat * lpls_obj['sy'])+lpls_obj['my']
+    preds ={'Tnew':tnew,'Yhat':yhat,'speR':sper}     
+    return preds
+
+def jrpls(Xi,Ri,Y,A,*,shush=False):
+    '''
+    JRPLS Algorithm per Garcia-Munoz Chemom.Intel.Lab.Syst., 133, pp.49-62.
     
+     X = {[ m x p ]} Phys. Prop. dictionary of Dataframes of materials_i x mat. properties
+         X = {'MatA':df_with_props_for_mat_A (one row per lot of MatA, one col per property),
+              'MatB':df_with_props_for_mat_B (one row per lot of MatB, one col per property)}
+         
+     R = {[ b x m ]} Blending ratios dictionary of Dataframes of  blends x materials_i
+         R = {'MatA': df_with_ratios_of_lots_of_A_used_per_blend,
+              'MatB': df_with_ratios_of_lots_of_B_used_per_blend,
+              } 
+     Rows of X[i] must correspond to Columns of R[i] 
+         
+     Y = [ b x n ]   Product characteristics dataframe of blends x prod. properties
+     
+     first column of all dataframes is an identifier string
+     
+    '''
+    X=[]
+    varidX=[]
+    obsidX=[]
+    materials=list(Xi.keys())
+    for k in Xi.keys():
+        Xaux=Xi[k]   
+        if isinstance(Xaux,np.ndarray):
+            X_ = Xaux.copy()
+            obsidX_ = False
+            varidX_ = False
+        elif isinstance(Xaux,pd.DataFrame):
+            X_=np.array(Xaux.values[:,1:]).astype(float)
+            obsidX_ = Xaux.values[:,0].astype(str)
+            obsidX_ = obsidX_.tolist()
+            varidX_ = Xaux.columns.values
+            varidX_ = varidX_[1:]
+            varidX_ = varidX_.tolist()
+        X.append(X_)
+        varidX.append(varidX_)
+        obsidX.append(obsidX_)
+        
+    if isinstance(Y,np.ndarray):
+        Y_=Y.copy()
+        obsidY = False
+        varidY = False
+    elif isinstance(Y,pd.DataFrame):
+        Y_=np.array(Y.values[:,1:]).astype(float)
+        obsidY = Y.values[:,0].astype(str)
+        obsidY = obsidY.tolist()
+        varidY = Y.columns.values
+        varidY = varidY[1:]
+        varidY = varidY.tolist()    
+ 
+    R=[]
+    varidR=[]
+    obsidR=[]
+    for k in materials:  
+        Raux=Ri[k] 
+        if isinstance(Raux,np.ndarray):
+            R_=Raux.copy()
+            obsidR_ = False
+            varidR_ = False
+        elif isinstance(Raux,pd.DataFrame):
+            R_=np.array(Raux.values[:,1:]).astype(float)
+            obsidR_ = Raux.values[:,0].astype(str)
+            obsidR_ = obsidR_.tolist()
+            varidR_ = Raux.columns.values
+            varidR_ = varidR_[1:]
+            varidR_ = varidR_.tolist()
+        varidR.append(varidR_)
+        obsidR.append(obsidR_)
+        R.append(R_)
+        
+    x_mean    = []
+    x_std     = []
+    jr_scale  = []
+    r_mean    = []
+    r_std     = []
+    not_Xmiss = []
+    not_Rmiss = []
+    Xhat      = []
+    TSSX      = []
+    TSSXpv    = []
+    TSSR      = []
+    TSSRpv    = []
+    X__=[]
+    R__=[]
+    for X_i,R_i in zip (X,R):
+        X_, x_mean_, x_std_ = meancenterscale(X_i)
+        R_, r_mean_, r_std_ = meancenterscale(R_i)
+        
+        jr_scale_=np.sqrt(X_.shape[0]*X_.shape[1])
+        jr_scale_=np.sqrt(X_.shape[1])
+        X_ = X_ / jr_scale_
+        
+        x_mean.append( x_mean_ )
+        x_std.append(  x_std_  )
+        jr_scale.append( jr_scale_)
+        r_mean.append( r_mean_ )
+        r_std.append(  r_std_  )
+        
+        X_nan_map  = np.isnan(X_)
+        not_Xmiss_ = (np.logical_not(X_nan_map))*1
+        R_nan_map  = np.isnan(R_)
+        not_Rmiss_ = (np.logical_not(R_nan_map))*1
+        not_Xmiss.append(not_Xmiss_)
+        not_Rmiss.append(not_Rmiss_)
+        
+        X_,dummy=n2z(X_)
+        R_,dummy=n2z(R_)
+        Xhat_ = np.zeros(X_.shape)
+        X__.append(X_)
+        R__.append(R_)
+        Xhat.append(Xhat_)
+        
+        TSSX.append(   np.sum(X_**2)       )
+        TSSXpv.append( np.sum(X_**2,axis=0))
+        TSSR.append(   np.sum(R_**2)       )
+        TSSRpv.append( np.sum(R_**2,axis=0))
+       
+    X=X__.copy()
+    R=R__.copy()
+    
+    Y_,y_mean,y_std = meancenterscale(Y_)
+    Y_nan_map = np.isnan(Y_)
+    not_Ymiss = (np.logical_not(Y_nan_map))*1
+    Y_,dummy=n2z(Y_)
+    TSSY   = np.sum(Y_**2)
+    TSSYpv = np.sum(Y_**2,axis=0)
+    
+    #use nipals
+    if not(shush):
+        print('phi.jrpls using NIPALS executed on: '+ str(datetime.datetime.now()) )
+
+    epsilon=1E-9
+    maxit=2000    
+
+    for a in list(range(A)):
+        # Select column with largest variance in Y as initial guess
+        ui = Y_[:,[np.argmax(std(Y_))]]
+        Converged=False
+        num_it=0
+        while Converged==False:
+            
+     # _Ab_btbinv(A,b,A_not_nan_map):
+     #  project c = Ab/b'b
+
+             #Step 1. h=R'u/u'u
+             hi=[]
+             for i,R_ in enumerate(R):
+                 hi_ = _Ab_btbinv(R_.T,ui,not_Rmiss[i].T)
+                 hi.append(hi_)                 
+             #print('step 1')
+             si=[]
+             for i,X_ in enumerate(X):
+                 #Step 2. s = X'h/(h'h) 
+                 si_ = _Ab_btbinv(X_.T, hi[i],not_Xmiss[i].T)
+                 si.append(si_)
+             #print('step 2')
+             
+             #Normalize joint s to unit length.
+             js=np.array([y for x in si for y in x])  #flattening list of lists
+             for i in np.arange(len(si)):
+                 si[i]=si[i]/np.linalg.norm(js)      
+
+             ri=[]
+             for i,X_ in enumerate(X):
+                 #Step 3. ri= (Xs)/(s's)
+                 ri_ = _Ab_btbinv(X_,si[i],not_Xmiss[i])
+                 ri.append(ri_)
+             #print('step 3')
+
+             #Calculating the Joint-r and Joint-R (hence the name of the method)
+             jr=[y for x in ri for y in x]
+             jr=np.array(jr).astype(float)
+             
+             for i,r_ in enumerate(R):
+                 if i==0:
+                     R_=r_
+                 else:
+                     R_=np.hstack((R_,r_))
+                     
+             for i,r_miss in enumerate(not_Rmiss):
+                if i==0:
+                    not_Rmiss_=r_miss
+                else:
+                    not_Rmiss_=np.hstack((not_Rmiss_,r_miss))
+                             
+             #Step 4. t = Rr/(r'r)
+             ti = _Ab_btbinv(R_,jr,not_Rmiss_)
+             #print('step 4')
+             
+             #Step 5 q=Y't/t't
+             qi = _Ab_btbinv(Y_.T,ti,not_Ymiss.T)
+             
+             #Step 5 un=(Yq)/(q'q)
+             un = _Ab_btbinv(Y_,qi,not_Ymiss)
+             #print('step 5')
+             
+             if abs((np.linalg.norm(ui)-np.linalg.norm(un)))/(np.linalg.norm(ui)) < epsilon:
+                 Converged=True
+                 
+             if num_it > maxit:
+                 Converged=True
+                 
+             if Converged:
+                 if not(shush):
+                     print('# Iterations for LV #'+str(a+1)+': ',str(num_it))
+                 pi=[]
+                 for i,R_ in enumerate(R):
+                     # Calculate P's for deflation p=R't/(t't) 
+                     pi_ = _Ab_btbinv(R_.T,ti,not_Rmiss[i].T)
+                     pi.append(pi_)
+                 vi=[]
+                 for i,X_ in enumerate(X):
+                     # Calculate v's for deflation v=Xr/(r'r) 
+                     vi_ = _Ab_btbinv(X_.T,ri[i],not_Xmiss[i].T)
+                     vi.append(vi_)
+                 
+                 for i in np.arange(len(R)):    
+                     # Deflate X leaving missing as zeros (important!)
+                     R[i]=(R[i]- ti @ pi[i].T)*not_Rmiss[i]
+                     X[i]=(X[i]- ri[i] @ vi[i].T)*not_Xmiss[i]
+                     Xhat[i] = Xhat[i] + ri[i] @ vi[i].T
+                 Y_=(Y_- ti @ qi.T)*not_Ymiss
+                 
+                 
+                 #print(R_.shape)
+                 #print(X_.shape)
+                 #print(Y_.shape)
+                 if a==0:
+                     T=ti
+                     P=pi
+                     S=si
+                     U=un
+                     Q=qi
+                     H=hi
+                     V=vi
+                     Rscores = ri
+                     
+                     r2X=[]
+                     r2Xpv=[]
+                     r2R=[]
+                     r2Rpv=[]
+                     for i in np.arange(len(X)):
+                         r2X.append( 1-np.sum(X[i]**2)/TSSX[i])
+                         r2Xpv_ = 1-np.sum(X[i]**2,axis=0)/TSSXpv[i]
+                         r2Xpv.append( r2Xpv_.reshape(-1,1))
+                         r2R.append( 1-np.sum(R[i]**2)/TSSR[i])
+                         r2Rpv_ = 1-np.sum(R[i]**2,axis=0)/TSSRpv[i]
+                         r2Rpv.append( r2Rpv_.reshape(-1,1))
+                                          
+                     r2Y   = 1-np.sum(Y_**2)/TSSY
+                     r2Ypv = 1-np.sum(Y_**2,axis=0)/TSSYpv
+                     r2Ypv = r2Ypv.reshape(-1,1)
+                     
+
+                                 
+                 else:
+                     T=np.hstack((T,ti.reshape(-1,1)))
+                     U=np.hstack((U,un.reshape(-1,1)))
+                     Q=np.hstack((Q,qi))
+                     
+                     for i in np.arange(len(P)):
+                         P[i]=np.hstack((P[i],pi[i])) 
+                     for i in np.arange(len(S)):    
+                         S[i]=np.hstack((S[i],si[i]))
+                     for i in np.arange(len(H)):    
+                         H[i]=np.hstack((H[i],hi[i]))
+                     for i in np.arange(len(V)):    
+                         V[i]=np.hstack((V[i],vi[i]))
+                     for i in np.arange(len(Rscores)):    
+                         Rscores[i]=np.hstack((Rscores[i],ri[i] ))
+
+                     for i in np.arange(len(X)):   
+                         r2X_   = 1-np.sum(X[i]**2)/TSSX[i]
+                         r2Xpv_ = 1-np.sum(X[i]**2,axis=0)/TSSXpv[i]
+                         r2Xpv_ = r2Xpv_.reshape(-1,1)
+                         r2X[i]    = np.hstack((r2X[i],r2X_))
+                         r2Xpv[i]  = np.hstack((r2Xpv[i],r2Xpv_))
+                         
+                         r2R_   = 1-np.sum(R[i]**2)/TSSR[i]
+                         r2Rpv_ = 1-np.sum(R[i]**2,axis=0)/TSSRpv[i]
+                         r2Rpv_ = r2Rpv_.reshape(-1,1)
+                         r2R[i]    = np.hstack((r2R[i],r2R_))
+                         r2Rpv[i]  = np.hstack((r2Rpv[i],r2Rpv_))
+                         
+       
+                     r2Y_   = 1-np.sum(Y_**2)/TSSY
+                     r2Ypv_ = 1-np.sum(Y_**2,axis=0)/TSSYpv
+                     r2Ypv_ = r2Ypv_.reshape(-1,1)
+                     r2Y    = np.hstack((r2Y,r2Y_))
+                     r2Ypv  = np.hstack((r2Ypv,r2Ypv_))
+                     
+
+             else:
+                 num_it = num_it + 1
+                 ui = un
+            
+        if a==0:
+            numIT=num_it
+        else:
+            numIT=np.hstack((numIT,num_it))
+    for i in np.arange(len(Xhat)):        
+        Xhat[i]=Xhat[i]*np.tile(x_std[i],(Xhat[i].shape[0],1))+np.tile(x_mean[i],(Xhat[i].shape[0],1) )      
+ 
+    for a in list(range(A-1,0,-1)):
+        r2Y[a]     = r2Y[a]-r2Y[a-1]
+        r2Ypv[:,a] = r2Ypv[:,a]-r2Ypv[:,a-1]
+    r2xc=[]
+    r2rc=[]
+    for i in np.arange(len(X)):    
+        for a in list(range(A-1,0,-1)):
+            r2X[i][a]     = r2X[i][a]-r2X[i][a-1]
+            r2Xpv[i][:,a] = r2Xpv[i][:,a]-r2Xpv[i][:,a-1]
+            r2R[i][a]     = r2R[i][a]-r2R[i][a-1]
+            r2Rpv[i][:,a] = r2Rpv[i][:,a]-r2Rpv[i][:,a-1]
+    
+    for i,r in enumerate(r2Xpv):
+        if i==0:
+           r2xpv_all= r
+        else:
+            r2xpv_all=np.vstack((r2xpv_all,r))
+
+    
+        r2xc.append(np.cumsum(r2X[i]))
+        r2rc.append(np.cumsum(r2R[i]))
+    
+    eigs = np.var(T,axis=0);
+    r2yc = np.cumsum(r2Y)
+    r2rc = np.mean(np.array(r2rc),axis=0)
+    r2xc = np.mean(np.array(r2xc),axis=0)
+    r2x  = np.mean(np.array(r2X),axis=0 ) 
+    r2r  = np.mean(np.array(r2R),axis=0 ) 
+    
+    if not(shush):
+        print('--------------------------------------------------------------')
+        print('LV #     Eig       R2X       sum(R2X)   R2R       sum(R2R)   R2Y       sum(R2Y)')
+        if A>1:    
+            for a in list(range(A)):
+                print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(eigs[a], r2x[a], r2xc[a],r2r[a],r2rc[a],r2Y[a],r2yc[a]))
+        else:
+           d1=eigs[0]
+           d2=r2xc[0]
+           d3=r2rc[0]
+           d4=r2yc[0]
+           print("LV #"+str(a+1)+":   {:6.3f}    {:.3f}     {:.3f}      {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(d1, r2x, d2,r2r,d3,r2Y,d4))
+        print('--------------------------------------------------------------')   
+        
+    jrpls_obj={'T':T,'P':P,'Q':Q,'U':U,'S':S,'H':H,'V':V,'Rscores':Rscores,
+              'r2xi':r2X,'r2xpvi':r2Xpv,'r2xpv':r2xpv_all,
+              'mx':x_mean,'sx':x_std,
+              'r2y':r2Y,'r2ypv':r2Ypv,'my':y_mean,'sy':y_std,
+              'r2ri':r2R,'r2rpvi':r2Rpv,'mr':r_mean,'sr':r_std,
+              'Xhat':Xhat,'materials':materials}  
+    if not isinstance(obsidX,bool):
+        jrpls_obj['obsidXi']=obsidX
+        jrpls_obj['varidXi']=varidX
+    
+    varidXall=[]
+    for i in np.arange(len(materials)):
+        for j in np.arange(len( varidX[i])):
+            varidXall.append( materials[i]+':'+varidX[i][j])
+    jrpls_obj['varidX']=varidXall    
+    
+    if not isinstance(obsidR,bool):
+       jrpls_obj['obsidRi']=obsidR
+       jrpls_obj['varidRi']=varidR  
+    
+    if not isinstance(obsidY,bool):
+       jrpls_obj['obsidY']=obsidY
+       jrpls_obj['varidY']=varidY    
+       
+    T2 = hott2(jrpls_obj,Tnew=T)
+    n  = T.shape[0]
+    T2_lim99 = (((n-1)*(n+1)*A)/(n*(n-A)))*f99(A,(n-A))
+    T2_lim95 = (((n-1)*(n+1)*A)/(n*(n-A)))*f95(A,(n-A))    
+    
+    speX=[]
+    speR=[]
+    speX_lim95=[]
+    speX_lim99=[]
+    speR_lim95=[]
+    speR_lim99=[]
+    for i in np.arange(len(X)):
+        speX .append(  np.sum(X[i]**2,axis=1,keepdims=1))
+        aux_=np.sum(X[i]**2,axis=1,keepdims=1)
+        speX_lim95_,speX_lim99_ = spe_ci(aux_)
+        speX_lim95.append(speX_lim95_)
+        speX_lim99.append(speX_lim99_)
+        
+        speR.append( np.sum(R[i]**2,axis=1,keepdims=1))
+        aux_=np.sum(R[i]**2,axis=1,keepdims=1)
+        speR_lim95_,speR_lim99_ = spe_ci(aux_)
+        speR_lim95.append(speR_lim95_)
+        speR_lim99.append(speR_lim99_)
+        
+    speY = np.sum(Y_**2,axis=1,keepdims=1)
+    speY_lim95,speY_lim99 = spe_ci(speY)
+    
+    jrpls_obj['T2']          = T2
+    jrpls_obj['T2_lim99']    = T2_lim99
+    jrpls_obj['T2_lim95']    = T2_lim95
+    jrpls_obj['speX']        = speX
+    jrpls_obj['speX_lim99']  = speX_lim99
+    jrpls_obj['speX_lim95']  = speX_lim95
+    jrpls_obj['speY']        = speY
+    jrpls_obj['speY_lim99']  = speY_lim99
+    jrpls_obj['speY_lim95']  = speY_lim95
+    jrpls_obj['speR']        = speR
+    jrpls_obj['speR_lim99']  = speR_lim99
+    jrpls_obj['speR_lim95']  = speR_lim95
+    
+    Wsi= []
+    Ws = []
+    for i in np.arange(len(S)):
+        Wsi.append (S[i] @ np.linalg.pinv(V[i].T @ S[i]) )
+        if i==0:
+            Ws=S[i] @ np.linalg.pinv(V[i].T @ S[i])
+        else:
+            Ws=np.vstack((Ws,S[i] @ np.linalg.pinv(V[i].T @ S[i])))    
+    jrpls_obj['Ssi'] = Wsi #trick to plot the JRPLS/LPLS does not really have Ws
+    jrpls_obj['Ss'] = Ws #trick to plot the JRPLS/LPLS does not really have Ws
+    #Ws=W @ np.linalg.pinv(P.T @ W)
+    jrpls_obj['type']='jrpls'
+    return jrpls_obj       
+
+     
+def jrpls_pred(rnew,jrplsobj):
+    '''
+    Routine to produce the prediction for a new observation of Ri
+    using a JRPLS model
+    preds = (rnew,jrplsobj)
+    
+    Inputs:
+        rnew: A dictionary with the format: 
+            rnew={ 
+                'matid':[(lotid,rvalue )],
+                
+                }
+            
+            for example, a prediction for the scenario:
+                
+        material    lot to use  rvalue       
+        API	        A0129	    0.5
+        Lactose	    Lac0003   	0.1
+        Lactose     Lac1010     0.2
+        MgSt	        M0012	    0.02
+        MCC      	MCC0017	    0.18
+        
+        use:
+            
+        rnew={
+            'API':[('A0129',0.5)],
+            'Lactose':[('Lac0003',0.1 ),('Lac1010',0.2 )],
+            'MgSt':[('M0012',0.02)],
+            'MCC':[('MCC0017',0.18)],
+            }    
+        
+    Outputs:
+        preds a dictionary of the form:
+            
+            preds ={'Tnew':tnew,'Yhat':yhat,'speR':sper} 
+            
+            where speR has the speR per each material
+
+    '''
+    
+    ok=True
+    if isinstance(rnew,list):
+        #check dimensions
+        i=0     
+        for r,mr,sr in zip(rnew,jrplsobj['mr'],jrplsobj['sr']):
+            if not(len(r)==len(mr[0])):
+                ok=False
+            np.ones(len(r))
+            if i==0:
+                rnew_=r
+                mr_=mr
+                sr_=sr
+                Rscores = jrplsobj['Rscores'][i]
+                P       = jrplsobj['P'][i]
+            else:
+                rnew_   = np.hstack((rnew_,r))    
+                mr_     = np.hstack((mr_,mr))
+                sr_     = np.hstack((sr_,sr))
+                Rscores = np.vstack((Rscores,jrplsobj['Rscores'][i] ))
+                P       = np.vstack((P,jrplsobj['P'][i] ))
+            i+=1
+                
+    elif isinstance(rnew,dict):
+        #re-arrange 
+        ok=True
+        rnew_=[['*']]*len(jrplsobj['materials'])
+        for k in list(rnew.keys()):
+            i = jrplsobj['materials'].index(k)
+            ri=np.zeros((jrplsobj['mr'][i].shape[1]) )
+            for m,r in rnew[k]:
+                e = jrplsobj['varidRi'][i].index(m)
+                ri[e]=r
+            rnew_[i]=ri
+        
+        preds=jrpls_pred(rnew_,jrplsobj)
+        return preds
+         
+    if ok:  
+        bkzeros=0
+        selmat=[]
+        for i,r in enumerate(jrplsobj['Rscores']):
+            frontzeros=Rscores.shape[0]-bkzeros-r.shape[0]
+            row=np.vstack((np.zeros((bkzeros,1)),
+                           np.ones((r.shape[0],1)),
+                           np.zeros(( frontzeros,1))))
+            bkzeros+=r.shape[0]
+            selmat.append(row)
+            
+        tnew=[]
+        sper=[]
+       
+        rnew_=(rnew_-mr_)/sr_
+        rnew_=rnew_.reshape(-1,1)
+        ti=[]
+        for a in np.arange(jrplsobj['T'].shape[1]):
+
+            ti_ =( rnew_.T@Rscores[:,a]/             
+                 (Rscores[:,a].T@Rscores[:,a]))
+            ti.append(ti_[0])
+            aux=ti_*P[:,a]
+            rnew_=rnew_-aux.reshape(-1,1)
+        tnew=np.array(ti)
+        sper=[]
+        for row in selmat:
+            sper.append(np.sum(rnew_[row==1]**2))
+        
+        yhat = tnew@jrplsobj['Q'].T
+        yhat = (yhat * jrplsobj['sy'])+jrplsobj['my']
+        preds ={'Tnew':tnew,'Yhat':yhat,'speR':sper}     
+        return preds    
+    else:
+        return 'dimensions of rnew did not macth model'
+    
+def tpls(Xi,Ri,Z,Y,A,*,shush=False):
+    '''
+     TPLS Algorithm per Garcia-Munoz Chemom.Intel.Lab.Syst., 133, pp.49-62.
+    
+     X = {[ m x p ]} Phys. Prop. dictionary of Dataframes of materials_i x mat. properties
+         X = {'MatA':df_with_props_for_mat_A (one row per lot of MatA, one col per property),
+              'MatB':df_with_props_for_mat_B (one row per lot of MatB, one col per property)}
+         
+     R = {[ b x m ]} Blending ratios dictionary of Dataframes of  blends x materials_i
+         R = {'MatA': df_with_ratios_of_lots_of_A_used_per_blend,
+              'MatB': df_with_ratios_of_lots_of_B_used_per_blend,
+              } 
+     Rows of X[i] must correspond to Columns of R[i] 
+         
+     Y = [ b x n ]   Product characteristics dataframe of blends x prod. properties
+     
+     Z = [b x p]  Process conditions dataframe of  blends x process variables
+     
+     first column of all dataframes is an identifier string
+     
+    '''
+    X=[]
+    varidX=[]
+    obsidX=[]
+    materials=list(Xi.keys())
+    for k in Xi.keys():
+        Xaux=Xi[k]   
+        if isinstance(Xaux,np.ndarray):
+            X_ = Xaux.copy()
+            obsidX_ = False
+            varidX_ = False
+        elif isinstance(Xaux,pd.DataFrame):
+            X_=np.array(Xaux.values[:,1:]).astype(float)
+            obsidX_ = Xaux.values[:,0].astype(str)
+            obsidX_ = obsidX_.tolist()
+            varidX_ = Xaux.columns.values
+            varidX_ = varidX_[1:]
+            varidX_ = varidX_.tolist()
+        X.append(X_)
+        varidX.append(varidX_)
+        obsidX.append(obsidX_)
+        
+    if isinstance(Y,np.ndarray):
+        Y_=Y.copy()
+        obsidY = False
+        varidY = False
+    elif isinstance(Y,pd.DataFrame):
+        Y_=np.array(Y.values[:,1:]).astype(float)
+        obsidY = Y.values[:,0].astype(str)
+        obsidY = obsidY.tolist()
+        varidY = Y.columns.values
+        varidY = varidY[1:]
+        varidY = varidY.tolist()    
+
+    if isinstance(Z,np.ndarray):
+        Z_=Z.copy()
+        obsidZ = False
+        varidZ = False
+    elif isinstance(Z,pd.DataFrame):
+        Z_=np.array(Z.values[:,1:]).astype(float)
+        obsidZ = Z.values[:,0].astype(str)
+        obsidZ = obsidZ.tolist()
+        varidZ = Z.columns.values
+        varidZ = varidZ[1:]
+        varidZ = varidZ.tolist()      
+    
+    R=[]
+    varidR=[]
+    obsidR=[]
+    for k in materials:  
+        Raux=Ri[k] 
+        if isinstance(Raux,np.ndarray):
+            R_=Raux.copy()
+            obsidR_ = False
+            varidR_ = False
+        elif isinstance(Raux,pd.DataFrame):
+            R_=np.array(Raux.values[:,1:]).astype(float)
+            obsidR_ = Raux.values[:,0].astype(str)
+            obsidR_ = obsidR_.tolist()
+            varidR_ = Raux.columns.values
+            varidR_ = varidR_[1:]
+            varidR_ = varidR_.tolist()
+        varidR.append(varidR_)
+        obsidR.append(obsidR_)
+        R.append(R_)
+        
+    x_mean    = []
+    x_std     = []
+    jr_scale  = []
+    r_mean    = []
+    r_std     = []
+    not_Xmiss = []
+    not_Rmiss = []
+    Xhat      = []
+    TSSX      = []
+    TSSXpv    = []
+    TSSR      = []
+    TSSRpv    = []
+    X__=[]
+    R__=[]
+    for X_i,R_i in zip (X,R):
+        X_, x_mean_, x_std_ = meancenterscale(X_i)
+        R_, r_mean_, r_std_ = meancenterscale(R_i)
+        
+        jr_scale_=np.sqrt(X_.shape[0]*X_.shape[1])
+        jr_scale_=np.sqrt(X_.shape[1])
+        X_ = X_ / jr_scale_
+        
+        x_mean.append( x_mean_ )
+        x_std.append(  x_std_  )
+        jr_scale.append( jr_scale_)
+        r_mean.append( r_mean_ )
+        r_std.append(  r_std_  )
+        
+        X_nan_map  = np.isnan(X_)
+        not_Xmiss_ = (np.logical_not(X_nan_map))*1
+        R_nan_map  = np.isnan(R_)
+        not_Rmiss_ = (np.logical_not(R_nan_map))*1
+        not_Xmiss.append(not_Xmiss_)
+        not_Rmiss.append(not_Rmiss_)
+        
+        X_,dummy=n2z(X_)
+        R_,dummy=n2z(R_)
+        Xhat_ = np.zeros(X_.shape)
+        X__.append(X_)
+        R__.append(R_)
+        Xhat.append(Xhat_)
+        
+        TSSX.append(   np.sum(X_**2)       )
+        TSSXpv.append( np.sum(X_**2,axis=0))
+        TSSR.append(   np.sum(R_**2)       )
+        TSSRpv.append( np.sum(R_**2,axis=0))
+       
+    X=X__.copy()
+    R=R__.copy()
+    
+    Y_,y_mean,y_std = meancenterscale(Y_)
+    Y_nan_map = np.isnan(Y_)
+    not_Ymiss = (np.logical_not(Y_nan_map))*1
+    Y_,dummy=n2z(Y_)
+    TSSY   = np.sum(Y_**2)
+    TSSYpv = np.sum(Y_**2,axis=0)
+    
+    Z_,z_mean,z_std = meancenterscale(Z_)
+    Z_nan_map = np.isnan(Z_)
+    not_Zmiss = (np.logical_not(Z_nan_map))*1
+    Z_,dummy=n2z(Z_)
+    TSSZ   = np.sum(Z_**2)
+    TSSZpv = np.sum(Z_**2,axis=0)
+    
+    #use nipals
+    if not(shush):
+        print('phi.tpls using NIPALS executed on: '+ str(datetime.datetime.now()) )
+
+    epsilon=1E-9
+    maxit=2000    
+
+    for a in list(range(A)):
+        # Select column with largest variance in Y as initial guess
+        ui = Y_[:,[np.argmax(std(Y_))]]
+        Converged=False
+        num_it=0
+        while Converged==False:
+            
+     # _Ab_btbinv(A,b,A_not_nan_map):
+     #  project c = Ab/b'b
+
+             #Step 2. h=R'u/u'u
+             hi=[]
+             for i,R_ in enumerate(R):
+                 hi_ = _Ab_btbinv(R_.T,ui,not_Rmiss[i].T)
+                 hi.append(hi_)                 
+             #print('step 2')
+             si=[]
+             for i,X_ in enumerate(X):
+                 #Step 3. s = X'h/(h'h) 
+                 si_ = _Ab_btbinv(X_.T, hi[i],not_Xmiss[i].T)
+                 si.append(si_)
+             #print('step 3')
+             
+             #Step 4 Normalize joint s to unit length.
+             js=np.array([y for x in si for y in x])  #flattening list of lists
+             for i in np.arange(len(si)):
+                 si[i]=si[i]/np.linalg.norm(js)      
+
+             #Step 5
+             ri=[]
+             for i,X_ in enumerate(X):
+                 #Step 5. ri= (Xs)/(s's)
+                 ri_ = _Ab_btbinv(X_,si[i],not_Xmiss[i])
+                 ri.append(ri_)
+             
+             #Step 6  
+             #Calculating the Joint-r and Joint-R (hence the name of the method)
+             jr=[y for x in ri for y in x]
+             jr=np.array(jr).astype(float)
+             
+             for i,r_ in enumerate(R):
+                 if i==0:
+                     R_=r_
+                 else:
+                     R_=np.hstack((R_,r_))
+                     
+             for i,r_miss in enumerate(not_Rmiss):
+                if i==0:
+                    not_Rmiss_=r_miss
+                else:
+                    not_Rmiss_=np.hstack((not_Rmiss_,r_miss))
+                             
+             t_rx = _Ab_btbinv(R_,jr,not_Rmiss_)
+             #print('step 6')
+             
+             #Step 7
+             #Now the process matrix
+             wi = _Ab_btbinv(Z_.T,ui,not_Zmiss.T)
+             
+             #Step 8
+             wi = wi / np.linalg.norm(wi)
+        
+             #Step 9
+             t_z =  _Ab_btbinv(Z_,wi,not_Zmiss)
+             
+             #Step 10
+             Taux=np.hstack((t_rx,t_z))
+             plsobj_=pls(Taux, Y_,1,mcsX=False,mcsY=False,shush=True,force_nipals=True)
+             wt_i = plsobj_['W']
+             qi   = plsobj_['Q']
+             un   = plsobj_['U']   
+             ti   = plsobj_['T']
+             
+             
+             if abs((np.linalg.norm(ui)-np.linalg.norm(un)))/(np.linalg.norm(ui)) < epsilon:
+                 Converged=True
+                 
+             if num_it > maxit:
+                 Converged=True
+                 
+             if Converged:
+                 if not(shush):
+                     print('# Iterations for LV #'+str(a+1)+': ',str(num_it))
+                 pi=[]
+                 for i,R_ in enumerate(R):
+                     # Calculate P's for deflation p=R't/(t't) 
+                     pi_ = _Ab_btbinv(R_.T,ti,not_Rmiss[i].T)
+                     pi.append(pi_)
+                 vi=[]
+                 for i,X_ in enumerate(X):
+                     # Calculate v's for deflation v=Xr/(r'r) 
+                     vi_ = _Ab_btbinv(X_.T,ri[i],not_Xmiss[i].T)
+                     vi.append(vi_)
+                 
+                 pzi = _Ab_btbinv(Z_.T,ti,not_Zmiss.T)
+                 
+                 for i in np.arange(len(R)):    
+                     # Deflate X leaving missing as zeros (important!)
+                     R[i]=(R[i]- ti @ pi[i].T)*not_Rmiss[i]
+                     X[i]=(X[i]- ri[i] @ vi[i].T)*not_Xmiss[i]
+                     Xhat[i] = Xhat[i] + ri[i] @ vi[i].T
+                     
+                 Y_=(Y_- ti @ qi.T)*not_Ymiss
+                 Z_=(Z_- ti @ pzi.T)*not_Zmiss 
+                 
+                 #print(R_.shape)
+                 #print(X_.shape)
+                 #print(Y_.shape)
+                 if a==0:
+                     T=ti
+                     P=pi
+                     Pz=pzi
+                     S=si
+                     U=un
+                     Q=qi
+                     H=hi
+                     V=vi
+                     Rscores = ri
+                     W=wi
+                     Wt=wt_i
+                     
+                     r2X=[]
+                     r2Xpv=[]
+                     r2R=[]
+                     r2Rpv=[]
+                     for i in np.arange(len(X)):
+                         r2X.append( 1-np.sum(X[i]**2)/TSSX[i])
+                         r2Xpv_ = 1-np.sum(X[i]**2,axis=0)/TSSXpv[i]
+                         r2Xpv.append( r2Xpv_.reshape(-1,1))
+                         r2R.append( 1-np.sum(R[i]**2)/TSSR[i])
+                         r2Rpv_ = 1-np.sum(R[i]**2,axis=0)/TSSRpv[i]
+                         r2Rpv.append( r2Rpv_.reshape(-1,1))
+                                          
+                     r2Y   = 1-np.sum(Y_**2)/TSSY
+                     r2Ypv = 1-np.sum(Y_**2,axis=0)/TSSYpv
+                     r2Ypv = r2Ypv.reshape(-1,1)
+                     
+                     r2Z   = 1-np.sum(Z_**2)/TSSZ
+                     r2Zpv = 1-np.sum(Z_**2,axis=0)/TSSZpv
+                     r2Zpv = r2Zpv.reshape(-1,1)              
+                 else:
+                     T=np.hstack((T,ti.reshape(-1,1)))
+                     U=np.hstack((U,un.reshape(-1,1)))
+                     Q=np.hstack((Q,qi))
+                     W=np.hstack((W,wi))
+                     Wt=np.hstack((Wt,wt_i))
+                     Pz=np.hstack((Pz,pzi ))
+                     
+                     for i in np.arange(len(P)):
+                         P[i]=np.hstack((P[i],pi[i])) 
+                     for i in np.arange(len(S)):    
+                         S[i]=np.hstack((S[i],si[i]))
+                     for i in np.arange(len(H)):    
+                         H[i]=np.hstack((H[i],hi[i]))
+                     for i in np.arange(len(V)):    
+                         V[i]=np.hstack((V[i],vi[i]))
+                     for i in np.arange(len(Rscores)):    
+                         Rscores[i]=np.hstack((Rscores[i],ri[i] ))
+
+                     for i in np.arange(len(X)):   
+                         r2X_   = 1-np.sum(X[i]**2)/TSSX[i]
+                         r2Xpv_ = 1-np.sum(X[i]**2,axis=0)/TSSXpv[i]
+                         r2Xpv_ = r2Xpv_.reshape(-1,1)
+                         r2X[i]    = np.hstack((r2X[i],r2X_))
+                         r2Xpv[i]  = np.hstack((r2Xpv[i],r2Xpv_))
+                         
+                         r2R_   = 1-np.sum(R[i]**2)/TSSR[i]
+                         r2Rpv_ = 1-np.sum(R[i]**2,axis=0)/TSSRpv[i]
+                         r2Rpv_ = r2Rpv_.reshape(-1,1)
+                         r2R[i]    = np.hstack((r2R[i],r2R_))
+                         r2Rpv[i]  = np.hstack((r2Rpv[i],r2Rpv_))
+                         
+       
+                     r2Y_   = 1-np.sum(Y_**2)/TSSY
+                     r2Ypv_ = 1-np.sum(Y_**2,axis=0)/TSSYpv
+                     r2Ypv_ = r2Ypv_.reshape(-1,1)
+                     r2Y    = np.hstack((r2Y,r2Y_))
+                     r2Ypv  = np.hstack((r2Ypv,r2Ypv_))
+                     
+                     r2Z_   = 1-np.sum(Z_**2)/TSSZ
+                     r2Zpv_ = 1-np.sum(Z_**2,axis=0)/TSSZpv
+                     r2Zpv_ = r2Zpv_.reshape(-1,1)  
+                     r2Z    = np.hstack((r2Z,r2Z_))
+                     r2Zpv  = np.hstack((r2Zpv,r2Zpv_))                     
+
+             else:
+                 num_it = num_it + 1
+                 ui = un       
+        if a==0:
+            numIT=num_it
+        else:
+            numIT=np.hstack((numIT,num_it))
+    for i in np.arange(len(Xhat)):        
+        Xhat[i]=Xhat[i]*np.tile(x_std[i],(Xhat[i].shape[0],1))+np.tile(x_mean[i],(Xhat[i].shape[0],1) )      
+ 
+    for a in list(range(A-1,0,-1)):
+        r2Y[a]     = r2Y[a]-r2Y[a-1]
+        r2Ypv[:,a] = r2Ypv[:,a]-r2Ypv[:,a-1]
+        r2Z[a]     = r2Z[a]-r2Z[a-1]
+        r2Zpv[:,a] = r2Zpv[:,a]-r2Zpv[:,a-1]
+
+    r2xc=[]
+    r2rc=[]
+    for i in np.arange(len(X)):    
+        for a in list(range(A-1,0,-1)):
+            r2X[i][a]     = r2X[i][a]-r2X[i][a-1]
+            r2Xpv[i][:,a] = r2Xpv[i][:,a]-r2Xpv[i][:,a-1]
+            r2R[i][a]     = r2R[i][a]-r2R[i][a-1]
+            r2Rpv[i][:,a] = r2Rpv[i][:,a]-r2Rpv[i][:,a-1]
+    
+    for i,r in enumerate(r2Xpv):
+        if i==0:
+           r2xpv_all= r
+        else:
+            r2xpv_all=np.vstack((r2xpv_all,r))
+
+    
+        r2xc.append(np.cumsum(r2X[i]))
+        r2rc.append(np.cumsum(r2R[i]))
+    
+
+    r2yc = np.cumsum(r2Y)
+    r2zc = np.cumsum(r2Z)
+    r2rc = np.mean(np.array(r2rc),axis=0)
+    r2xc = np.mean(np.array(r2xc),axis=0)
+    r2x  = np.mean(np.array(r2X),axis=0 ) 
+    r2r  = np.mean(np.array(r2R),axis=0 ) 
+    
+    if not(shush):
+        print('--------------------------------------------------------------')
+        print('LV #     R2X       sum(R2X)   R2R       sum(R2R)   R2Z       sum(R2Z)   R2Y       sum(R2Y)')
+        if A>1:    
+            for a in list(range(A)):
+                print("LV #"+str(a+1)+":   {:.3f}     {:.3f}      {:.3f}     {:.3f}      {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(r2x[a],r2xc[a],r2r[a],r2rc[a],r2Z[a],r2zc[a],r2Y[a],r2yc[a]))
+        else:
+         
+           d1=r2xc[0]
+           d2=r2rc[0]
+           d3=r2zc[0]
+           d4=r2yc[0]
+           print("LV #"+str(a+1)+":   {:.3f}     {:.3f}      {:.3f}     {:.3f}      {:.3f}     {:.3f}      {:.3f}     {:.3f}".format(r2x, d1,r2r,d2,r2Z,d3,r2Y,d4))
+        print('--------------------------------------------------------------')   
+        
+    tpls_obj={'T':T,'P':P,'Q':Q,'U':U,'S':S,'H':H,'V':V,'Rscores':Rscores,
+              'r2xi':r2X,'r2xpvi':r2Xpv,'r2xpv':r2xpv_all,
+              'mx':x_mean,'sx':x_std,
+              'r2y':r2Y,'r2ypv':r2Ypv,
+              'my':y_mean,'sy':y_std,
+              'r2ri':r2R,'r2rpvi':r2Rpv,
+              'mr':r_mean,'sr':r_std,
+              'r2z':r2Z,'r2zpv':r2Zpv,
+              'mz':z_mean,'sz':z_std,
+              'Xhat':Xhat,'materials':materials,'Wt':Wt,'W':W,'Pz':Pz}  
+    if not isinstance(obsidX,bool):
+        tpls_obj['obsidXi']=obsidX
+        tpls_obj['varidXi']=varidX
+    
+    varidXall=[]
+    for i in np.arange(len(materials)):
+        for j in np.arange(len( varidX[i])):
+            varidXall.append( materials[i]+':'+varidX[i][j])
+    tpls_obj['varidX']=varidXall    
+    
+    if not isinstance(obsidR,bool):
+       tpls_obj['obsidRi']=obsidR
+       tpls_obj['varidRi']=varidR  
+    
+    if not isinstance(obsidY,bool):
+       tpls_obj['obsidY']=obsidY
+       tpls_obj['varidY']=varidY    
+
+    if not isinstance(obsidZ,bool):
+       tpls_obj['obsidZ']=obsidZ
+       tpls_obj['varidZ']=varidZ  
+       
+    T2 = hott2(tpls_obj,Tnew=T)
+    n  = T.shape[0]
+    T2_lim99 = (((n-1)*(n+1)*A)/(n*(n-A)))*f99(A,(n-A))
+    T2_lim95 = (((n-1)*(n+1)*A)/(n*(n-A)))*f95(A,(n-A))    
+    
+    speX=[]
+    speR=[]
+    speX_lim95=[]
+    speX_lim99=[]
+    speR_lim95=[]
+    speR_lim99=[]
+    for i in np.arange(len(X)):
+        speX .append(  np.sum(X[i]**2,axis=1,keepdims=1))
+        aux_=np.sum(X[i]**2,axis=1,keepdims=1)
+        speX_lim95_,speX_lim99_ = spe_ci(aux_)
+        speX_lim95.append(speX_lim95_)
+        speX_lim99.append(speX_lim99_)
+        
+        speR.append( np.sum(R[i]**2,axis=1,keepdims=1))
+        aux_=np.sum(R[i]**2,axis=1,keepdims=1)
+        speR_lim95_,speR_lim99_ = spe_ci(aux_)
+        speR_lim95.append(speR_lim95_)
+        speR_lim99.append(speR_lim99_)
+        
+    speY = np.sum(Y_**2,axis=1,keepdims=1)
+    speY_lim95,speY_lim99 = spe_ci(speY)
+    
+    speZ = np.sum(Z_**2,axis=1,keepdims=1)
+    speZ_lim95,speZ_lim99 = spe_ci(speZ)
+    
+    tpls_obj['T2']          = T2
+    tpls_obj['T2_lim99']    = T2_lim99
+    tpls_obj['T2_lim95']    = T2_lim95
+    tpls_obj['speX']        = speX
+    tpls_obj['speX_lim99']  = speX_lim99
+    tpls_obj['speX_lim95']  = speX_lim95
+    tpls_obj['speY']        = speY
+    tpls_obj['speY_lim99']  = speY_lim99
+    tpls_obj['speY_lim95']  = speY_lim95
+    tpls_obj['speR']        = speR
+    tpls_obj['speR_lim99']  = speR_lim99
+    tpls_obj['speR_lim95']  = speR_lim95
+    tpls_obj['speZ']        = speZ
+    tpls_obj['speZ_lim99']  = speZ_lim99
+    tpls_obj['speZ_lim95']  = speZ_lim95
+    
+    Wsi= []
+    Ws = []
+    for i in np.arange(len(S)):
+        Wsi.append (S[i] @ np.linalg.pinv(V[i].T @ S[i]) )
+        if i==0:
+            Ws=S[i] @ np.linalg.pinv(V[i].T @ S[i])
+        else:
+            Ws=np.vstack((Ws,S[i] @ np.linalg.pinv(V[i].T @ S[i])))    
+    tpls_obj['Ssi'] = Wsi #trick to plot the JRPLS/LPLS does not really have Ws
+    tpls_obj['Ss'] = Ws #trick to plot the JRPLS/LPLS does not really have Ws
+    #Ws=W @ np.linalg.pinv(P.T @ W)
+    tpls_obj['type']='tpls'
+    
+    Ws=W @ np.linalg.pinv(Pz.T @ W)
+    tpls_obj['Ws']=Ws
+    return tpls_obj       
+
+def tpls_pred(rnew,znew,tplsobj):
+    '''
+    Routine to produce the prediction for a new observation of Ri
+    using a TPLS model
+    preds = (rnew,znew,tplsobj)
+    
+    Inputs:
+        rnew: A dictionary with the format: 
+            rnew={ 
+                'matid':[(lotid,rvalue )],
+                
+                }
+            
+            for example, a prediction for the scenario:
+                
+        material    lot to use  rvalue       
+        API	        A0129	    0.5
+        Lactose	    Lac0003   	0.1
+        Lactose     Lac1010     0.2
+        MgSt	        M0012	    0.02
+        MCC      	MCC0017	    0.18
+        
+        use:
+            
+        rnew={
+            'API':[('A0129',0.5)],
+            'Lactose':[('Lac0003',0.1 ),('Lac1010',0.2 )],
+            'MgSt':[('M0012',0.02)],
+            'MCC':[('MCC0017',0.18)],
+            }    
+        
+        znew: Dataframe or numpy with new observation
+        
+    Outputs:
+        preds a dictionary of the form:
+            
+            preds ={'Tnew':tnew,'Yhat':yhat,'speR':sper,'speZ':spez} 
+            
+            where speR has the speR per each material
+            
+
+    '''
+    
+    ok=True
+    if isinstance(rnew,list):
+        #check dimensions
+        i=0     
+        for r,mr,sr in zip(rnew,tplsobj['mr'],tplsobj['sr']):
+            if not(len(r)==len(mr[0])):
+                ok=False
+            np.ones(len(r))
+            if i==0:
+                rnew_=r
+                mr_=mr
+                sr_=sr
+                Rscores = tplsobj['Rscores'][i]
+                P       = tplsobj['P'][i]
+            else:
+                rnew_   = np.hstack((rnew_,r))    
+                mr_     = np.hstack((mr_,mr))
+                sr_     = np.hstack((sr_,sr))
+                Rscores = np.vstack((Rscores,tplsobj['Rscores'][i] ))
+                P       = np.vstack((P,tplsobj['P'][i] ))
+            i+=1
+                
+    elif isinstance(rnew,dict):
+        #re-arrange 
+        ok=True
+        rnew_=[['*']]*len(tplsobj['materials'])
+        for k in list(rnew.keys()):
+            i = tplsobj['materials'].index(k)
+            ri=np.zeros((tplsobj['mr'][i].shape[1]) )
+            for m,r in rnew[k]:
+                e = tplsobj['varidRi'][i].index(m)
+                ri[e]=r
+            rnew_[i]=ri
+        
+        preds=tpls_pred(rnew_,znew,tplsobj)
+        return preds
+    if isinstance(znew,pd.DataFrame):
+        znew_=znew.values.reshape(-1)[1:].astype(float)
+    elif isinstance(znew,list):
+        znew_=np.array(znew)
+    elif isinstance(znew,np.ndarray):
+        znew_=znew.copy()
+        
+    if not(len(znew_)==tplsobj['mz'].shape[1]):
+        ok = False
+   
+    if ok:  
+        bkzeros=0
+        selmat=[]
+        for i,r in enumerate(tplsobj['Rscores']):
+            frontzeros=Rscores.shape[0]-bkzeros-r.shape[0]
+            row=np.vstack((np.zeros((bkzeros,1)),
+                           np.ones((r.shape[0],1)),
+                           np.zeros(( frontzeros,1))))
+            bkzeros+=r.shape[0]
+            selmat.append(row)
+            
+        tnew=[]
+        sper=[]
+        spez=[]
+       
+        rnew_=(rnew_-mr_)/sr_
+        rnew_=rnew_.reshape(-1,1)
+
+        znew_=(znew_-tplsobj['mz'])/tplsobj['sz']
+        znew_=znew_.reshape(-1,1)
+
+        
+        tnew=[]
+        for a in np.arange(tplsobj['T'].shape[1]):
+
+            ti_rx_ =( rnew_.T@Rscores[:,a]/             
+                 (Rscores[:,a].T@Rscores[:,a]))
+            
+            ti_z_ = znew_.T@tplsobj['W'][:,a]
+            
+            
+            ti_ = np.array([ti_rx_,ti_z_]).reshape(1,-1)@tplsobj['Wt'][:,a]
+            
+            tnew.append(ti_[0])
+            aux=ti_*P[:,a]
+            rnew_=rnew_-aux.reshape(-1,1)
+            
+            auxz=ti_*tplsobj['Pz'][:,a]
+            znew_=znew_-auxz.reshape(-1,1)
+            
+        
+        sper=[]
+        for row in selmat:
+            sper.append(np.sum(rnew_[row==1]**2))
+        spez=np.sum(znew_**2)
+        tnew=np.array(tnew)
+        yhat = tnew@tplsobj['Q'].T
+        yhat = (yhat * tplsobj['sy'])+tplsobj['my']
+        preds ={'Tnew':tnew,'Yhat':yhat,'speR':sper,'speZ':spez}     
+        return preds    
+    else:
+        return 'dimensions of rnew or znew did not macth model'
+    
+def varimax_(X, gamma = 1.0, q = 20, tol = 1e-6):
+    p,k = X.shape
+    R = eye(k)
+    d=0
+    for i in range(q):
+        d_ = d
+        Lambda = dot(X, R)
+        u,s,vh = svd(dot(X.T,asarray(Lambda)**3 - (gamma/p) * dot(Lambda, diag(diag(dot(Lambda.T,Lambda))))))
+        R = dot(u,vh)
+        d = sum(s)
+        if d_!=0 and d/d_ < 1 + tol: break
+    return dot(X, R)
+
+def varimax_rotation(mvm_obj,X,*,Y=False):
+    mvmobj=mvm_obj.copy()
+    if isinstance(X,np.ndarray):
+        X_=X.copy
+    if isinstance(X,pd.DataFrame):
+        X_=X.values[:,1:].astype(float)
+        
+    if isinstance(Y,np.ndarray):
+        Y_=Y.copy
+    if isinstance(Y,pd.DataFrame):
+        Y_=Y.values[:,1:].astype(float)
+            
+    X_ = (X_ - np.tile(mvmobj['mx'],(X_.shape[0],1)))/np.tile(mvmobj['sx'],(X_.shape[0],1))
+    not_Xmiss = ~(np.isnan(X_))*1
+    X_,Xmap=n2z(X_)
+    
+    if not(isinstance(Y,bool)):
+        Y_ = (Y_ - np.tile(mvmobj['my'],(Y_.shape[0],1)))/np.tile(mvmobj['sy'],(Y_.shape[0],1))
+        not_Ymiss = ~(np.isnan(Y_))*1
+        Y_,Ymap=n2z(Y_)
+        
+    A=mvmobj['T'].shape[1]
+    if 'Q' in mvmobj:
+        Wrot=varimax_(mvmobj['W'])
+        Trot=[]
+        Prot=[]
+        Qrot=[]
+        Urot=[]
+        for a in np.arange(A):
+            ti=_Ab_btbinv(X_, Wrot[:,a], not_Xmiss)
+            pi=_Ab_btbinv(X_.T,ti,not_Xmiss.T )
+            qi=_Ab_btbinv(Y_.T,ti,not_Ymiss.T )
+            ui=_Ab_btbinv(Y_,qi,not_Ymiss )
+            X_ = (X_ - ti@pi.T)*not_Xmiss
+            Y_ = (Y_ - ti@qi.T)*not_Ymiss
+            Trot.append(ti)
+            Prot.append(pi)
+            Qrot.append(qi)
+            Urot.append(ui)
+        Trot=np.array(Trot).T
+        Prot=np.array(Prot).T
+        Qrot=np.array(Qrot).T
+        Urot=np.array(Urot).T
+        Trot=Trot[0]
+        Prot=Prot[0]
+        Qrot=Qrot[0]
+        Urot=Urot[0]
+        Wsrot=Wrot @ np.linalg.pinv(Prot.T @ Wrot)
+        mvmobj['W']=Wrot
+        mvmobj['T']=Trot
+        mvmobj['P']=Prot
+        mvmobj['Q']=Qrot
+        mvmobj['U']=Urot
+        mvmobj['Ws']=Wsrot
+    else:
+        Prot=varimax_( mvmobj['P'])
+        Trot=[]
+        for a in np.arange(A):
+            ti=_Ab_btbinv(X_, Prot[:,a], not_Xmiss)
+            Trot.append(ti)
+            
+        Trot=np.array(Trot).T
+        mvmobj['P']=Prot
+        mvmobj['T']=Trot[0]
+    return mvmobj
+        
+        
