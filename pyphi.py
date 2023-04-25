@@ -4992,23 +4992,32 @@ def varimax_rotation(mvm_obj,X,*,Y=False):
             X_ = (X_ - ti@pi.T)*not_Xmiss
             Y_ = (Y_ - ti@qi.T)*not_Ymiss
             if a==0:
+                
+                r2Xpv = np.zeros((1,len(TSSXpv))).reshape(-1)                
                 r2X   = 1-np.sum(X_**2)/TSSX
-                r2Xpv = 1-np.sum(X_**2,axis=0)/TSSXpv
-                r2Xpv = r2Xpv.reshape(-1,1)
+                r2Xpv[TSSXpv>0] = 1-(np.sum(X_**2,axis=0)[TSSXpv>0]/TSSXpv[TSSXpv>0])
+                r2Xpv = r2Xpv.reshape(-1,1)   
+                                
+                r2Ypv = np.zeros((1,len(TSSYpv))).reshape(-1)                
                 r2Y   = 1-np.sum(Y_**2)/TSSY
-                r2Ypv = 1-np.sum(Y_**2,axis=0)/TSSYpv
-                r2Ypv = r2Ypv.reshape(-1,1)
+                r2Ypv[TSSYpv>0] = 1-(np.sum(Y_**2,axis=0)[TSSYpv>0]/TSSYpv[TSSYpv>0])
+                r2Ypv = r2Ypv.reshape(-1,1)                   
                 
             else:
+                
                 r2X   = np.hstack((r2X,1-np.sum(X_**2)/TSSX))
-                aux_  = 1-np.sum(X_**2,axis=0)/TSSXpv
+                aux_  = np.zeros((1,len(TSSXpv))).reshape(-1)
+                aux_[TSSXpv>0]  = 1- (np.sum(X_**2,axis=0)[TSSXpv>0]/TSSXpv[TSSXpv>0])
                 aux_  = aux_.reshape(-1,1)
                 r2Xpv = np.hstack((r2Xpv,aux_))
-                
+                                
                 r2Y   = np.hstack((r2Y,1-np.sum(Y_**2)/TSSY))
-                aux_  = 1-np.sum(Y_**2,axis=0)/TSSYpv
+                aux_  = np.zeros((1,len(TSSYpv))).reshape(-1)
+                aux_[TSSYpv>0]  = 1- (np.sum(Y_**2,axis=0)[TSSYpv>0]/TSSYpv[TSSYpv>0])
                 aux_  = aux_.reshape(-1,1)
-                r2Ypv = np.hstack((r2Ypv,aux_))  
+                r2Ypv = np.hstack((r2Ypv,aux_))
+
+
             Trot.append(ti)
             Prot.append(pi)
             Qrot.append(qi)
@@ -5045,14 +5054,17 @@ def varimax_rotation(mvm_obj,X,*,Y=False):
         for a in np.arange(A):
             ti=_Ab_btbinv(X_, Prot[:,a], not_Xmiss)
             Trot.append(ti)
+            pi=Prot[:,[a]]
             X_ = (X_ - ti@pi.T)*not_Xmiss
-            if a==0:
+            if a==0:                
+                r2Xpv = np.zeros((1,len(TSSXpv))).reshape(-1)                
                 r2X   = 1-np.sum(X_**2)/TSSX
-                r2Xpv = 1-np.sum(X_**2,axis=0)/TSSXpv
+                r2Xpv[TSSXpv>0] = 1-(np.sum(X_**2,axis=0)[TSSXpv>0]/TSSXpv[TSSXpv>0])
                 r2Xpv = r2Xpv.reshape(-1,1)                
             else:
                 r2X   = np.hstack((r2X,1-np.sum(X_**2)/TSSX))
-                aux_  = 1-np.sum(X_**2,axis=0)/TSSXpv
+                aux_ = np.zeros((1,len(TSSXpv))).reshape(-1)
+                aux_[TSSXpv>0]  = 1- (np.sum(X_**2,axis=0)[TSSXpv>0]/TSSXpv[TSSXpv>0])
                 aux_  = aux_.reshape(-1,1)
                 r2Xpv = np.hstack((r2Xpv,aux_))
             
