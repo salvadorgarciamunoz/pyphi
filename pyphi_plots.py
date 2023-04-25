@@ -4,6 +4,7 @@
 Plots for pyPhi
 
 @author: Sal Garcia <sgarciam@ic.ac.uk> <salvadorgarciamunoz@gmail.com>
+Addition on Apr 25 2023  added markersize to score_scatter
 Addition on Apr 23 2023  also added the text_alpha flag to loadings map for PCA models
 Addition on Apr 22 2023  added tooltips to contribution plots and VIP
                          implemented multiple columns in score scatter (yay!)
@@ -644,7 +645,7 @@ def vip(mvm_obj,*,plotwidth=600,material=False,zspace=False,addtitle=''):
 def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
                   add_ci=False,add_labels=False,add_legend=True,legend_cols=1, 
                   addtitle='',plotwidth=600,plotheight=600,
-                  rscores=False,material=False):
+                  rscores=False,material=False,marker_size=7):
     '''
     Score scatter plot
     by Salvador Garcia-Munoz 
@@ -749,7 +750,7 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
                 ]
         
         p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=plotwidth,plot_height=plotheight, title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ '] '+addtitle)
-        p.circle('x', 'y', source=source,size=7)
+        p.circle('x', 'y', source=source,size=marker_size)
         if add_ci:
             T_aux1=mvmobj['T'][:,[xydim[0]-1]]
             T_aux2=mvmobj['T'][:,[xydim[1]-1]]
@@ -820,14 +821,14 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
             source = ColumnDataSource(data=dict(x=x_aux, y=y_aux,ObsID=obsid_aux,ObsNum=obsnum_aux, Class=classid_aux))        
             color_=bokeh_palette[Classes_.index(classid_in_turn)]
             if add_legend:
-                c = p.circle('x','y',source=source,color=color_)
+                c = p.circle('x','y',source=source,color=color_,size=marker_size)
                 aux_=classid_in_turn
                 if isinstance(aux_,(float,int)):
                     aux_=str(aux_)
                 #legend_it.append((classid_in_turn, [c]))
                 legend_it.append((aux_, [c]))
             else:
-                p.circle('x','y',source=source,color=color_)
+                p.circle('x','y',source=source,color=color_,size=marker_size)
             if add_labels:
                 labelsX = LabelSet(x='x', y='y', text='ObsID', level='glyph',x_offset=5, y_offset=5, source=source, render_mode='canvas')
                 p.add_layout(labelsX)
