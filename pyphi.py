@@ -2,6 +2,8 @@
 Phi for Python (pyPhi)
 
 by Salvador Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
+Added Apr 25
+        * Enhanced the varimax_rotation to adjust the r2 and r2pv to the rotated loadings
 Added Apr 21
         * Re added varimax_rotation with complete model rotation for PCA and PLS
         
@@ -4966,11 +4968,14 @@ def varimax_rotation(mvm_obj,X,*,Y=False):
     X_ = (X_ - np.tile(mvmobj['mx'],(X_.shape[0],1)))/np.tile(mvmobj['sx'],(X_.shape[0],1))
     not_Xmiss = ~(np.isnan(X_))*1
     X_,Xmap=n2z(X_)
-    
+    TSSX   = np.sum(X_**2)
+    TSSXpv = np.sum(X_**2,axis=0)
     if not(isinstance(Y,bool)):
         Y_ = (Y_ - np.tile(mvmobj['my'],(Y_.shape[0],1)))/np.tile(mvmobj['sy'],(Y_.shape[0],1))
         not_Ymiss = ~(np.isnan(Y_))*1
         Y_,Ymap=n2z(Y_)
+        TSSY   = np.sum(Y_**2)
+        TSSYpv = np.sum(Y_**2,axis=0)
         
     A=mvmobj['T'].shape[1]
     if 'Q' in mvmobj:
@@ -4986,10 +4991,34 @@ def varimax_rotation(mvm_obj,X,*,Y=False):
             ui=_Ab_btbinv(Y_,qi,not_Ymiss )
             X_ = (X_ - ti@pi.T)*not_Xmiss
             Y_ = (Y_ - ti@qi.T)*not_Ymiss
+            if a==0:
+                r2X   = 1-np.sum(X_**2)/TSSX
+                r2Xpv = 1-np.sum(X_**2,axis=0)/TSSXpv
+                r2Xpv = r2Xpv.reshape(-1,1)
+                r2Y   = 1-np.sum(Y_**2)/TSSY
+                r2Ypv = 1-np.sum(Y_**2,axis=0)/TSSYpv
+                r2Ypv = r2Ypv.reshape(-1,1)
+                
+            else:
+                r2X   = np.hstack((r2X,1-np.sum(X_**2)/TSSX))
+                aux_  = 1-np.sum(X_**2,axis=0)/TSSXpv
+                aux_  = aux_.reshape(-1,1)
+                r2Xpv = np.hstack((r2Xpv,aux_))
+                
+                r2Y   = np.hstack((r2Y,1-np.sum(Y_**2)/TSSY))
+                aux_  = 1-np.sum(Y_**2,axis=0)/TSSYpv
+                aux_  = aux_.reshape(-1,1)
+                r2Ypv = np.hstack((r2Ypv,aux_))  
             Trot.append(ti)
             Prot.append(pi)
             Qrot.append(qi)
             Urot.append(ui)
+                            
+        for a in list(range(A-1,0,-1)):
+            r2X[a]     = r2X[a]-r2X[a-1]
+            r2Xpv[:,a] = r2Xpv[:,a]-r2Xpv[:,a-1]
+            r2Y[a]     = r2Y[a]-r2Y[a-1]
+            r2Ypv[:,a] = r2Ypv[:,a]-r2Ypv[:,a-1]
         Trot=np.array(Trot).T
         Prot=np.array(Prot).T
         Qrot=np.array(Qrot).T
@@ -5005,16 +5034,36 @@ def varimax_rotation(mvm_obj,X,*,Y=False):
         mvmobj['Q']=Qrot
         mvmobj['U']=Urot
         mvmobj['Ws']=Wsrot
+        mvmobj['r2x']   = r2X
+        mvmobj['r2xpv'] = r2Xpv
+        mvmobj['r2y']   = r2Y
+        mvmobj['r2ypv'] = r2Ypv
+              
     else:
         Prot=varimax_( mvmobj['P'])
         Trot=[]
         for a in np.arange(A):
             ti=_Ab_btbinv(X_, Prot[:,a], not_Xmiss)
             Trot.append(ti)
+            X_ = (X_ - ti@pi.T)*not_Xmiss
+            if a==0:
+                r2X   = 1-np.sum(X_**2)/TSSX
+                r2Xpv = 1-np.sum(X_**2,axis=0)/TSSXpv
+                r2Xpv = r2Xpv.reshape(-1,1)                
+            else:
+                r2X   = np.hstack((r2X,1-np.sum(X_**2)/TSSX))
+                aux_  = 1-np.sum(X_**2,axis=0)/TSSXpv
+                aux_  = aux_.reshape(-1,1)
+                r2Xpv = np.hstack((r2Xpv,aux_))
             
         Trot=np.array(Trot).T
+        for a in list(range(A-1,0,-1)):
+            r2X[a]     = r2X[a]-r2X[a-1]
+            r2Xpv[:,a] = r2Xpv[:,a]-r2Xpv[:,a-1]            
         mvmobj['P']=Prot
         mvmobj['T']=Trot[0]
+        mvmobj['r2x']   = r2X
+        mvmobj['r2xpv'] = r2Xpv
     return mvmobj
         
         
