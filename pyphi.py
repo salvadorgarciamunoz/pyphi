@@ -2,6 +2,14 @@
 Phi for Python (pyPhi)
 
 by Salvador Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
+Added Apr 30 {feliz día de los niños}
+        * Modified Multi-block PLS to include the block name in the variable name
+Added Apr 29
+        * Included the unique routine and adjusted the parse_materials routine so materials 
+          and lots are in the same order as in the raw data
+          
+Added Apr 27
+        * Enhanced adapt_pls_4_pyomo to use variable names as indices if flag is sent
 Added Apr 25
         * Enhanced the varimax_rotation to adjust the r2 and r2pv to the rotated loadings
 Added Apr 21
@@ -2181,8 +2189,11 @@ def savgol(ws,od,op,Dm):
             Dm_sg= Dm @ M.T
         return Dm_sg,M
 
-def np2D2pyomo(arr):
-    output=dict(((i+1,j+1), arr[i][j]) for i in range(arr.shape[0]) for j in range(arr.shape[1]))
+def np2D2pyomo(arr,*,varids=False):
+    if not(varids):
+        output=dict(((i+1,j+1), arr[i][j]) for i in range(arr.shape[0]) for j in range(arr.shape[1]))
+    else:
+        output=dict(((varids[i],j+1), arr[i][j]) for i in range(arr.shape[0]) for j in range(arr.shape[1]))
     return output
 
 def np1D2pyomo(arr,*,indexes=False):
@@ -2197,7 +2208,7 @@ def np1D2pyomo(arr,*,indexes=False):
 
 
 
-def adapt_pls_4_pyomo(plsobj):
+def adapt_pls_4_pyomo(plsobj,*,use_var_ids=False):
     plsobj_ = plsobj.copy()
     
     A = plsobj['T'].shape[1]
@@ -2209,21 +2220,30 @@ def adapt_pls_4_pyomo(plsobj):
     pyo_N = np.arange(1,N+1)  #index for columns of X
     pyo_M = np.arange(1,M+1)  #index for columns of Y
     pyo_A = pyo_A.tolist()
-    pyo_N = pyo_N.tolist()
-    pyo_M = pyo_M.tolist()
-    
-    pyo_Ws = np2D2pyomo(plsobj['Ws'])
-    pyo_Q  = np2D2pyomo(plsobj['Q'])
-    pyo_P  = np2D2pyomo(plsobj['P'])
-    
-    var_t = np.var(plsobj['T'],axis=0)
-    
-    pyo_var_t = np1D2pyomo(var_t)
-    pyo_mx    = np1D2pyomo(plsobj['mx'])
-    pyo_sx    = np1D2pyomo(plsobj['sx'])
-    pyo_my    = np1D2pyomo(plsobj['my'])
-    pyo_sy    = np1D2pyomo(plsobj['sy'])
-    
+    if not(use_var_ids):
+        pyo_N = pyo_N.tolist()
+        pyo_M = pyo_M.tolist()    
+        pyo_Ws = np2D2pyomo(plsobj['Ws'])
+        pyo_Q  = np2D2pyomo(plsobj['Q'])
+        pyo_P  = np2D2pyomo(plsobj['P'])    
+        var_t = np.var(plsobj['T'],axis=0)    
+        pyo_var_t = np1D2pyomo(var_t)
+        pyo_mx    = np1D2pyomo(plsobj['mx'])
+        pyo_sx    = np1D2pyomo(plsobj['sx'])
+        pyo_my    = np1D2pyomo(plsobj['my'])
+        pyo_sy    = np1D2pyomo(plsobj['sy'])
+    else:    
+        pyo_N = plsobj['varidX']
+        pyo_M = plsobj['varidY']
+        pyo_Ws = np2D2pyomo(plsobj['Ws'],varids=plsobj['varidX'])
+        pyo_Q  = np2D2pyomo(plsobj['Q'] ,varids=plsobj['varidY'])
+        pyo_P  = np2D2pyomo(plsobj['P'] ,varids=plsobj['varidX'])
+        var_t = np.var(plsobj['T'],axis=0)    
+        pyo_var_t = np1D2pyomo(var_t)
+        pyo_mx    = np1D2pyomo(plsobj['mx'],indexes=plsobj['varidX'])
+        pyo_sx    = np1D2pyomo(plsobj['sx'],indexes=plsobj['varidX'])
+        pyo_my    = np1D2pyomo(plsobj['my'],indexes=plsobj['varidY'])
+        pyo_sy    = np1D2pyomo(plsobj['sy'],indexes=plsobj['varidY'])
             
     plsobj_['pyo_A']      = pyo_A
     plsobj_['pyo_N']      = pyo_N
@@ -2934,7 +2954,7 @@ def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=F
             columns=x.columns.tolist()
             for i,h in enumerate(columns):
                 if i!=0:
-                    X_var_names.append(h)
+                    X_var_names.append( XMB['blknames'][c]+' '+h)
                     
             if isinstance(mcsX,bool):
                 if mcsX:
@@ -3339,6 +3359,17 @@ def export_2_gproms(mvmobj,*,fname='phi_export.txt'):
         outfile.write("\n".join(lines))
 
         return
+def unique(df,colid):    
+    '''
+    replacement of the np.unique routine, specifically for dataframes
+    returns unique values in the order found in the dataframe
+    df:     A pandas dataframe
+    colid:  Column identifier 
+    
+    '''
+    aux=df.drop_duplicates(subset=colid,keep='first')
+    unique_entries=aux[colid].values.tolist()
+    return unique_entries
     
 def parse_materials(filename,sheetname):
     '''
@@ -3362,9 +3393,8 @@ def parse_materials(filename,sheetname):
     '''
     materials=pd.read_excel(filename,sheet_name=sheetname)
 
-    #Sanity Check
     ok=True
-    for lot in np.unique(materials['Finished Product Lot']):
+    for lot in unique(materials,'Finished Product Lot'):
         this_lot=materials[materials["Finished Product Lot"]==lot]
         for mt,m in zip(this_lot['Material'].values, this_lot['Material Lot'].values):
             try:
@@ -3379,8 +3409,8 @@ def parse_materials(filename,sheetname):
         print('Lot :'+lot+' ratio/qty adds to '+str(np.sum(this_lot['Ratio or Quantity'].values) ))
     if ok:    
         JR=[]
-        materials_used=np.unique(materials['Material'])
-        fp_lots=np.unique(materials['Finished Product Lot'])
+        materials_used=unique(materials,'Material')
+        fp_lots=unique(materials,'Finished Product Lot')
         for m in materials_used:
             r_mat=[]
             mat_lots=np.unique(materials['Material Lot'][materials['Material']==m]).tolist()
