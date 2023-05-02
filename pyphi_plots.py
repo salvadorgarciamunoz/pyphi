@@ -4,6 +4,7 @@
 Plots for pyPhi
 
 @author: Sal Garcia <sgarciam@ic.ac.uk> <salvadorgarciamunoz@gmail.com>
+Addition on May 1 2023   corrected description of mb_vip
 Addition on Apr 25 2023  added markersize to score_scatter
 Addition on Apr 23 2023  also added the text_alpha flag to loadings map for PCA models
 Addition on Apr 22 2023  added tooltips to contribution plots and VIP
@@ -1764,7 +1765,7 @@ def mb_r2pb(mvmobj,*,plotwidth=600,plotheight=400):
 
 def mb_vip(mvmobj,*,plotwidth=600,plotheight=400):
     """
-    Super weights for Multi-block models
+    VIP per block for Multi-block models
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     

@@ -2,6 +2,10 @@
 Phi for Python (pyPhi)
 
 by Salvador Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
+Added May 1st
+        * YMB is now added in the same structure as the XMB
+        * Corrected the dimensionality of the lwpls prediction, it was a double-nested array.
+        
 Added Apr 30 {feliz día de los niños}
         * Modified Multi-block PLS to include the block name in the variable name
 Added Apr 29
@@ -1860,7 +1864,7 @@ def lwpls(xnew,loc_par,mvmobj,X,Y,*,shush=False):
         Xi    = Xi - t @ p.T
         Yi    = Yi - t @ q.T
         xnewi = xnewi - p @ tnew
-    return yhat.T
+    return yhat[0].T
     
     
 def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
@@ -2909,17 +2913,17 @@ def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=F
     '''
     Multi-block PLS model using the approach by Westerhuis, J. Chemometrics, 12, 301–321 (1998)
     
-    Parameters
+    Inputs
     ----------
     XMB : Dictionary or PandasDataFrame
+        Dictionary structure:
         {'BlockName1':block_1_data_pd,
          'BlockName2':block_2_data_pd}
 
-
     YMB : Dictionary or PandasDataFrame
-        Multi-block entity with two fields:
-            data: List of dataframes with data
-            blknames: List of block names
+        Dictionary structure:
+        {'BlockName1':block_1_data_pd,
+         'BlockName2':block_2_data_pd}
           
     '''
     x_means=[]
@@ -3013,6 +3017,13 @@ def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=F
         X_=x_.copy() 
         
     if isinstance(YMB,dict):
+        data_=[]
+        names_=[]
+        for k in YMB.keys():
+            data_.append(YMB[k])
+            names_.append(k)
+        YMB={'data':data_,'blknames':names_}
+        
         c=0
         for y in YMB['data']:        
             y_=y.values[:,1:].astype(float)
@@ -3498,7 +3509,8 @@ def lpls(X,R,Y,A,*,shush=False):
     # X = [ m x p ] Phys. Prop. DataFrame of             materials x mat. properties
     # R = [ b x m ] Blending ratios DataFrame of         blends    x materials
     # Y = [ b x n ] Product characteristics DataFrame of blends    x prod. properties
-    #first column of all dataframes is an identifier string
+    #first column of all dataframes is the observation identifier
+    # A = Number of components
     '''
     if isinstance(X,np.ndarray):
         X_ = X.copy()
@@ -3797,11 +3809,11 @@ def jrpls(Xi,Ri,Y,A,*,shush=False):
     '''
     JRPLS Algorithm per Garcia-Munoz Chemom.Intel.Lab.Syst., 133, pp.49-62.
     
-     X = {[ m x p ]} Phys. Prop. dictionary of Dataframes of materials_i x mat. properties
+     X =  Phys. Prop. dictionary of Dataframes of materials_i x mat. properties
          X = {'MatA':df_with_props_for_mat_A (one row per lot of MatA, one col per property),
               'MatB':df_with_props_for_mat_B (one row per lot of MatB, one col per property)}
          
-     R = {[ b x m ]} Blending ratios dictionary of Dataframes of  blends x materials_i
+     R = Blending ratios dictionary of Dataframes of  blends x materials_i
          R = {'MatA': df_with_ratios_of_lots_of_A_used_per_blend,
               'MatB': df_with_ratios_of_lots_of_B_used_per_blend,
               } 
@@ -3809,7 +3821,7 @@ def jrpls(Xi,Ri,Y,A,*,shush=False):
          
      Y = [ b x n ]   Product characteristics dataframe of blends x prod. properties
      
-     first column of all dataframes is an identifier string
+     first column of all dataframes is the observation identifier
      
     '''
     X=[]
@@ -4337,11 +4349,11 @@ def tpls(Xi,Ri,Z,Y,A,*,shush=False):
     '''
      TPLS Algorithm per Garcia-Munoz Chemom.Intel.Lab.Syst., 133, pp.49-62.
     
-     X = {[ m x p ]} Phys. Prop. dictionary of Dataframes of materials_i x mat. properties
+     X = Phys. Prop. dictionary of Dataframes of materials_i x mat. properties
          X = {'MatA':df_with_props_for_mat_A (one row per lot of MatA, one col per property),
               'MatB':df_with_props_for_mat_B (one row per lot of MatB, one col per property)}
          
-     R = {[ b x m ]} Blending ratios dictionary of Dataframes of  blends x materials_i
+     R =  Blending ratios dictionary of Dataframes of  blends x materials_i
          R = {'MatA': df_with_ratios_of_lots_of_A_used_per_blend,
               'MatB': df_with_ratios_of_lots_of_B_used_per_blend,
               } 
@@ -4351,7 +4363,7 @@ def tpls(Xi,Ri,Z,Y,A,*,shush=False):
      
      Z = [b x p]  Process conditions dataframe of  blends x process variables
      
-     first column of all dataframes is an identifier string
+     first column of all dataframes is the observation identifier
      
     '''
     X=[]
