@@ -19,12 +19,13 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
-        "numpy",
+        "numpy==1.20.3",
         "scipy",
         "pandas",
         "xlrd",
-        "bokeh",
+        "bokeh==2.4.3",
         "matplotlib",
-        "pyomo"
+        "pyomo", 
+        "statsmodels"
     ],
 ) 
