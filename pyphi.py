@@ -246,7 +246,7 @@ def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cro
             #Generate matrix of random numbers and zero out nans
             Xrnd = np.random.random(X_.shape)*not_Xmiss
             indx = np.argsort(np.reshape(Xrnd,(Xrnd.shape[0]*Xrnd.shape[1])))
-            elements_to_remove_per_round = np.int(np.ceil((X_.shape[0]*X_.shape[1]) * (cross_val/100)))
+            elements_to_remove_per_round = int(np.ceil((X_.shape[0]*X_.shape[1]) * (cross_val/100)))
             error = np.zeros((rows*cols,1))
             rounds=1
             while np.sum(not_removed_map) > 0 :#While there are still elements to be removed
@@ -793,7 +793,7 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=True,shus
             #Generate matrix of random numbers and zero out nans
             Yrnd = np.random.random(Y_.shape)*not_Ymiss
             indxY = np.argsort(np.reshape(Yrnd,(Yrnd.shape[0]*Yrnd.shape[1])))
-            elements_to_remove_per_roundY = np.int(np.ceil((Y_.shape[0]*Y_.shape[1]) * (cross_val/100)))
+            elements_to_remove_per_roundY = int(np.ceil((Y_.shape[0]*Y_.shape[1]) * (cross_val/100)))
             errorY = np.zeros((rowsY*colsY,1))
                 
             if cross_val_X:
@@ -803,7 +803,7 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=True,shus
                 #Generate matrix of random numbers and zero out nans
                 Xrnd = np.random.random(X_.shape)*not_Xmiss
                 indxX = np.argsort(np.reshape(Xrnd,(Xrnd.shape[0]*Xrnd.shape[1])))
-                elements_to_remove_per_roundX = np.int(np.ceil((X_.shape[0]*X_.shape[1]) * (cross_val/100)))
+                elements_to_remove_per_roundX = int(np.ceil((X_.shape[0]*X_.shape[1]) * (cross_val/100)))
                 errorX = np.zeros((rowsX*colsX,1))
             else:
                 not_removed_mapX=0
@@ -2021,7 +2021,7 @@ def spe(mvmobj,Xnew,*,Ynew=False):
         Xres = Xres - Xnewhat
         spex_ =  np.sum(Xres**2,axis=1,keepdims=True)
         
-        if not(isinstance(Ynew,np.bool)) and ('Q' in mvmobj):
+        if not(isinstance(Ynew,bool)) and ('Q' in mvmobj):
             Ynewhat= Tnew @ mvmobj['Q'].T
             Yres = Y_   - np.tile(mvmobj['my'],(Ynew.shape[0],1))
             Yres = Yres / np.tile(mvmobj['sy'],(Ynew.shape[0],1))
@@ -2513,7 +2513,7 @@ def contributions(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_sp
             
     lv_space: Latent spaces over which to do the calculations [applicable to 'ht2' and 'scores']
     """
-    if isinstance(lv_space,np.bool):
+    if isinstance(lv_space,bool):
         lv_space=list(range(mvmobj['T'].shape[1]))
     elif isinstance(lv_space,int):
         lv_space=np.array([lv_space])-1
@@ -2529,7 +2529,7 @@ def contributions(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_sp
         to_obs=np.array(to_obs)
         to_obs=to_obs.tolist()
     
-    if not(isinstance(from_obs,np.bool)):    
+    if not(isinstance(from_obs,bool)):    
         if isinstance(from_obs,int):
            from_obs=np.array([from_obs])
            from_obs=from_obs.tolist()
@@ -2541,7 +2541,7 @@ def contributions(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_sp
         X_ = X.copy()
     elif isinstance(X,pd.DataFrame):
         X_=np.array(X.values[:,1:]).astype(float)      
-    if not(isinstance(Y,np.bool)):
+    if not(isinstance(Y,bool)):
         if isinstance(Y,np.ndarray):
             Y_=Y.copy()
         elif isinstance(Y,pd.DataFrame):
@@ -2562,7 +2562,7 @@ def contributions(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_sp
                     to_cont=to_cont + aux_
                 else:
                     to_cont=to_cont + aux_**2
-        if not(isinstance(from_obs,np.bool)):
+        if not(isinstance(from_obs,bool)):
             from_obs_mean=np.mean(X_[from_obs,:],axis=0,keepdims=1)    
             from_cont=np.zeros((1,X_.shape[1]))
             for a in lv_space:    
@@ -2590,7 +2590,7 @@ def contributions(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_sp
         contsX=((Xerror)**2)*np.sign(Xerror)
         contsX=np.mean(contsX,axis=0,keepdims=True)
         
-        if not(isinstance(Y,np.bool)):
+        if not(isinstance(Y,bool)):
             Y_=Y_[to_obs,:]
             Yhat=pred['Yhat']
             Yhatmcs=((Yhat-np.tile(mvmobj['my'],(Yhat.shape[0],1)))/(np.tile(mvmobj['sy'],(Yhat.shape[0],1))))
