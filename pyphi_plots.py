@@ -114,7 +114,7 @@ def r2pv(mvm_obj,*,plotwidth=600,plotheight=400,addtitle='',material=False,zspac
         
             
         px = figure(x_range=XVar, title="R2"+ yaxlbl+" Per Variable "+addtitle,
-             tools="save,box_zoom,xpan,hover,reset", tooltips="$name @XVar: @$name",plot_width=plotwidth,plot_height=plotheight)
+             tools="save,box_zoom,xpan,hover,reset", tooltips="$name @XVar: @$name",width=plotwidth,height=plotheight)
         
         v=px.vbar_stack(lv_labels, x='XVar', width=0.9,color=bokeh_palette,source=r2pvX_dict)
         px.y_range.range_padding = 0.1
@@ -126,8 +126,8 @@ def r2pv(mvm_obj,*,plotwidth=600,plotheight=400,addtitle='',material=False,zspac
         px.xaxis.major_label_orientation = 45
         legend = Legend(items=[(x, [v[i]]) for i, x in enumerate(lv_labels)], location=(0, 0))
         px.add_layout(legend, 'right')
-        py = figure(x_range=YVar, plot_height=plotheight, title="R2Y Per Variable "+addtitle,
-            tools="save,box_zoom,xpan,hover,reset", tooltips="$name @YVar: @$name",plot_width=plotwidth)
+        py = figure(x_range=YVar, height=plotheight, title="R2Y Per Variable "+addtitle,
+            tools="save,box_zoom,xpan,hover,reset", tooltips="$name @YVar: @$name",width=plotwidth)
         
         v=py.vbar_stack(lv_labels, x='YVar', width=0.9,color=bokeh_palette,source=r2pvY_dict)
         py.y_range.range_padding = 0.1
@@ -151,7 +151,7 @@ def r2pv(mvm_obj,*,plotwidth=600,plotheight=400,addtitle='',material=False,zspac
         bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]  
                
         p = figure(x_range=XVar, title="R2X Per Variable "+addtitle,
-             tools="save,box_zoom,xpan,hover,reset", tooltips="$name @XVar: @$name",plot_width=plotwidth,plot_height=plotheight)
+             tools="save,box_zoom,xpan,hover,reset", tooltips="$name @XVar: @$name",width=plotwidth,height=plotheight)
         
         v=p.vbar_stack(lv_labels, x='XVar', width=0.9,color=bokeh_palette,source=r2pvX_dict)
         legend = Legend(items=[(x, [v[i]]) for i, x in enumerate(lv_labels)], location=(0, 0))
@@ -241,7 +241,7 @@ def loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=False,zspa
         output_file("Loadings "+space_lbl+" Space_"+rnd_num+".html",title=space_lbl+' Loadings PLS')
         for i in list(np.arange(A)):
             p = figure(x_range=XVar, title=space_lbl+" Space Loadings "+lv_labels[i]+addtitle,
-                    tools=TOOLS,tooltips=TOOLTIPS,plot_width=plotwidth)
+                    tools=TOOLS,tooltips=TOOLTIPS,width=plotwidth)
             source1 = ColumnDataSource(data=dict(x_=XVar, y_=mvmobj['Ws'][:,i].tolist(),names=XVar)) 
             
             #p.vbar(x=XVar, top=mvmobj['Ws'][:,i].tolist(), width=0.5)
@@ -266,7 +266,7 @@ def loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=False,zspa
         output_file("Loadings Y Space_"+rnd_num+".html",title='Y Loadings PLS')
         for i in list(np.arange(A)):
             p = figure(x_range=YVar, title="Y Space Loadings "+lv_labels[i]+addtitle,
-                    tools="save,box_zoom,pan,reset",tooltips=TOOLTIPS,plot_width=plotwidth)
+                    tools="save,box_zoom,pan,reset",tooltips=TOOLTIPS,width=plotwidth)
             
             source1 = ColumnDataSource(data=dict(x_=YVar, y_=mvmobj['Q'][:,i].tolist(),names=YVar)) 
             #p.vbar(x=YVar, top=mvmobj['Q'][:,i].tolist(), width=0.5)
@@ -292,7 +292,7 @@ def loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=False,zspa
             source1 = ColumnDataSource(data=dict(x_=XVar, y_=mvmobj['P'][:,i].tolist(),names=XVar))  
             
             p = figure(x_range=XVar, title="X Space Loadings "+lv_labels[i]+addtitle,
-                    tools=TOOLS,tooltips=TOOLTIPS,plot_width=plotwidth)
+                    tools=TOOLS,tooltips=TOOLTIPS,width=plotwidth)
             
             #p.vbar(x=XVar, top=mvmobj['P'][:,i].tolist(), width=0.5)
             
@@ -381,7 +381,7 @@ def loadings_map(mvm_obj,dims,*,plotwidth=600,addtitle='',material=False,zspace=
     
         source1 = ColumnDataSource(data=dict(x=x_ws, y=y_ws,names=XVar))  
         source2 = ColumnDataSource(data=dict(x=x_q, y=y_q,names=YVar)) 
-        p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=plotwidth, title="Loadings Map LV["+str(dims[0])+"] - LV["+str(dims[1])+"] "+addtitle,
+        p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth, title="Loadings Map LV["+str(dims[0])+"] - LV["+str(dims[1])+"] "+addtitle,
                                                                                                           x_range=(-1.5,1.5),y_range=(-1.5,1.5))
         p.circle('x', 'y', source=source1,size=10,color='darkblue')
         p.circle('x', 'y', source=source2,size=10,color='red')
@@ -390,11 +390,11 @@ def loadings_map(mvm_obj,dims,*,plotwidth=600,addtitle='',material=False,zspace=
         
         labelsX = LabelSet(x='x', y='y', text='names', 
                            level='glyph',x_offset=5, y_offset=5, 
-                           source=source1, render_mode='canvas',text_color='darkgray',
+                           source=source1,text_color='darkgray',
                            text_alpha=textalpha )
         labelsY = LabelSet(x='x', y='y', text='names', 
                            level='glyph',x_offset=5, y_offset=5, 
-                           source=source2, render_mode='canvas',text_color='darkgray',
+                           source=source2,text_color='darkgray',
                            text_alpha=textalpha )
         p.add_layout(labelsX)
         p.add_layout(labelsY)
@@ -427,12 +427,12 @@ def loadings_map(mvm_obj,dims,*,plotwidth=600,addtitle='',material=False,zspace=
                 ]
     
         source1 = ColumnDataSource(data=dict(x=x_p, y=y_p,names=XVar))  
-        p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=plotwidth, title="Loadings Map PC["+str(dims[0])+"] - PC["+str(dims[1])+"] "+addtitle,                                                                                                         x_range=(-1.5,1.5),y_range=(-1.5,1.5))
+        p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth, title="Loadings Map PC["+str(dims[0])+"] - PC["+str(dims[1])+"] "+addtitle,                                                                                                         x_range=(-1.5,1.5),y_range=(-1.5,1.5))
         p.circle('x', 'y', source=source1,size=10,color='darkblue')
         p.xaxis.axis_label = lv_labels [dims[0]-1]
         p.yaxis.axis_label = lv_labels [dims[1]-1]        
         labelsX = LabelSet(x='x', y='y', text='names', level='glyph',x_offset=5, y_offset=5, source=source1, 
-                           render_mode='canvas',text_color='darkgray',text_alpha=textalpha)
+                          text_color='darkgray',text_alpha=textalpha)
         p.add_layout(labelsX)
         vline = Span(location=0, dimension='height', line_color='black', line_width=2)
         # Horizontal line
@@ -517,7 +517,7 @@ def weighted_loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=F
         output_file("Loadings "+space_lbl+" Space_"+rnd_num+".html",title=space_lbl+' Weighted Loadings PLS')
         for i in list(np.arange(A)):
             p = figure(x_range=XVar, title=space_lbl+" Space Weighted Loadings "+lv_labels[i]+addtitle,
-                     tools=TOOLS,tooltips=TOOLTIPS,plot_width=plotwidth)
+                     tools=TOOLS,tooltips=TOOLTIPS,width=plotwidth)
             source1 = ColumnDataSource(data=dict(x_=XVar, y_=(mvmobj['r2xpv'][:,i] * mvmobj['Ws'][:,i]).tolist(),names=XVar)) 
              
             #p.vbar(x=XVar, top=(mvmobj['r2xpv'][:,i] * mvmobj['Ws'][:,i]).tolist(), width=0.5)
@@ -541,7 +541,7 @@ def weighted_loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=F
         output_file("Loadings Y Space_"+rnd_num+".html",title='Y Weighted Loadings PLS')
         for i in list(np.arange(A)):
             p = figure(x_range=YVar, title="Y Space Weighted Loadings "+lv_labels[i]+addtitle,
-                     tools=TOOLS,tooltips=TOOLTIPS,plot_width=plotwidth)
+                     tools=TOOLS,tooltips=TOOLTIPS,width=plotwidth)
             source1 = ColumnDataSource(data=dict(x_=YVar, y_=(mvmobj['r2ypv'][:,i] * mvmobj['Q'][:,i]).tolist(),names=YVar)) 
             
             #p.vbar(x=YVar, top=(mvmobj['r2ypv'][:,i] * mvmobj['Q'][:,i]).tolist(), width=0.5)
@@ -565,7 +565,7 @@ def weighted_loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=F
         output_file("Loadings X Space_"+rnd_num+".html",title='X Weighted Loadings PCA') 
         for i in list(np.arange(A)):
             p = figure(x_range=XVar, title="X Space Weighted Loadings "+lv_labels[i]+addtitle,
-                     tools=TOOLS,tooltips=TOOLTIPS,plot_width=plotwidth)
+                     tools=TOOLS,tooltips=TOOLTIPS,width=plotwidth)
             source1 = ColumnDataSource(data=dict(x_=XVar, y_=(mvmobj['r2xpv'][:,i] * mvmobj['P'][:,i]).tolist(),names=XVar)) 
             
             #p.vbar(x=XVar, top=(mvmobj['r2xpv'][:,i] * mvmobj['P'][:,i]).tolist(), width=0.5)
@@ -633,7 +633,7 @@ def vip(mvm_obj,*,plotwidth=600,material=False,zspace=False,addtitle=''):
                     ]
         
         p = figure(x_range=sorted_XVar, title="VIP "+addtitle,
-            tools="save,box_zoom,pan,reset",tooltips=TOOLTIPS,plot_width=plotwidth)
+            tools="save,box_zoom,pan,reset",tooltips=TOOLTIPS,width=plotwidth)
         source1 = ColumnDataSource(data=dict(x_=sorted_XVar, y_=vip.tolist(),names=sorted_XVar)) 
         #p.vbar(x=sorted_XVar, top=vip.tolist(), width=0.5)
         p.vbar(x='x_', top='y_', source=source1,width=0.5)
@@ -734,7 +734,7 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
     for n in list(range(1,len(ObsID_)+1)):
                 ObsNum_.append(str(n))  
     
-    if isinstance(CLASSID,np.bool): # No CLASSIDS
+    if isinstance(CLASSID,bool): # No CLASSIDS
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
         output_file("Score_Scatter_"+rnd_num+".html",title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ ']')
 
@@ -750,7 +750,7 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
                 ("Obs: ","@ObsID")
                 ]
         
-        p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=plotwidth,plot_height=plotheight, title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ '] '+addtitle)
+        p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight, title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ '] '+addtitle)
         p.circle('x', 'y', source=source,size=marker_size)
         if add_ci:
             T_aux1=mvmobj['T'][:,[xydim[0]-1]]
@@ -764,7 +764,7 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
             p.line(xd99,yd99n,line_color="red",line_dash='dashed')
             
         if add_labels:
-            labelsX = LabelSet(x='x', y='y', text='ObsID', level='glyph',x_offset=5, y_offset=5, source=source, render_mode='canvas')
+            labelsX = LabelSet(x='x', y='y', text='ObsID', level='glyph',x_offset=5, y_offset=5, source=source)
             p.add_layout(labelsX)
         if not(rscores):    
             p.xaxis.axis_label = 't ['+str(xydim[0])+']'
@@ -802,7 +802,7 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
         classid_=list(CLASSID[colorby])
         legend_it = []
         
-        p = figure(tools=TOOLS, tooltips=TOOLTIPS,toolbar_location="above",plot_width=plotwidth,plot_height=plotheight,title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ '] '+addtitle)
+        p = figure(tools=TOOLS, tooltips=TOOLTIPS,toolbar_location="above",width=plotwidth,height=plotheight,title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ '] '+addtitle)
 
         for classid_in_turn in Classes_:                      
             x_aux       = []
@@ -831,7 +831,7 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
             else:
                 p.circle('x','y',source=source,color=color_,size=marker_size)
             if add_labels:
-                labelsX = LabelSet(x='x', y='y', text='ObsID', level='glyph',x_offset=5, y_offset=5, source=source, render_mode='canvas')
+                labelsX = LabelSet(x='x', y='y', text='ObsID', level='glyph',x_offset=5, y_offset=5, source=source)
                 p.add_layout(labelsX)
         if add_ci:
             T_aux1=mvmobj['T'][:,[xydim[0]-1]]
@@ -922,7 +922,7 @@ def score_line(mvmobj,dim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False,
     for n in list(range(1,len(ObsID_)+1)):
         ObsNum_.append('Obs #'+str(n))  
                        
-    if isinstance(CLASSID,np.bool): # No CLASSIDS
+    if isinstance(CLASSID,bool): # No CLASSIDS
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
         output_file("Score_Line_"+rnd_num+".html",title='Score Line t['+str(dim[0])+ ']')
 
@@ -938,7 +938,7 @@ def score_line(mvmobj,dim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False,
                 ("Obs: ","@ObsID")
                 ]
         
-        p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=plotwidth,plot_height=plotheight, title='Score Line t['+str(dim[0])+']' )
+        p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight, title='Score Line t['+str(dim[0])+']' )
         p.circle('x', 'y', source=source,size=7)
         if plotline:
             p.line('x', 'y', source=source)
@@ -949,7 +949,7 @@ def score_line(mvmobj,dim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False,
             p.line(x_, lim99,line_color="red",line_dash='dashed')
             p.line(x_,-lim99,line_color="red",line_dash='dashed')
         if add_labels:
-            labelsX = LabelSet(x='x', y='y', text='ObsID', level='glyph',x_offset=5, y_offset=5, source=source, render_mode='canvas')
+            labelsX = LabelSet(x='x', y='y', text='ObsID', level='glyph',x_offset=5, y_offset=5, source=source)
             p.add_layout(labelsX)
         p.xaxis.axis_label = 'Observation'
         p.yaxis.axis_label = 't ['+str(dim[0])+']'
@@ -977,7 +977,7 @@ def score_line(mvmobj,dim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False,
         classid_=list(CLASSID[colorby])
         legend_it = []
         
-        p = figure(tools=TOOLS, tooltips=TOOLTIPS,toolbar_location="above",plot_width=plotwidth,plot_height=plotheight, title='Score Line t['+str(dim[0])+ ']')
+        p = figure(tools=TOOLS, tooltips=TOOLTIPS,toolbar_location="above",width=plotwidth,height=plotheight, title='Score Line t['+str(dim[0])+ ']')
 
         for classid_in_turn in Classes_:
             x_aux=[]
@@ -1010,7 +1010,7 @@ def score_line(mvmobj,dim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False,
                 legend_it.append((aux_, [c]))
 
             if add_labels:
-                labelsX = LabelSet(x='x', y='y', text='ObsID', level='glyph',x_offset=5, y_offset=5, source=source, render_mode='canvas')
+                labelsX = LabelSet(x='x', y='y', text='ObsID', level='glyph',x_offset=5, y_offset=5, source=source)
                 p.add_layout(labelsX)
         if add_ci:
             lim95,lim99=phi.single_score_conf_int(mvmobj['T'][:,[dim[0]-1]])
@@ -1049,12 +1049,12 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=
     
     """
     
-    if isinstance(score_plot_xydim,np.bool):
+    if isinstance(score_plot_xydim,bool):
         add_score_plot = False
     else:
         add_score_plot = True
         
-    if isinstance(Xnew,np.bool): #No Xnew was given need to plot all from model
+    if isinstance(Xnew,bool): #No Xnew was given need to plot all from model
         if 'obsidX' in mvmobj:
             ObsID_=mvmobj['obsidX']
         else:
@@ -1064,7 +1064,7 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=
                               
         Obs_num = np.arange(mvmobj['T'].shape[0])+1
         
-        if add_score_plot and not(isinstance(score_plot_xydim,np.bool)):
+        if add_score_plot and not(isinstance(score_plot_xydim,bool)):
             t_x  = mvmobj['T'][:,[score_plot_xydim[0]-1]]
             t_y  = mvmobj['T'][:,[score_plot_xydim[1]-1]]
         else:
@@ -1102,7 +1102,7 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=
             
         
         
-        if add_score_plot and not(isinstance(score_plot_xydim,np.bool)):
+        if add_score_plot and not(isinstance(score_plot_xydim,bool)):
             if 'Q' in mvmobj:  
                 xpred=phi.pls_pred(X_,mvmobj)
             else:
@@ -1117,7 +1117,7 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=
         
         Obs_num = np.arange(t2_.shape[0])+1
         
-        if 'Q' in mvmobj and not(isinstance(Ynew,np.bool)):
+        if 'Q' in mvmobj and not(isinstance(Ynew,bool)):
             spex_,spey_ = phi.spe(mvmobj,Xnew,Ynew=Ynew)
         else:
             spex_ = phi.spe(mvmobj,Xnew)
@@ -1133,12 +1133,12 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=
                        
                        
         if not(add_score_plot):
-            if 'Q' in mvmobj and not(isinstance(Ynew,np.bool)):
+            if 'Q' in mvmobj and not(isinstance(Ynew,bool)):
                 source = ColumnDataSource(data=dict(x=Obs_num, ObsID=ObsID_,ObsNum=ObsNum_,t2=t2_,spex=spex_,spey=spey_))  
             else:
                 source = ColumnDataSource(data=dict(x=Obs_num, ObsID=ObsID_,ObsNum=ObsNum_,t2=t2_,spex=spex_)) 
         else:
-            if 'Q' in mvmobj and not(isinstance(Ynew,np.bool)):
+            if 'Q' in mvmobj and not(isinstance(Ynew,bool)):
                 source = ColumnDataSource(data=dict(x=Obs_num, ObsID=ObsID_,ObsNum=ObsNum_,t2=t2_,spex=spex_,spey=spey_,tx=t_x,ty=t_y))  
             else:
                 source = ColumnDataSource(data=dict(x=Obs_num, ObsID=ObsID_,ObsNum=ObsNum_,t2=t2_,spex=spex_,tx=t_x,ty=t_y))
@@ -1151,7 +1151,7 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=
     
     rnd_num=str(int(np.round(1000*np.random.random_sample())))               
     output_file("Diagnostics"+rnd_num+".html",title='Diagnostics') 
-    p = figure(tools=TOOLS, tooltips=TOOLTIPS, plot_width=plotwidth, title="Hotelling's T2")
+    p = figure(tools=TOOLS, tooltips=TOOLTIPS, width=plotwidth, title="Hotelling's T2")
     p.circle('x','t2',source=source)
     if ht2_logscale:
         p.line([0,Obs_num[-1]],[np.log10(mvmobj['T2_lim95']),np.log10(mvmobj['T2_lim95'])],line_color='gold')
@@ -1165,7 +1165,7 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=
     p.yaxis.axis_label = "HT2"
     p_list=[p]
     
-    p = figure(tools=TOOLS, tooltips=TOOLTIPS, plot_width=plotwidth, title='SPE X')
+    p = figure(tools=TOOLS, tooltips=TOOLTIPS, width=plotwidth, title='SPE X')
     p.circle('x','spex',source=source)
     
     if spe_logscale:
@@ -1178,7 +1178,7 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=
     p.yaxis.axis_label = 'SPE X-Space'
     p_list.append(p)
     
-    p = figure(tools=TOOLS, tooltips=TOOLTIPS, plot_width=plotwidth, title='Outlier Map')
+    p = figure(tools=TOOLS, tooltips=TOOLTIPS, width=plotwidth, title='Outlier Map')
     p.circle('t2','spex',source=source)
     if ht2_logscale:
         vline = Span(location=np.log10(mvmobj['T2_lim99']), dimension='height', line_color='red', line_width=1)
@@ -1195,8 +1195,8 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=
     p_list.append(p)
     
     
-    if 'Q' in mvmobj and not(isinstance(spey_,np.bool)):
-        p = figure(tools=TOOLS, tooltips=TOOLTIPS, plot_height=400, title='SPE Y')
+    if 'Q' in mvmobj and not(isinstance(spey_,bool)):
+        p = figure(tools=TOOLS, tooltips=TOOLTIPS, height=400, title='SPE Y')
         p.circle('x','spey',source=source)
         p.line([0,Obs_num[-1]],[mvmobj['speY_lim95'],mvmobj['speY_lim95']],line_color='gold')
         p.line([0,Obs_num[-1]],[mvmobj['speY_lim99'],mvmobj['speY_lim99']],line_color='red')
@@ -1204,7 +1204,7 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=
         p.yaxis.axis_label = 'SPE Y-Space'
         p_list.append(p)
     if add_score_plot:
-        p = figure(tools=TOOLS, tooltips=TOOLTIPS, plot_width=plotwidth, title='Score Scatter')
+        p = figure(tools=TOOLS, tooltips=TOOLTIPS, width=plotwidth, title='Score Scatter')
         p.circle('tx', 'ty', source=source,size=7)
         
         T_aux1=mvmobj['T'][:,[score_plot_xydim[0]-1]]
@@ -1311,12 +1311,12 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
                 ("Obs: ","@ObsID")
                 ]
     
-    if isinstance(CLASSID,np.bool): # No CLASSIDS
+    if isinstance(CLASSID,bool): # No CLASSIDS
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
         output_file("ObsvsPred_"+rnd_num+".html",title='ObsvsPred')
         plot_counter=0
         
-        if not(isinstance(yhat,np.bool)): #skip if PCA model sent
+        if not(isinstance(yhat,bool)): #skip if PCA model sent
             for i in list(range(Y_.shape[1])):
                 x_ = Y_[:,i]
                 y_ = yhat[:,i]          
@@ -1324,8 +1324,8 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
                 max_value = np.nanmax([np.nanmax(x_),np.nanmax(y_)])
                 
                 source = ColumnDataSource(data=dict(x=x_, y=y_,ObsID=ObsID_))
-                #p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title=YVar[i])
-                p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title=YVar[i],x_range=(min_value, max_value),y_range=(min_value, max_value))
+                #p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=600, height=600, title=YVar[i])
+                p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=600, height=600, title=YVar[i],x_range=(min_value, max_value),y_range=(min_value, max_value))
                 p.circle('x', 'y', source=source,size=7,color='darkblue')
                 p.line([min_value,max_value],[min_value,max_value],line_color='cyan',line_dash='dashed')
                 p.xaxis.axis_label ='Observed'
@@ -1344,7 +1344,7 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
                 max_value = np.nanmax([np.nanmax(x_),np.nanmax(y_)])
  
                 source = ColumnDataSource(data=dict(x=x_, y=y_,ObsID=ObsID_))
-                p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title=XVar[i],x_range=(min_value, max_value),y_range=(min_value, max_value))
+                p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=600, height=600, title=XVar[i],x_range=(min_value, max_value),y_range=(min_value, max_value))
                 p.circle('x', 'y', source=source,size=7,color='darkblue')
                 p.line([min_value,max_value],[min_value,max_value],line_color='cyan',line_dash='dashed')
                 p.xaxis.axis_label ='Observed'
@@ -1368,13 +1368,13 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
         
         plot_counter=0
         
-        if not(isinstance(yhat,np.bool)): #skip if PCA model sent
+        if not(isinstance(yhat,bool)): #skip if PCA model sent
             for i in list(range(Y_.shape[1])):
                 x_ = Y_[:,i]
                 y_ = yhat[:,i]
                 min_value = np.nanmin([np.nanmin(x_),np.nanmin(y_)])
                 max_value = np.nanmax([np.nanmax(x_),np.nanmax(y_)])
-                p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title=YVar[i],x_range=(min_value, max_value),y_range=(min_value, max_value))
+                p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=600, height=600, title=YVar[i],x_range=(min_value, max_value),y_range=(min_value, max_value))
                 for classid_in_turn in Classes_:
                     x_aux=[]
                     y_aux=[]
@@ -1406,7 +1406,7 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
                 y_ = xhat[:,i]
                 min_value = np.nanmin([np.nanmin(x_),np.nanmin(y_)])
                 max_value = np.nanmax([np.nanmax(x_),np.nanmax(y_)])
-                p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=600, plot_height=600, title=XVar[i],x_range=(min_value, max_value),y_range=(min_value, max_value))
+                p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=600, height=600, title=XVar[i],x_range=(min_value, max_value),y_range=(min_value, max_value))
                 for classid_in_turn in Classes_:
                     x_aux=[]
                     y_aux=[]
@@ -1477,9 +1477,9 @@ def contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,
                     to_obs_.append(ObsID.index(o))
             elif isinstance(to_obs[0],int):
                 to_obs_=to_obs.copy()
-        elif isinstance(to_obs,np.bool):
+        elif isinstance(to_obs,bool):
             good_to_go=False
-        if not(isinstance(from_obs,np.bool)):
+        if not(isinstance(from_obs,bool)):
             if isinstance(from_obs,str):
                 from_obs_=ObsID.index(from_obs)
             elif isinstance(from_obs,int):
@@ -1498,13 +1498,13 @@ def contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,
             to_obs_=to_obs.copy()
         else:
             good_to_go=False    
-    if cont_type=='scores' and not(isinstance(Y,np.bool)):
+    if cont_type=='scores' and not(isinstance(Y,bool)):
         Y=False
         
-    if isinstance(Y,np.bool) and good_to_go:
+    if isinstance(Y,bool) and good_to_go:
         Xconts=phi.contributions(mvmobj,X,cont_type,Y=False,from_obs=from_obs_,to_obs=to_obs_,lv_space=lv_space)
         Yconts=False
-    elif not(isinstance(Y,np.bool)) and good_to_go and ('Q' in mvmobj) and cont_type=='spe':
+    elif not(isinstance(Y,bool)) and good_to_go and ('Q' in mvmobj) and cont_type=='spe':
         Xconts,Yconts=phi.contributions(mvmobj,X,cont_type,Y=Y,from_obs=from_obs_,to_obs=to_obs_,lv_space=lv_space)
     
     if 'varidX' in mvmobj:
@@ -1538,7 +1538,7 @@ def contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,
     TOOLTIPS = [
                 ("Variable","@names")
                 ]
-    p = figure(x_range=XVar, plot_height=plotheight,plot_width=plotwidth, title="Contributions Plot"+from_txt+to_txt,
+    p = figure(x_range=XVar, height=plotheight,width=plotwidth, title="Contributions Plot"+from_txt+to_txt,
                     tools="save,box_zoom,pan,reset",tooltips=TOOLTIPS)
     
     source1 = ColumnDataSource(data=dict(x_=XVar, y_=Xconts[0].tolist(),names=XVar)) 
@@ -1557,7 +1557,7 @@ def contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,
     p.xaxis.major_label_orientation = 45
     p_list=[p]
     
-    if not(isinstance(Yconts,np.bool)):
+    if not(isinstance(Yconts,bool)):
         if 'varidY' in mvmobj:
             YVar=mvmobj['varidY']
         else:
@@ -1565,7 +1565,7 @@ def contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,
             for n in list(np.arange(mvmobj['Q'].shape[0])+1):
                 YVar.append('YVar #'+str(n))               
         
-        p = figure(x_range=YVar, plot_height=plotheight,plot_width=plotwidth, title="Contributions Plot",
+        p = figure(x_range=YVar, height=plotheight,width=plotwidth, title="Contributions Plot",
                     tools="save,box_zoom,pan,reset")
         #p.vbar(x=YVar, top=Yconts[0].tolist(), width=0.5)
         source1 = ColumnDataSource(data=dict(x_=YVar, y_=Yconts[0].tolist(),names=YVar)) 
@@ -1616,7 +1616,7 @@ def plot_spectra(X,*,xaxis=False,plot_title='Main Title',tab_title='Tab Title',x
         elif isinstance(xaxis,list):
             x=np.array(xaxis)
             x=np.reshape(x,(1,-1))
-        elif isinstance(xaxis,np.bool):
+        elif isinstance(xaxis,bool):
             x=np.array(list(range(X.shape[1])))
             x=np.reshape(x,(1,-1))
     rnd_num=str(int(np.round(1000*np.random.random_sample())))                
@@ -1673,7 +1673,7 @@ def plot_line_pd(X,col_name,*,plot_title='Main Title',tab_title='Tab Title',xaxi
             ObsNum_.append('Obs #'+str(n))     
         if not(first_plot):                   
             plot_title=''    
-        p = figure(tools=TOOLS, tooltips=TOOLTIPS,plot_width=plotwidth,plot_height=plotheight,title=plot_title)        
+        p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)        
         source = ColumnDataSource(data=dict(x=x_, y=y_,ObsID=ObsID_,ObsNum=ObsNum_))
         p.xaxis.axis_label = xaxis_label
         p.yaxis.axis_label = this_col_name
@@ -1706,7 +1706,7 @@ def mb_weights(mvmobj,*,plotwidth=600,plotheight=400):
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
         output_file("blockweights_"+rnd_num+".html",title="Block Weights")         
         px = figure(x_range=XVar, title="Block weights for MBPLS"+lv_labels[i],
-             tools="save,box_zoom,hover,reset", tooltips=[("Var:","@x_")],plot_width=plotwidth,plot_height=plotheight)   
+             tools="save,box_zoom,hover,reset", tooltips=[("Var:","@x_")],width=plotwidth,height=plotheight)   
         source1 = ColumnDataSource(data=dict(x_=XVar, y_=mvmobj['Wt'][:,i].tolist(),names=XVar)) 
         px.vbar(x='x_', top='y_', source=source1,width=0.5)
         px.y_range.range_padding = 0.1
@@ -1751,7 +1751,7 @@ def mb_r2pb(mvmobj,*,plotwidth=600,plotheight=400):
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
         bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]                 
         px = figure(x_range=XVar, title="r2 per Block for MBPLS",
-             tools="save,box_zoom,hover,reset", tooltips="$name @XVar: @$name",plot_width=plotwidth,plot_height=plotheight)        
+             tools="save,box_zoom,hover,reset", tooltips="$name @XVar: @$name",width=plotwidth,height=plotheight)        
         px.vbar_stack(lv_labels, x='XVar', width=0.9,color=bokeh_palette,source=r2pbX_dict)
         px.y_range.range_padding = 0.1
         px.ygrid.grid_line_color = None
@@ -1793,7 +1793,7 @@ def mb_vip(mvmobj,*,plotwidth=600,plotheight=400):
     output_file("blockvip"+rnd_num+".html",title="Block VIP") 
     source1 = ColumnDataSource(data=dict(x_=XVar, y_=vip.tolist(),names=XVar))         
     px = figure(x_range=XVar, title="Block VIP for MBPLS",
-         tools="save,box_zoom,hover,reset",tooltips=[("Block:","@x_")],plot_width=plotwidth,plot_height=plotheight)   
+         tools="save,box_zoom,hover,reset",tooltips=[("Block:","@x_")],width=plotwidth,height=plotheight)   
     
     px.vbar(x='x_', top='y_', source=source1,width=0.5)
     px.y_range.range_padding = 0.1
