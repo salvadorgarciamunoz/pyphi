@@ -11,6 +11,7 @@ Optionally the second column labeled 'PHASE','Phase' or 'phase' indicating
 the phase of exceution
 
 Change log:
+* added Dec 4  2023  Added a BatchVIP calculation
 * added Apr 23 2023  Corrected a very dumb mistake I made coding when tired    
     
 * added Apr 18 2023 Added descriptors routine to obtain landmarks of the batch
@@ -912,7 +913,74 @@ def loadings_abs_integral(mmvm_obj,*,r2_weighted=False,addtitle=False):
             if not(isinstance(addtitle,bool)) and isinstance(addtitle,str):
                 plt.title(addtitle)
             plt.tight_layout()   
+
+def batch_vip(mmvm_obj,*,addtitle=False):
+    '''
+    plot the summation across componets of the integral of the absolute value of loadings for a batch
+    multiplied by the R2 [which kinda mimicks the VIP]
+    Inputs:
+        mmvm_obj: A multiway PCA or PLS model
+    '''
+    r2_weighted=True
+    if 'Q' in mmvm_obj:
+        if mmvm_obj['ninit']==0:
+            if r2_weighted:
+                aux_df=pd.DataFrame(mmvm_obj['Ws']*np.tile(mmvm_obj['r2y'],(mmvm_obj['Ws'].shape[0],1)))
+            else:
+                aux_df=pd.DataFrame(mmvm_obj['Ws'])
             
+            aux_df.insert(0,'bid',mmvm_obj['bid'])
+        else:
+            rows_=np.arange( mmvm_obj['nsamples']*mmvm_obj['nvars'])+mmvm_obj['ninit']
+            if r2_weighted:
+                aux_df=pd.DataFrame(mmvm_obj['Ws'][rows_,:]*mmvm_obj['r2xpv'][rows_,:] )
+            else:
+                aux_df=pd.DataFrame(mmvm_obj['Ws'][rows_,:] )
+            aux_df.insert(0,'bid',mmvm_obj['bid'])
+            
+        integral_of_loadings=[]
+        aux_vname=[]
+        for i,v in enumerate(unique(aux_df,'bid')):                
+            dat=aux_df[aux_df['bid']==v].values[:,1:]
+            integral_of_loadings.append(np.sum(np.abs(dat),axis=0,keepdims=True)[0])
+            aux_vname.append(v)
+        integral_of_loadings=np.array(integral_of_loadings)
+        plt.figure()
+        plt.bar(aux_vname,np.sum(integral_of_loadings,axis=1))
+        plt.ylabel('Batch VIP')
+        plt.xticks(rotation=75)
+        if not(isinstance(addtitle,bool)) and isinstance(addtitle,str):
+            plt.title(addtitle)
+        plt.tight_layout()   
+                
+    else:
+        if r2_weighted:
+            aux_df=pd.DataFrame(mmvm_obj['P']*mmvm_obj['r2xpv'])
+        else:
+            aux_df=pd.DataFrame(mmvm_obj['P'])
+            
+        aux_df.insert(0,'bid',mmvm_obj['bid'])
+       
+        integral_of_loadings=[]
+        aux_vname=[]
+        for i,v in enumerate(unique(aux_df,'bid')):                  
+            dat=aux_df[aux_df['bid']==v].values[:,1:]
+            integral_of_loadings.append(np.sum(np.abs(dat),axis=0,keepdims=True)[0])
+            aux_vname.append(v)
+        integral_of_loadings=np.array(integral_of_loadings)
+        
+
+        plt.figure()
+        plt.bar(aux_vname,np.sum(integral_of_loadings,axis=1))
+        
+        plt.ylabel(r'$\sum_{a} \sum (|P| * R^2$')
+
+        plt.xticks(rotation=75)
+        if not(isinstance(addtitle,bool)) and isinstance(addtitle,str):
+            plt.title(addtitle)
+        plt.tight_layout()   
+            
+
 def r2pv(mmvm_obj,*,which_var=False):
     '''
     Plot batch r2 for variables as a function of time/sample
