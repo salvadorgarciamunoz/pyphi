@@ -4,6 +4,10 @@
 Plots for pyPhi
 
 @author: Sal Garcia <sgarciam@ic.ac.uk> <salvadorgarciamunoz@gmail.com>
+Addition on Jan 18 2024  Added flag to score_scatter to include model scores in plot
+                         replaced phi.unique -> np.unique
+                         Updated call to maptplotlib colormap to keep it compatible
+                         
 Addition on Sep 26 2023  All plots are now viewable offline (e.g. in airplane mode)
 Addition on May 1 2023   corrected description of mb_vip
 Addition on Apr 25 2023  added markersize to score_scatter
@@ -42,7 +46,8 @@ from bokeh.models import ColumnDataSource,LabelSet,Span,Legend
 import pyphi as phi
 import pandas as pd
 
-import matplotlib.cm as cm
+#import matplotlib.cm as cm
+import matplotlib
 
 def r2pv(mvm_obj,*,plotwidth=600,plotheight=400,addtitle='',material=False,zspace=False):
     """
@@ -107,7 +112,8 @@ def r2pv(mvm_obj,*,plotwidth=600,plotheight=400,addtitle='',material=False,zspac
     if is_pls:
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
         output_file("r2xypv_"+rnd_num+".html",title="R2"+ yaxlbl+ "YPV",mode='inline') 
-        colormap =cm.get_cmap("rainbow")
+        #colormap =cm.get_cmap("rainbow")
+        colormap = matplotlib.colormaps['rainbow']
         different_colors=A
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
         bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]  
@@ -146,7 +152,8 @@ def r2pv(mvm_obj,*,plotwidth=600,plotheight=400,addtitle='',material=False,zspac
     else:   
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
         output_file("r2xpv_"+rnd_num+".html",title='R2XPV',mode='inline') 
-        colormap =cm.get_cmap("rainbow")
+        #colormap =cm.get_cmap("rainbow")
+        colormap = matplotlib.colormaps['rainbow']
         different_colors=A
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
         bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]  
@@ -644,10 +651,29 @@ def vip(mvm_obj,*,plotwidth=600,material=False,zspace=False,addtitle=''):
         show(p)
     return    
 
+def _create_classid_(df,column,*,bins=5):
+    '''
+    Internal routine to create a CLASSID dataframe from values in a column
+    '''
+    
+    hist,bin_edges=np.histogram(df[column].values[np.logical_not(np.isnan(df[column].values))],bins=5 )
+    range_list=[]
+    for i,e in enumerate(bin_edges[:-1]):
+        range_list.append(str(np.round(bin_edges[i],3))+' to '+ str(np.round(bin_edges[i+1],3)))
+    range_list.append('NaN')
+    membership_=np.digitize(df[column].values,bin_edges)
+    membership=[]
+    for m in membership_:
+        membership.append(range_list[m-1])
+    classid_df=df[df.columns[0]].to_frame()
+    
+    classid_df.insert(1,column,membership)
+    return classid_df
+
 def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
                   add_ci=False,add_labels=False,add_legend=True,legend_cols=1, 
                   addtitle='',plotwidth=600,plotheight=600,
-                  rscores=False,material=False,marker_size=7):
+                  rscores=False,material=False,marker_size=7,nbins=False,include_model=False):
     '''
     Score scatter plot
     by Salvador Garcia-Munoz 
@@ -668,6 +694,8 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
     rscores    : Plot scores for all material space in lpls|jrpls|tpls
     material   : Label for specific material to plot scores for in lpls|jrpls|tpls 
     '''
+    # if not(isinstance(nbins, bool)):
+    #     if colorby in df.columns.to_list():
     mvmobj=mvm_obj.copy()
     if ((mvmobj['type']=='lpls') or  (mvmobj['type']=='jrpls')  or  (mvmobj['type']=='tpls')) and (not(isinstance(Xnew,bool))):    
         Xnew=False
@@ -730,7 +758,29 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
         else:
             xpred=phi.pca_pred(X_,mvmobj)
         T_matrix=xpred['Tnew']
-        
+    
+    if include_model:
+        if 'obsidX' in mvmobj:
+            ObsID__=mvmobj['obsidX'].copy()
+        else:
+            ObsID__ = []
+            for n in list(np.arange(mvmobj['T'].shape[0])+1):
+                ObsID__.append('Model Obs #'+str(n))  
+        T_matrix_=mvmobj['T'].copy()    
+      
+        if isinstance(CLASSID,bool): #If there are no classids I need to create one
+            source=(['Model']*T_matrix_.shape[0])
+            source.extend(['New']*T_matrix.shape[0])
+            ObsID__.extend(ObsID_)
+            CLASSID=pd.DataFrame.from_dict( {'ObsID':ObsID__,'_Source_':source })
+            colorby='_Source_'
+        else: #IF there are I need to augment it
+            source=['Model']*T_matrix_.shape[0]
+            CLASSID_=pd.DataFrame.from_dict( {CLASSID.columns[0]:ObsID__,colorby:source })
+            ObsID__.extend(ObsID_)
+            CLASSID = pd.concat([CLASSID_,CLASSID])
+        ObsID_=ObsID__.copy()    
+        T_matrix=np.vstack((T_matrix_,T_matrix ))
     ObsNum_=[]    
     for n in list(range(1,len(ObsID_)+1)):
                 ObsNum_.append(str(n))  
@@ -781,12 +831,19 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
         show(p)      
     else: # YES CLASSIDS
     
-        Classes_=np.unique(CLASSID[colorby]).tolist()        
+        #Classes_=np.unique(CLASSID[colorby]).tolist()      
+        Classes_=phi.unique(CLASSID,colorby)
         
         A=len(Classes_)
-        colormap =cm.get_cmap("rainbow")
+        #colormap =cm.get_cmap("rainbow")
+        colormap = matplotlib.colormaps['rainbow']
         different_colors=A
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
+        #Test code to overwrite "Model" Category with light Cyan
+        if Classes_[0]=='Model':
+            color_mapping=colormap(np.linspace(0,1,different_colors-1),1,True)
+            color_mapping=np.vstack((np.array([225,225,225,255]),color_mapping))
+            
         bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]  
         rnd_num=str(int(np.round(1000*np.random.random_sample())))               
         output_file("Score_Scatter_"+rnd_num+".html",title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ ']',mode='inline') 
@@ -956,9 +1013,11 @@ def score_line(mvmobj,dim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False,
         p.yaxis.axis_label = 't ['+str(dim[0])+']'
         show(p)      
     else: # YES CLASSIDS
-        Classes_=np.unique(CLASSID[colorby]).tolist()
+        #Classes_=np.unique(CLASSID[colorby]).tolist()
+        Classes_=phi.unique(CLASSID,colorby)
         A=len(Classes_)
-        colormap =cm.get_cmap("rainbow")
+        #colormap =cm.get_cmap("rainbow")
+        colormap = matplotlib.colormaps['rainbow']
         different_colors=A
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
         bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]  
@@ -1358,9 +1417,11 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
         show(column(p_list))
         
     else: # YES CLASSIDS
-        Classes_=np.unique(CLASSID[colorby]).tolist()
+        #Classes_=np.unique(CLASSID[colorby]).tolist()
+        Classes_=phi.unique(CLASSID,colorby)
         different_colors=len(Classes_)
-        colormap =cm.get_cmap("rainbow")
+        #colormap =cm.get_cmap("rainbow")
+        colormap = matplotlib.colormaps['rainbow']
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
         bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]  
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
@@ -1747,7 +1808,8 @@ def mb_r2pb(mvmobj,*,plotwidth=600,plotheight=400):
         r2pbX_dict.update({lv_labels[i] : mvmobj['r2pbX'][:,i].tolist()})
         rnd_num=str(int(np.round(1000*np.random.random_sample())))
         output_file("r2perblock"+rnd_num+".html",title="R2 per Block",mode='inline') 
-        colormap =cm.get_cmap("rainbow")
+        #colormap =cm.get_cmap("rainbow")
+        colormap = matplotlib.colormaps['rainbow']
         different_colors=A
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
         bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]                 
