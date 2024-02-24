@@ -4,6 +4,9 @@
 Plots for pyPhi
 
 @author: Sal Garcia <sgarciam@ic.ac.uk> <salvadorgarciamunoz@gmail.com>
+Addition on Feb 21 2024
+                         Added ability to make score plots with a gradient color
+                         of nbins based on a numerical value in the classids 
 Addition on Jan 18 2024  Added flag to score_scatter to include model scores in plot
                          replaced phi.unique -> np.unique
                          Updated call to maptplotlib colormap to keep it compatible
@@ -651,22 +654,23 @@ def vip(mvm_obj,*,plotwidth=600,material=False,zspace=False,addtitle=''):
         show(p)
     return    
 
-def _create_classid_(df,column,*,bins=5):
+def _create_classid_(df,column,*,nbins=5):
     '''
     Internal routine to create a CLASSID dataframe from values in a column
     '''
     
-    hist,bin_edges=np.histogram(df[column].values[np.logical_not(np.isnan(df[column].values))],bins=5 )
+    hist,bin_edges=np.histogram(df[column].values[np.logical_not(np.isnan(df[column].values))],bins=nbins )
     range_list=[]
     for i,e in enumerate(bin_edges[:-1]):
         range_list.append(str(np.round(bin_edges[i],3))+' to '+ str(np.round(bin_edges[i+1],3)))
-    range_list.append('NaN')
-    membership_=np.digitize(df[column].values,bin_edges)
+    #range_list.append('NaN')
+    bin_edges_=bin_edges.copy()
+    bin_edges_[-1]=bin_edges_[-1]+0.1
+    membership_=np.digitize(df[column].values,bin_edges_)
     membership=[]
     for m in membership_:
         membership.append(range_list[m-1])
     classid_df=df[df.columns[0]].to_frame()
-    
     classid_df.insert(1,column,membership)
     return classid_df
 
@@ -694,8 +698,11 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
     rscores    : Plot scores for all material space in lpls|jrpls|tpls
     material   : Label for specific material to plot scores for in lpls|jrpls|tpls 
     '''
-    # if not(isinstance(nbins, bool)):
-    #     if colorby in df.columns.to_list():
+    if not(isinstance(nbins, bool)):
+         if colorby in CLASSID.columns.to_list():
+             classid_by_var = _create_classid_(CLASSID,colorby,nbins=nbins)
+             CLASSID = classid_by_var.copy()
+             
     mvmobj=mvm_obj.copy()
     if ((mvmobj['type']=='lpls') or  (mvmobj['type']=='jrpls')  or  (mvmobj['type']=='tpls')) and (not(isinstance(Xnew,bool))):    
         Xnew=False
@@ -829,13 +836,9 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
         hline = Span(location=0, dimension='width', line_color='black', line_width=2)
         p.renderers.extend([vline, hline])
         show(p)      
-    else: # YES CLASSIDS
-    
-        #Classes_=np.unique(CLASSID[colorby]).tolist()      
+    else: # YES CLASSIDS   
         Classes_=phi.unique(CLASSID,colorby)
-        
         A=len(Classes_)
-        #colormap =cm.get_cmap("rainbow")
         colormap = matplotlib.colormaps['rainbow']
         different_colors=A
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
@@ -844,6 +847,19 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
             color_mapping=colormap(np.linspace(0,1,different_colors-1),1,True)
             color_mapping=np.vstack((np.array([225,225,225,255]),color_mapping))
             
+            
+        if not(isinstance(nbins, bool)):
+             if colorby in CLASSID.columns.to_list():
+                 Classes_=phi.unique(CLASSID,colorby)
+                 A=len(Classes_)
+                 #colormap =cm.get_cmap("rainbow")
+                 colormap = matplotlib.colormaps['viridis']
+                 different_colors=A
+                 color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
+                 if Classes_[0]=='Model':
+                     color_mapping=colormap(np.linspace(0,1,different_colors-1),1,True)
+                     color_mapping=np.vstack((np.array([225,225,225,255]),color_mapping))
+
         bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]  
         rnd_num=str(int(np.round(1000*np.random.random_sample())))               
         output_file("Score_Scatter_"+rnd_num+".html",title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ ']',mode='inline') 
@@ -857,6 +873,10 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
                 ("Obs: ","@ObsID"),
                 ("Class:","@Class")
                 ]        
+#        if not(isinstance(nbins, bool)):
+#             if colorby in CLASSID.columns.to_list():
+#                 classid_=list(classid_by_var[colorby])
+#        else:
         classid_=list(CLASSID[colorby])
         legend_it = []
         
