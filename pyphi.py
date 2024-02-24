@@ -2,6 +2,9 @@
 Phi for Python (pyPhi)
 
 by Salvador Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
+Added Dec 19th 2023
+        * phi.clean_htmls  removes all html files in the working directory
+        * clean_empty_rows returns also the names of the rows removed
 Added May 1st
         * YMB is now added in the same structure as the XMB
         * Corrected the dimensionality of the lwpls prediction, it was a double-nested array.
@@ -164,7 +167,12 @@ else:
 if not(pyomo_ok) or (not(ipopt_ok) and not(gams_ok)):
     print('Will be using the NEOS server in the absence of IPOPT and GAMS')
     
-
+def clean_htmls():
+    files_here=os.listdir('.')
+    for f in files_here:
+        if 'html' in f:
+            os.remove(f)      
+    return
 
 def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cross_val=0):
     """ Principal Components Analysis routine
@@ -2625,18 +2633,19 @@ def clean_empty_rows(X,*,shush=False):
     Xmiss = X_nan_map*1
     Xmiss = np.sum(Xmiss,axis=1)
     indx = find(Xmiss, lambda x: x==X_.shape[1])
-       
+    rows_rem=[]   
     if len(indx)>0:
         for i in indx:
             if not(shush):
                 print('Removing row ', ObsID_[i], ' due to 100% missing data')
+            rows_rem.append(ObsID_[i])
         if isinstance(X,pd.DataFrame):
             X_=X.drop(X.index.values[indx].tolist())
         else:
             X_=np.delete(X_,indx,0)
-        return X_
+        return X_,rows_rem
     else:
-        return X
+        return X,rows_rem
     
 def clean_low_variances(X,*,shush=False,min_var=1E-10):
     '''
