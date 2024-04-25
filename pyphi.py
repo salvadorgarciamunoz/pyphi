@@ -5131,7 +5131,7 @@ def varimax_rotation(mvm_obj,X,*,Y=False):
         
         
 
-def mean_center(Dm):
+def spectra_mean_center(Dm):
     """
     Mean centering all spectra to have mean zero. 
     Dm: Spectra
@@ -5142,7 +5142,7 @@ def mean_center(Dm):
     if isinstance(Dm,pd.DataFrame):
         Dm_columns =Dm.columns
         Dm_values  = Dm.values
-        Dm_values[:,1:] = mean_center(Dm_values[:,1:].astype(float))
+        Dm_values[:,1:] = spectra_mean_center(Dm_values[:,1:].astype(float))
         Dm_pd=pd.DataFrame(Dm_values,columns=Dm_columns)
         return Dm_pd
     else:
@@ -5155,7 +5155,7 @@ def mean_center(Dm):
             mean_centered = Dm - spectra_mean
             return mean_centered
 
-def autoscale(Dm):
+def spectra_autoscale(Dm):
     """
     Autoscaling all spectra to have variance one. 
     Dm: Spectra
@@ -5166,7 +5166,7 @@ def autoscale(Dm):
     if isinstance(Dm,pd.DataFrame):
         Dm_columns =Dm.columns
         Dm_values  = Dm.values
-        Dm_values[:,1:] = autoscale(Dm_values[:,1:].astype(float))
+        Dm_values[:,1:] = spectra_autoscale(Dm_values[:,1:].astype(float))
         Dm_pd=pd.DataFrame(Dm_values,columns=Dm_columns)
         return Dm_pd
     else:
@@ -5175,13 +5175,13 @@ def autoscale(Dm):
             autoscaled = Dm/spectra_sd[:,None]
             return autoscaled
         else: 
-            spectra_sd=Dm.std() # ddof argument to use N-1 as devisor instead of N
+            spectra_sd=Dm.std(ddof = 1) # ddof argument to use N-1 as devisor instead of N
             autoscaled = Dm/spectra_sd
             return autoscaled
 
 
     
-def baseline_correction(Dm):
+def spectra_baseline_correction(Dm):
     """
     Shifiting all spectra to have minimum zero. 
     Only works with pandas dataframe. 
@@ -5193,7 +5193,7 @@ def baseline_correction(Dm):
     if isinstance(Dm,pd.DataFrame):
         Dm_columns =Dm.columns
         Dm_values  = Dm.values
-        Dm_values[:,1:] = baseline_correction(Dm_values[:,1:].astype(float))
+        Dm_values[:,1:] = spectra_baseline_correction(Dm_values[:,1:].astype(float))
         Dm_pd=pd.DataFrame(Dm_values,columns=Dm_columns)
         return Dm_pd
     else:
@@ -5202,15 +5202,15 @@ def baseline_correction(Dm):
             shifted = Dm - spectra_min[:,None]
             return shifted
         else: 
-            spectra_min=Dm.min() # ddof argument to use N-1 as devisor instead of N
+            spectra_min=Dm.min() 
             shifted = Dm - spectra_min
             return shifted
 
-def msc(Dm, reference_spectra = None):
+def spectra_msc(Dm, reference_spectra = None):
     if isinstance(Dm,pd.DataFrame):
         Dm_columns =Dm.columns
         Dm_values  = Dm.values
-        Dm_values[:,1:] = msc(Dm_values[:,1:].astype(float))
+        Dm_values[:,1:] = spectra_msc(Dm_values[:,1:].astype(float))
         Dm_pd=pd.DataFrame(Dm_values,columns=Dm_columns)
         return Dm_pd
     else:
@@ -5219,9 +5219,6 @@ def msc(Dm, reference_spectra = None):
                 reference_spectra = Dm.mean(axis=0)
             V = np.vstack([np.ones(reference_spectra.shape), reference_spectra])
             U = Dm@V.T@np.linalg.inv(V@V.T)
-            # a = raw_spectra.mean(axis=1)
-            # b = ((raw_spectra - raw_spectra.mean(axis=0))@reference_spectra)/(reference_spectra**2).sum()
-            # corrected_spectra = (raw_spectra - a[:,None])/b[:,None]
             corrected_spectra = (Dm - U[:,0, None])/U[:,1, None]
             return corrected_spectra
         else:
@@ -5229,8 +5226,5 @@ def msc(Dm, reference_spectra = None):
                 raise ValueError("msc needs a reference spectra or to be able to use the mean of many spectra")
             V = np.vstack([np.ones(reference_spectra.shape), reference_spectra])
             U = Dm@V.T@np.linalg.inv(V@V.T)
-            # a = raw_spectra.mean(axis=1)
-            # b = ((raw_spectra - raw_spectra.mean(axis=0))@reference_spectra)/(reference_spectra**2).sum()
-            # corrected_spectra = (raw_spectra - a[:,None])/b[:,None]
             corrected_spectra = (Dm - U[0])/U[1]
             return corrected_spectra
