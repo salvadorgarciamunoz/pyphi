@@ -4,6 +4,7 @@
 Plots for pyPhi
 
 @author: Sal Garcia <sgarciam@ic.ac.uk> <salvadorgarciamunoz@gmail.com>
+Addition on Apr 29 2024  Made it compatible with Bokeh 3.4.1 replacing "circle" with "scatter"
 Addition on Feb 24 2024
                          Replaced the randon number in the file names with a time string.
 Addition on Feb 21 2024
@@ -408,8 +409,12 @@ def loadings_map(mvm_obj,dims,*,plotwidth=600,addtitle='',material=False,zspace=
         source2 = ColumnDataSource(data=dict(x=x_q, y=y_q,names=YVar)) 
         p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth, title="Loadings Map LV["+str(dims[0])+"] - LV["+str(dims[1])+"] "+addtitle,
                                                                                                           x_range=(-1.5,1.5),y_range=(-1.5,1.5))
-        p.circle('x', 'y', source=source1,size=10,color='darkblue')
-        p.circle('x', 'y', source=source2,size=10,color='red')
+        #p.circle('x', 'y', source=source1,size=10,color='darkblue')
+        #p.circle('x', 'y', source=source2,size=10,color='red')
+        
+        p.scatter(x='x',y= 'y', source=source1,size=10,color='darkblue')
+        p.scatter('x', 'y', source=source2,size=10,color='red')
+        
         p.xaxis.axis_label = lv_labels [dims[0]-1]
         p.yaxis.axis_label = lv_labels [dims[1]-1]
         
@@ -454,7 +459,8 @@ def loadings_map(mvm_obj,dims,*,plotwidth=600,addtitle='',material=False,zspace=
     
         source1 = ColumnDataSource(data=dict(x=x_p, y=y_p,names=XVar))  
         p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth, title="Loadings Map PC["+str(dims[0])+"] - PC["+str(dims[1])+"] "+addtitle,                                                                                                         x_range=(-1.5,1.5),y_range=(-1.5,1.5))
-        p.circle('x', 'y', source=source1,size=10,color='darkblue')
+        #p.circle('x', 'y', source=source1,size=10,color='darkblue')
+        p.scatter(x='x',y='y', source=source1,size=10,color='darkblue')
         p.xaxis.axis_label = lv_labels [dims[0]-1]
         p.yaxis.axis_label = lv_labels [dims[1]-1]        
         labelsX = LabelSet(x='x', y='y', text='names', level='glyph',x_offset=5, y_offset=5, source=source1, 
@@ -829,7 +835,8 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
                 ]
         
         p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight, title='Score Scatter t['+str(xydim[0])+'] - t['+str(xydim[1])+ '] '+addtitle)
-        p.circle('x', 'y', source=source,size=marker_size)
+        #p.circle('x', 'y', source=source,size=marker_size)
+        p.scatter('x', 'y', source=source,size=marker_size)
         if add_ci:
             T_aux1=mvmobj['T'][:,[xydim[0]-1]]
             T_aux2=mvmobj['T'][:,[xydim[1]-1]]
@@ -921,14 +928,16 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
             source = ColumnDataSource(data=dict(x=x_aux, y=y_aux,ObsID=obsid_aux,ObsNum=obsnum_aux, Class=classid_aux))        
             color_=bokeh_palette[Classes_.index(classid_in_turn)]
             if add_legend:
-                c = p.circle('x','y',source=source,color=color_,size=marker_size)
+                #c = p.circle('x','y',source=source,color=color_,size=marker_size)
+                c = p.scatter('x','y',source=source,color=color_,size=marker_size)
                 aux_=classid_in_turn
                 if isinstance(aux_,(float,int)):
                     aux_=str(aux_)
                 #legend_it.append((classid_in_turn, [c]))
                 legend_it.append((aux_, [c]))
             else:
-                p.circle('x','y',source=source,color=color_,size=marker_size)
+                #p.circle('x','y',source=source,color=color_,size=marker_size)
+                p.scatter('x','y',source=source,color=color_,size=marker_size)
             if add_labels:
                 labelsX = LabelSet(x='x', y='y', text='ObsID', level='glyph',x_offset=5, y_offset=5, source=source)
                 p.add_layout(labelsX)
@@ -1039,7 +1048,9 @@ def score_line(mvmobj,dim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False,
                 ]
         
         p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight, title='Score Line t['+str(dim[0])+']' )
-        p.circle('x', 'y', source=source,size=7)
+        #p.circle('x', 'y', source=source,size=7)
+        p.scatter('x', 'y', source=source,size=10)
+        
         if plotline:
             p.line('x', 'y', source=source)
         if add_ci:
@@ -1097,7 +1108,9 @@ def score_line(mvmobj,dim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False,
                     classid_aux.append(classid_in_turn)
             source = ColumnDataSource(data=dict(x=x_aux, y=y_aux,ObsID=obsid_aux,ObsNum=obsnum_aux,Class=classid_aux))        
             color_=bokeh_palette[Classes_.index(classid_in_turn)]
-            c=p.circle('x','y',source=source,color=color_)
+            #c=p.circle('x','y',source=source,color=color_)
+            c=p.scatter('x','y',source=source,color=color_)
+            
             if plotline:
                 c1=p.line('x','y',source=source,color=color_)    
              #added to allow numbers in classids   
@@ -1256,7 +1269,8 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=
     rnd_num=timestr()         
     output_file("Diagnostics"+rnd_num+".html",title='Diagnostics',mode='inline') 
     p = figure(tools=TOOLS, tooltips=TOOLTIPS, width=plotwidth, title="Hotelling's T2")
-    p.circle('x','t2',source=source)
+    #p.circle('x','t2',source=source)
+    p.scatter('x','t2',source=source)
     if ht2_logscale:
         p.line([0,Obs_num[-1]],[np.log10(mvmobj['T2_lim95']),np.log10(mvmobj['T2_lim95'])],line_color='gold')
         p.line([0,Obs_num[-1]],[np.log10(mvmobj['T2_lim99']),np.log10(mvmobj['T2_lim99'])],line_color='red')
@@ -1270,7 +1284,9 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=
     p_list=[p]
     
     p = figure(tools=TOOLS, tooltips=TOOLTIPS, width=plotwidth, title='SPE X')
-    p.circle('x','spex',source=source)
+    #p.circle('x','spex',source=source)
+    p.scatter('x','spex',source=source)
+    
     
     if spe_logscale:
         p.line([0,Obs_num[-1]],[np.log10(mvmobj['speX_lim95']),np.log10(mvmobj['speX_lim95'])],line_color='gold')
@@ -1283,7 +1299,9 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=
     p_list.append(p)
     
     p = figure(tools=TOOLS, tooltips=TOOLTIPS, width=plotwidth, title='Outlier Map')
-    p.circle('t2','spex',source=source)
+    #p.circle('t2','spex',source=source)
+    p.scatter('t2','spex',source=source)
+    
     if ht2_logscale:
         vline = Span(location=np.log10(mvmobj['T2_lim99']), dimension='height', line_color='red', line_width=1)
     else:
@@ -1301,7 +1319,8 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=
     
     if 'Q' in mvmobj and not(isinstance(spey_,bool)):
         p = figure(tools=TOOLS, tooltips=TOOLTIPS, height=400, title='SPE Y')
-        p.circle('x','spey',source=source)
+        #p.circle('x','spey',source=source)
+        p.scatter('x','spey',source=source,size=10)
         p.line([0,Obs_num[-1]],[mvmobj['speY_lim95'],mvmobj['speY_lim95']],line_color='gold')
         p.line([0,Obs_num[-1]],[mvmobj['speY_lim99'],mvmobj['speY_lim99']],line_color='red')
         p.xaxis.axis_label = 'Observation sequence'
@@ -1309,7 +1328,8 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=
         p_list.append(p)
     if add_score_plot:
         p = figure(tools=TOOLS, tooltips=TOOLTIPS, width=plotwidth, title='Score Scatter')
-        p.circle('tx', 'ty', source=source,size=7)
+        #p.circle('tx', 'ty', source=source,size=7)
+        p.scatter('tx', 'ty', source=source,size=10)
         
         T_aux1=mvmobj['T'][:,[score_plot_xydim[0]-1]]
         T_aux2=mvmobj['T'][:,[score_plot_xydim[1]-1]]
@@ -1431,7 +1451,8 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
                 source = ColumnDataSource(data=dict(x=x_, y=y_,ObsID=ObsID_))
                 #p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=600, height=600, title=YVar[i])
                 p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=600, height=600, title=YVar[i],x_range=(min_value, max_value),y_range=(min_value, max_value))
-                p.circle('x', 'y', source=source,size=7,color='darkblue')
+                #p.circle('x', 'y', source=source,size=7,color='darkblue')
+                p.scatter('x', 'y', source=source,size=7,color='darkblue')
                 p.line([min_value,max_value],[min_value,max_value],line_color='cyan',line_dash='dashed')
                 p.xaxis.axis_label ='Observed'
                 p.yaxis.axis_label ='Predicted'
@@ -1450,7 +1471,8 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
  
                 source = ColumnDataSource(data=dict(x=x_, y=y_,ObsID=ObsID_))
                 p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=600, height=600, title=XVar[i],x_range=(min_value, max_value),y_range=(min_value, max_value))
-                p.circle('x', 'y', source=source,size=7,color='darkblue')
+                #p.circle('x', 'y', source=source,size=7,color='darkblue')
+                p.scatter('x', 'y', source=source,size=10,color='darkblue')
                 p.line([min_value,max_value],[min_value,max_value],line_color='cyan',line_dash='dashed')
                 p.xaxis.axis_label ='Observed'
                 p.yaxis.axis_label ='Predicted'
@@ -1496,7 +1518,8 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
                             classid_aux.append(classid_in_turn)
                     source = ColumnDataSource(data=dict(x=x_aux, y=y_aux,ObsID=obsid_aux,Class=classid_aux))        
                     color_=bokeh_palette[Classes_.index(classid_in_turn)]
-                    p.circle('x','y',source=source,color=color_,legend_label=classid_in_turn)
+                    #p.circle('x','y',source=source,color=color_,legend_label=classid_in_turn)
+                    p.scatter('x','y',source=source,color=color_,legend_label=classid_in_turn)
                     p.line([min_value,max_value],[min_value,max_value],line_color='cyan',line_dash='dashed')
                 p.xaxis.axis_label ='Observed'
                 p.yaxis.axis_label ='Predicted'
@@ -1528,7 +1551,8 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
                             classid_aux.append(classid_in_turn)
                     source = ColumnDataSource(data=dict(x=x_aux, y=y_aux,ObsID=obsid_aux,Class=classid_aux))        
                     color_=bokeh_palette[Classes_.index(classid_in_turn)]
-                    p.circle('x','y',source=source,color=color_,legend_label=classid_in_turn)
+                    #p.circle('x','y',source=source,color=color_,legend_label=classid_in_turn)
+                    p.scatter('x','y',source=source,color=color_,legend_label=classid_in_turn)
                     p.line([min_value,max_value],[min_value,max_value],line_color='cyan',line_dash='dashed')
                 p.xaxis.axis_label ='Observed'
                 p.yaxis.axis_label ='Predicted'
@@ -1789,7 +1813,8 @@ def plot_line_pd(X,col_name,*,plot_title='Main Title',tab_title='Tab Title',xaxi
         p.xaxis.axis_label = xaxis_label
         p.yaxis.axis_label = this_col_name
         p.line('x', 'y', source=source)
-        p.circle('x', 'y', source=source)
+        #p.circle('x', 'y', source=source)
+        p.scatter('x', 'y', source=source)
         if first_plot:
             p_list=[p]
             first_plot=False
