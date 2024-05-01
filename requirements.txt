@@ -1,3 +1,4 @@
+spyder
 numpy
 scipy
 pandas
@@ -5,3 +6,6 @@ xlrd
 bokeh
 matplotlib
 pyomo
+datetime
+statsmodels
+openpyxl
