@@ -877,7 +877,17 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
             
         if not(isinstance(nbins, bool)):
              if colorby in CLASSID.columns.to_list():
-                 Classes_=phi.unique(CLASSID,colorby)
+                 #Classes_=phi.unique(CLASSID,colorby)
+                 Classes_=np.unique(CLASSID[colorby]).tolist()
+                 item_o=[]
+                 for item in Classes_:
+                     item_o.append(float(item[:item.find(' ')]))
+                 idx=idx=np.argsort(item_o)
+                 Classes_o=[]
+                 for i in idx:
+                     Classes_o.append(Classes_[i])
+                 Classes_=Classes_o.copy()    
+                 #print(Classes_)
                  A=len(Classes_)
                  #colormap =cm.get_cmap("rainbow")
                  colormap = matplotlib.colormaps['viridis']
