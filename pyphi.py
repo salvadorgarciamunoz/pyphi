@@ -102,6 +102,8 @@ import numpy as np
 import pandas as pd
 import datetime
 from scipy.special import factorial
+from scipy.stats import norm
+from scipy.optimize import fsolve
 from scipy import interpolate
 from statsmodels.distributions.empirical_distribution import ECDF
 from shutil import which
@@ -5130,3 +5132,141 @@ def varimax_rotation(mvm_obj,X,*,Y=False):
     return mvmobj
         
         
+
+def spectra_mean_center(Dm):
+    """
+    Mean centering all spectra to have mean zero. 
+    Dm: Spectra
+
+    Outputs:
+    Processed spectra
+    """
+    if isinstance(Dm,pd.DataFrame):
+        Dm_columns =Dm.columns
+        Dm_values  = Dm.values
+        Dm_values[:,1:] = spectra_mean_center(Dm_values[:,1:].astype(float))
+        Dm_pd=pd.DataFrame(Dm_values,columns=Dm_columns)
+        return Dm_pd
+    else:
+        if Dm.ndim == 2:
+            spectra_mean=Dm.mean(axis=1)
+            mean_centered = Dm - spectra_mean[:,None]
+            return mean_centered
+        if Dm.ndim == 1:
+            spectra_mean=Dm.mean()
+            mean_centered = Dm - spectra_mean
+            return mean_centered
+
+def spectra_autoscale(Dm):
+    """
+    Autoscaling all spectra to have variance one. 
+    Dm: Spectra
+
+    Outputs:
+    Processed spectra
+    """
+    if isinstance(Dm,pd.DataFrame):
+        Dm_columns =Dm.columns
+        Dm_values  = Dm.values
+        Dm_values[:,1:] = spectra_autoscale(Dm_values[:,1:].astype(float))
+        Dm_pd=pd.DataFrame(Dm_values,columns=Dm_columns)
+        return Dm_pd
+    else:
+        if Dm.ndim == 2:
+            spectra_sd  =  Dm.std(axis=1, ddof = 1) # ddof argument to use N-1 as devisor instead of N
+            autoscaled = Dm/spectra_sd[:,None]
+            return autoscaled
+        else: 
+            spectra_sd=Dm.std(ddof = 1) # ddof argument to use N-1 as devisor instead of N
+            autoscaled = Dm/spectra_sd
+            return autoscaled
+
+
+    
+def spectra_baseline_correction(Dm):
+    """
+    Shifiting all spectra to have minimum zero. 
+    Only works with pandas dataframe. 
+    Dm: Spectra
+
+    Outputs:
+    Processed spectra
+    """
+    if isinstance(Dm,pd.DataFrame):
+        Dm_columns =Dm.columns
+        Dm_values  = Dm.values
+        Dm_values[:,1:] = spectra_baseline_correction(Dm_values[:,1:].astype(float))
+        Dm_pd=pd.DataFrame(Dm_values,columns=Dm_columns)
+        return Dm_pd
+    else:
+        if Dm.ndim == 2: 
+            spectra_min=Dm.min(axis=1)
+            shifted = Dm - spectra_min[:,None]
+            return shifted
+        else: 
+            spectra_min=Dm.min() 
+            shifted = Dm - spectra_min
+            return shifted
+
+def spectra_msc(Dm, reference_spectra = None):
+    if isinstance(Dm,pd.DataFrame):
+        Dm_columns =Dm.columns
+        Dm_values  = Dm.values
+        Dm_values[:,1:] = spectra_msc(Dm_values[:,1:].astype(float))
+        Dm_pd=pd.DataFrame(Dm_values,columns=Dm_columns)
+        return Dm_pd
+    else:
+        if Dm.ndim == 2:
+            if reference_spectra is None:
+                reference_spectra = Dm.mean(axis=0)
+            V = np.vstack([np.ones(reference_spectra.shape), reference_spectra])
+            U = Dm@V.T@np.linalg.inv(V@V.T)
+            corrected_spectra = (Dm - U[:,0, None])/U[:,1, None]
+            return corrected_spectra
+        else:
+            if reference_spectra is None:
+                raise ValueError("msc needs a reference spectra or to be able to use the mean of many spectra")
+            V = np.vstack([np.ones(reference_spectra.shape), reference_spectra])
+            U = Dm@V.T@np.linalg.inv(V@V.T)
+            corrected_spectra = (Dm - U[0])/U[1]
+            return corrected_spectra
+        
+def bootstrap_pls(X, Y, num_latents, num_samples, **kwargs):
+    """
+    Generates a list of PLS objects to be used in prediction
+    """
+    if isinstance(X, pd.DataFrame):
+        Dm_values  = X.values[:,1:].astype(float)
+    if isinstance(Y, pd.DataFrame):
+        Y = Y.values[:,1:].astype(float)
+    boot_pls_obj = []
+    for _ in range(num_samples):
+        sample_indexes = np.random.randint(Dm_values.shape[0], None, Dm_values.shape[0])
+        boot_spectra = Dm_values[sample_indexes]
+        boot_Y = Y[sample_indexes]
+        boot_pls_obj.append(pls(boot_spectra,boot_Y,num_latents,shush=True, **kwargs))
+    return boot_pls_obj
+
+def bootstrap_pls_pred(X_new, bootstrap_pls_obj, quantiles = [0.025, 0.975]):
+    """
+    Finds the quantiles predicion using bootstrapped PLS with gaussian errors. 
+    Only works with 1d outputs
+    """
+    for quantile in quantiles:
+        if quantile >= 1 or quantile <=0:
+            raise ValueError("Quantiles must be between zero and one")
+    means = []
+    sds = []
+    for pls_obj in bootstrap_pls_obj:
+        means.append(pls_pred(X_new, pls_obj)["Yhat"])
+        sds.append( np.sqrt(pls_obj["speY"].mean()))
+    means = np.array(means).squeeze()
+    sds = np.array(sds)
+    dist = norm(means, sds[:,None])
+    ppf = []
+    for quantile in quantiles:
+        def cdf(x):
+            return dist.cdf(x).mean(axis=0) - np.ones_like(x)*quantile
+        ppf.append(fsolve(cdf, means.mean(axis=0)))
+    return ppf
+    
