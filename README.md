@@ -16,7 +16,7 @@ Pyphi requires the following python packages: numpy, scipy, pandas, xlrd, bokeh,
 1) Ensure you have Python 3 installed and accessible via your terminal ("python" command).
    - It's strongly encouraged you create a virtual environment using anaconda (```conda create -n your_pyphienv python```) or venv (```pip -m venv your_pyphienv```). You can then activate your environment ```conda activate your_pyphienv``` or venv Windows ```yourenv\Scripts\activate.bat``` or venv Linux/mac ```source yourenv/bin/activate``` ) and then install everything into a sandboxed environment.
 2) Download this repository via ```git clone``` or manually using the download zip button at the top of the page.
-3) Install the pyphi and pyphi_plots modules by opening a terminal window, navigating to the root of this repository, and typing ```python setup.py install```.
+3) Install the pyphi and pyphi_plots modules by opening a terminal window, navigating to the root of this repository, and typing ```pip install -r requirements.txt```.
 
 To confirm you have a working installation, navigate to the ```Examples``` folder and copy the ```Example_Script_testing_MD_by_NLP.py``` to the directory of your choice. Run ```python Example_Script_testing_MD_by_NLP.py```, verifying there are no errors logged to the console.
 

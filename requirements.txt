@@ -1,7 +1,11 @@
-numpy
-scipy
-pandas
-xlrd
 bokeh
+datetime
 matplotlib
+numpy
+openpyxl
+pandas
 pyomo
+scipy
+statsmodels
+spyder
+xlrd
