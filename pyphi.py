@@ -102,6 +102,8 @@ import numpy as np
 import pandas as pd
 import datetime
 from scipy.special import factorial
+from scipy.stats import norm
+from scipy.optimize import fsolve
 from scipy import interpolate
 from statsmodels.distributions.empirical_distribution import ECDF
 from shutil import which
@@ -5228,3 +5230,43 @@ def spectra_msc(Dm, reference_spectra = None):
             U = Dm@V.T@np.linalg.inv(V@V.T)
             corrected_spectra = (Dm - U[0])/U[1]
             return corrected_spectra
+        
+def bootstrap_pls(X, Y, num_latents, num_samples, **kwargs):
+    """
+    Generates a list of PLS objects to be used in prediction
+    """
+    if isinstance(X, pd.DataFrame):
+        Dm_values  = X.values[:,1:].astype(float)
+    if isinstance(Y, pd.DataFrame):
+        Y = Y.values[:,1:].astype(float)
+    boot_pls_obj = []
+    for _ in range(num_samples):
+        sample_indexes = np.random.randint(Dm_values.shape[0], None, Dm_values.shape[0])
+        boot_spectra = Dm_values[sample_indexes]
+        boot_Y = Y[sample_indexes]
+        boot_pls_obj.append(pls(boot_spectra,boot_Y,num_latents,shush=True, **kwargs))
+    return boot_pls_obj
+
+def bootstrap_pls_pred(X_new, bootstrap_pls_obj, quantiles = [0.025, 0.975]):
+    """
+    Finds the quantiles predicion using bootstrapped PLS with gaussian errors. 
+    Only works with 1d outputs
+    """
+    for quantile in quantiles:
+        if quantile >= 1 or quantile <=0:
+            raise ValueError("Quantiles must be between zero and one")
+    means = []
+    sds = []
+    for pls_obj in bootstrap_pls_obj:
+        means.append(pls_pred(X_new, pls_obj)["Yhat"])
+        sds.append( np.sqrt(pls_obj["speY"].mean()))
+    means = np.array(means).squeeze()
+    sds = np.array(sds)
+    dist = norm(means, sds[:,None])
+    ppf = []
+    for quantile in quantiles:
+        def cdf(x):
+            return dist.cdf(x).mean(axis=0) - np.ones_like(x)*quantile
+        ppf.append(fsolve(cdf, means.mean(axis=0)))
+    return ppf
+    
