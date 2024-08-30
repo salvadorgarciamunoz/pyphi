@@ -2114,7 +2114,7 @@ def meancenterscale(X,*,mcs=True):
         x_std=np.nan
     return X,x_mean,x_std
 
-def snv (x):
+def spectra_snv (x):
     """
     Inputs:
         x: Spectra
@@ -2125,7 +2125,7 @@ def snv (x):
     if isinstance(x,pd.DataFrame):
         x_columns=x.columns
         x_values= x.values
-        x_values[:,1:] = snv(x_values[:,1:].astype(float))
+        x_values[:,1:] = spectra_snv(x_values[:,1:].astype(float))
         xpd=pd.DataFrame(x_values,columns=x_columns)
         return xpd
     else:
@@ -2145,7 +2145,7 @@ def snv (x):
             x = x/stdx
             return x
     
-def savgol(ws,od,op,Dm):
+def spectra_savgol(ws,od,op,Dm):
     """
     Savitzky-Golay filter for spectra
     inputs:
@@ -2169,7 +2169,7 @@ def savgol(ws,od,op,Dm):
         x_values= Dm.values
         Col1= Dm.values[:,0].tolist()
         Col1=np.reshape(Col1,(-1,1))
-        aux, M = savgol(ws,od,op,x_values[:,1:].astype(float))
+        aux, M = spectra_savgol(ws,od,op,x_values[:,1:].astype(float))
         data_=np.hstack((Col1,aux))
         xpd=pd.DataFrame(data=data_,columns=FirstElement)
         return xpd,M
