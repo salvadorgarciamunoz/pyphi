@@ -1,6 +1,17 @@
 """
 Phi for Python (pyPhi)
 
+By Sal Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
+Added Nov 18th, 2024
+        * replaced interp2d with RectBivariateSpline 
+        * Protected SPE lim calculations for near zero residuals
+        * Added build_polynomial function to create linear regression
+          models with variable selection assited by PLS
+
+by merge from James
+        * Added spectra preprocessing methods
+        * bootstrap PLS
+        
 by Salvador Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
 Added Dec 19th 2023
         * phi.clean_htmls  removes all html files in the working directory
@@ -105,11 +116,13 @@ from scipy.special import factorial
 from scipy.stats import norm
 from scipy.optimize import fsolve
 from scipy import interpolate
+from scipy.interpolate import  RectBivariateSpline
 from statsmodels.distributions.empirical_distribution import ECDF
 from shutil import which
 import os
 from numpy import eye, asarray, dot, sum, diag
 from numpy.linalg import svd
+import matplotlib.pyplot as plt
 
 os.environ['NEOS_EMAIL'] = 'pyphisoftware@gmail.com' 
 
@@ -2315,14 +2328,19 @@ def spe_ci(spe):
           [100.0000,  124.3000,  135.8000 ]])
 
     spem=np.mean(spe)
-    spev=np.var(spe,ddof=1)
-    g=(spev/(2*spem))
-    h=(2*spem**2)/spev
-
-    lim95=np.interp(h,chi[:,0],chi[:,1])
-    lim99=np.interp(h,chi[:,0],chi[:,2]);
-    lim95= g*lim95
-    lim99= g*lim99
+    if spem > 1E-16:
+        spev=np.var(spe,ddof=1)
+        g=(spev/(2*spem))
+        h=(2*spem**2)/spev
+    
+        lim95=np.interp(h,chi[:,0],chi[:,1])
+        lim99=np.interp(h,chi[:,0],chi[:,2]);
+        lim95= g*lim95
+        lim99= g*lim99
+    else:
+        lim95=0
+        lim99=0
+    
     return lim95,lim99
 
 def single_score_conf_int(t):
@@ -2410,9 +2428,10 @@ def f99(i,j):
         Y=tab1[1:,0]
         X=tab1[0,1:]
         Z=tab1[1:,1:]
-        f = interpolate.interp2d(X, Y, Z, kind='cubic')
+       # f = interpolate.interp2d(X, Y, Z, kind='cubic')
+        f = RectBivariateSpline(X, Y, Z.T)
         f99_=f(j,i)
-        f99_=f99_[0]
+        f99_=f99_[0][0]
     elif i>120 and j<=120:
         f99_=np.interp(j,tab3[:,0],tab3[:,1])
     elif i<=120 and j>120:
@@ -2455,9 +2474,10 @@ def f95(i,j):
         Y=tab1[1:,0]
         X=tab1[0,1:]
         Z=tab1[1:,1:]
-        f = interpolate.interp2d(X, Y, Z, kind='cubic')
+       # f = interpolate.interp2d(X, Y, Z, kind='cubic')
+        f = RectBivariateSpline(X, Y, Z.T)
         f95_=f(j,i)
-        f95_=f95_[0]
+        f95_=f95_[0][0]
     elif i>120 and j<=120:
         f95_=np.interp(j,tab3[:,0],tab3[:,1])
     elif i<=120 and j>120:
@@ -5269,4 +5289,149 @@ def bootstrap_pls_pred(X_new, bootstrap_pls_obj, quantiles = [0.025, 0.975]):
             return dist.cdf(x).mean(axis=0) - np.ones_like(x)*quantile
         ppf.append(fsolve(cdf, means.mean(axis=0)))
     return ppf
-    
+
+
+def findstr(string):
+    indx=[]
+    for i,s in enumerate(string):
+        if s=='*' or s=='/':
+           indx.append(i)
+    return indx
+
+def evalvar(data,vname):
+    if vname.find('^') >0:
+        actual_vname=vname[:vname.find('^')]
+        actual_vname=actual_vname.strip()
+        if actual_vname in data.columns[1:]:
+            power=float(vname[vname.find('^')+1:])
+            vals=data[actual_vname].values.reshape(-1,1)**power
+        else:
+            vals=False
+    else:
+        actual_vname=vname.strip()
+        if actual_vname in data.columns[1:]:
+            vals=data[actual_vname].values.reshape(-1,1)
+        else:
+            vals=False
+    return vals
+
+def build_polynomial(data,factors,response,*,bias_term=True):
+    '''
+    Parameters
+    ----------
+    data : DataFrame
+            Pandas data frame, first column is the observation id column
+    factors : List
+            list of factors to be included in expression. Powers, Mutliplications
+            and divisions are allowed. Eg:
+                structure=[
+                    'Variable 1'
+                    'Variable 1^2'
+                    'Variable 2'
+                    'Variable 3 * Variable 1'
+                    'Variable 1^2 / Variable 4'
+                    ]
+                
+    response: string
+            Response variable in the dataset (must be a column of 'data')
+    bias_term : True [Include a bias Term], False [exclude a bias term]       
+
+    Returns
+    -------
+    coeffs - polynomial coefficients per factor and bias term (if included)
+
+    '''
+    try:
+        for j,f in enumerate(factors):
+            #search for * or / operators
+            if f.find('*')>0 or f.find('/')>0:
+                #find all locations for * or /
+                indx=findstr(f)
+                for ii,i in enumerate(indx):
+                    if ii==0: 
+                        vname1=f[0:i]
+                        if len(indx)>1:
+                            vname2=f[i+1,indx[1]]
+                        else:
+                            vname2=f[i+1:]
+                            
+                        vals1=evalvar(data,vname1)
+                        vals2=evalvar(data,vname2)
+                        if f[i]=='*':
+                            xcol=vals1 * vals2
+                        elif f[i]=='/':
+                            xcol=vals1 / vals2
+                    else:
+                        if len(indx)==ii+1:
+                            vname=f[i+1,:]
+                        else:
+                            vname=f[i+1:indx(ii+1)]
+                        vals=evalvar(data,vname)
+                        if f[i]=='*':
+                            xcol= xcol * vals
+                        elif f[i]=='/':
+                            xcol= xcol / vals
+                if j==0:
+                    X=xcol
+                else:
+                    X=np.hstack((X,xcol)) 
+            else:
+                if j==0:
+                    X=evalvar(data,f)
+                else:
+                    temp=evalvar(data,f)
+                    X=np.hstack((X,temp ))
+        X_df=pd.DataFrame(X,columns=factors)
+        X_df.insert(0,data.columns[0],data[data.columns[0] ].values)
+        Y_df=data[ [data.columns[0],response]]
+        Y=data[response].values
+        pls_obj=pls(X_df,Y_df,len(factors))
+        Ypred=pls_pred(X_df,pls_obj)
+        Ypred=Ypred['Yhat']
+        RMSE=[np.sqrt(np.mean((Y_df.values[:,1:].astype(float) -Ypred)**2  ) )]
+        
+        vip=np.sum(np.abs(pls_obj['Ws'] * np.tile(pls_obj['r2y'],(pls_obj['Ws'].shape[0],1)) ),axis=1)
+        vip=np.reshape(vip,-1)
+        #vip=np.reshape(vip,(len(vip),-1))
+        sort_indx=np.argsort(-vip,axis=0)
+        sort_asc_indx=np.argsort(vip,axis=0)
+        vip=vip[sort_indx]
+        sorted_factors=[]
+        for i in sort_indx:
+            sorted_factors.append(factors[i])  
+        plt.figure()
+        plt.bar(np.arange(len(sorted_factors)),vip)
+        plt.xticks(np.arange(len(sorted_factors)),labels=sorted_factors,rotation=60 )
+        plt.ylabel('VIP')
+        plt.xlabel('Factors')
+        plt.tight_layout()
+        
+        sorted_asc_factors=[]
+        for i in sort_asc_indx:
+            sorted_asc_factors.append(factors[i]) 
+        X_df_m=X_df.copy()
+        for f in sorted_asc_factors:
+            if f!=sorted_asc_factors[-1]:
+                X_df_m.drop(f,axis=1,inplace=True)
+                pls_obj=pls(X_df_m,Y_df,X_df_m.shape[1]-1)
+                Ypred=pls_pred(X_df_m,pls_obj)
+                Ypred=Ypred['Yhat']
+                RMSE.append(np.sqrt(np.mean((Y_df.values[:,1:].astype(float) -Ypred)**2  ) ))
+       
+        sorted_asc_factors_lbl=['Full']
+        for i in sort_asc_indx[:-1]:
+            sorted_asc_factors_lbl.append(factors[i]) 
+        plt.figure()
+        plt.bar(np.arange(len(factors)),RMSE)
+        plt.xticks(np.arange(len(factors)),labels=sorted_asc_factors_lbl,rotation=60 )
+        plt.ylabel('RMSE ('+response+')')
+        plt.xlabel('Factors removed from model')
+        plt.tight_layout()
+        Xaug=np.hstack((X,np.ones((X.shape[0],1)) ))
+        factors_out=factors.copy()
+        factors_out.append('Bias')
+        betasOLSlssq,r1,r2,r3=np.linalg.lstsq(Xaug,Y)
+        
+        return betasOLSlssq,factors_out,X,Y
+    except:
+        print('Something went wrong')
