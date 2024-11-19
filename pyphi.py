@@ -5433,5 +5433,5 @@ def build_polynomial(data,factors,response,*,bias_term=True):
     factors_out.append('Bias')
     betasOLSlssq,r1,r2,r3=np.linalg.lstsq(Xaug,Y)
     
-    return betasOLSlssq,factors_out,X,Y
+    return betasOLSlssq,factors_out,Xaug,Y
 
