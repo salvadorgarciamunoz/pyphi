@@ -5341,97 +5341,97 @@ def build_polynomial(data,factors,response,*,bias_term=True):
     coeffs - polynomial coefficients per factor and bias term (if included)
 
     '''
-    try:
-        for j,f in enumerate(factors):
-            #search for * or / operators
-            if f.find('*')>0 or f.find('/')>0:
-                #find all locations for * or /
-                indx=findstr(f)
-                for ii,i in enumerate(indx):
-                    if ii==0: 
-                        vname1=f[0:i]
-                        if len(indx)>1:
-                            vname2=f[i+1,indx[1]]
-                        else:
-                            vname2=f[i+1:]
-                            
-                        vals1=evalvar(data,vname1)
-                        vals2=evalvar(data,vname2)
-                        if f[i]=='*':
-                            xcol=vals1 * vals2
-                        elif f[i]=='/':
-                            xcol=vals1 / vals2
+
+    for j,f in enumerate(factors):
+        #search for * or / operators
+        if f.find('*')>0 or f.find('/')>0:
+            #find all locations for * or /
+            indx=findstr(f)
+            for ii,i in enumerate(indx):
+                if ii==0: 
+                    vname1=f[0:i]
+                    if len(indx)>1:
+                        vname2=f[i+1:indx[1]]
                     else:
-                        if len(indx)==ii+1:
-                            vname=f[i+1,:]
-                        else:
-                            vname=f[i+1:indx(ii+1)]
-                        vals=evalvar(data,vname)
-                        if f[i]=='*':
-                            xcol= xcol * vals
-                        elif f[i]=='/':
-                            xcol= xcol / vals
-                if j==0:
-                    X=xcol
+                        vname2=f[i+1:]
+                        
+                    vals1=evalvar(data,vname1)
+                    vals2=evalvar(data,vname2)
+                    if f[i]=='*':
+                        xcol=vals1 * vals2
+                    elif f[i]=='/':
+                        xcol=vals1 / vals2
                 else:
-                    X=np.hstack((X,xcol)) 
+                    if len(indx)==ii+1:
+                        vname=f[i+1:]
+                    else:
+                        vname=f[i+1:indx(ii+1)]
+                    vals=evalvar(data,vname)
+                    if f[i]=='*':
+                        xcol= xcol * vals
+                    elif f[i]=='/':
+                        xcol= xcol / vals
+            if j==0:
+                X=xcol
             else:
-                if j==0:
-                    X=evalvar(data,f)
-                else:
-                    temp=evalvar(data,f)
-                    X=np.hstack((X,temp ))
-        X_df=pd.DataFrame(X,columns=factors)
-        X_df.insert(0,data.columns[0],data[data.columns[0] ].values)
-        Y_df=data[ [data.columns[0],response]]
-        Y=data[response].values
-        pls_obj=pls(X_df,Y_df,len(factors))
-        Ypred=pls_pred(X_df,pls_obj)
-        Ypred=Ypred['Yhat']
-        RMSE=[np.sqrt(np.mean((Y_df.values[:,1:].astype(float) -Ypred)**2  ) )]
-        
-        vip=np.sum(np.abs(pls_obj['Ws'] * np.tile(pls_obj['r2y'],(pls_obj['Ws'].shape[0],1)) ),axis=1)
-        vip=np.reshape(vip,-1)
-        #vip=np.reshape(vip,(len(vip),-1))
-        sort_indx=np.argsort(-vip,axis=0)
-        sort_asc_indx=np.argsort(vip,axis=0)
-        vip=vip[sort_indx]
-        sorted_factors=[]
-        for i in sort_indx:
-            sorted_factors.append(factors[i])  
-        plt.figure()
-        plt.bar(np.arange(len(sorted_factors)),vip)
-        plt.xticks(np.arange(len(sorted_factors)),labels=sorted_factors,rotation=60 )
-        plt.ylabel('VIP')
-        plt.xlabel('Factors')
-        plt.tight_layout()
-        
-        sorted_asc_factors=[]
-        for i in sort_asc_indx:
-            sorted_asc_factors.append(factors[i]) 
-        X_df_m=X_df.copy()
-        for f in sorted_asc_factors:
-            if f!=sorted_asc_factors[-1]:
-                X_df_m.drop(f,axis=1,inplace=True)
-                pls_obj=pls(X_df_m,Y_df,X_df_m.shape[1]-1)
-                Ypred=pls_pred(X_df_m,pls_obj)
-                Ypred=Ypred['Yhat']
-                RMSE.append(np.sqrt(np.mean((Y_df.values[:,1:].astype(float) -Ypred)**2  ) ))
-       
-        sorted_asc_factors_lbl=['Full']
-        for i in sort_asc_indx[:-1]:
-            sorted_asc_factors_lbl.append(factors[i]) 
-        plt.figure()
-        plt.bar(np.arange(len(factors)),RMSE)
-        plt.xticks(np.arange(len(factors)),labels=sorted_asc_factors_lbl,rotation=60 )
-        plt.ylabel('RMSE ('+response+')')
-        plt.xlabel('Factors removed from model')
-        plt.tight_layout()
-        Xaug=np.hstack((X,np.ones((X.shape[0],1)) ))
-        factors_out=factors.copy()
-        factors_out.append('Bias')
-        betasOLSlssq,r1,r2,r3=np.linalg.lstsq(Xaug,Y)
-        
-        return betasOLSlssq,factors_out,X,Y
-    except:
-        print('Something went wrong')
+                X=np.hstack((X,xcol)) 
+        else:
+            if j==0:
+                X=evalvar(data,f)
+            else:
+                temp=evalvar(data,f)
+                X=np.hstack((X,temp ))
+    print('Built X from factors')            
+    X_df=pd.DataFrame(X,columns=factors)
+    X_df.insert(0,data.columns[0],data[data.columns[0] ].values)
+    Y_df=data[ [data.columns[0],response]]
+    Y=data[response].values
+    pls_obj=pls(X_df,Y_df,len(factors))
+    Ypred=pls_pred(X_df,pls_obj)
+    Ypred=Ypred['Yhat']
+    RMSE=[np.sqrt(np.mean((Y_df.values[:,1:].astype(float) -Ypred)**2  ) )]
+    
+    vip=np.sum(np.abs(pls_obj['Ws'] * np.tile(pls_obj['r2y'],(pls_obj['Ws'].shape[0],1)) ),axis=1)
+    vip=np.reshape(vip,-1)
+    #vip=np.reshape(vip,(len(vip),-1))
+    sort_indx=np.argsort(-vip,axis=0)
+    sort_asc_indx=np.argsort(vip,axis=0)
+    vip=vip[sort_indx]
+    sorted_factors=[]
+    for i in sort_indx:
+        sorted_factors.append(factors[i])  
+    plt.figure()
+    plt.bar(np.arange(len(sorted_factors)),vip)
+    plt.xticks(np.arange(len(sorted_factors)),labels=sorted_factors,rotation=60 )
+    plt.ylabel('VIP')
+    plt.xlabel('Factors')
+    plt.tight_layout()
+    
+    sorted_asc_factors=[]
+    for i in sort_asc_indx:
+        sorted_asc_factors.append(factors[i]) 
+    X_df_m=X_df.copy()
+    for f in sorted_asc_factors:
+        if f!=sorted_asc_factors[-1]:
+            X_df_m.drop(f,axis=1,inplace=True)
+            pls_obj=pls(X_df_m,Y_df,X_df_m.shape[1]-1)
+            Ypred=pls_pred(X_df_m,pls_obj)
+            Ypred=Ypred['Yhat']
+            RMSE.append(np.sqrt(np.mean((Y_df.values[:,1:].astype(float) -Ypred)**2  ) ))
+   
+    sorted_asc_factors_lbl=['Full']
+    for i in sort_asc_indx[:-1]:
+        sorted_asc_factors_lbl.append(factors[i]) 
+    plt.figure()
+    plt.bar(np.arange(len(factors)),RMSE)
+    plt.xticks(np.arange(len(factors)),labels=sorted_asc_factors_lbl,rotation=60 )
+    plt.ylabel('RMSE ('+response+')')
+    plt.xlabel('Factors removed from model')
+    plt.tight_layout()
+    Xaug=np.hstack((X,np.ones((X.shape[0],1)) ))
+    factors_out=factors.copy()
+    factors_out.append('Bias')
+    betasOLSlssq,r1,r2,r3=np.linalg.lstsq(Xaug,Y)
+    
+    return betasOLSlssq,factors_out,X,Y
+
