@@ -7,6 +7,8 @@ Created on Sat Nov 16 13:32:27 2024
 import pyphi as phi
 import pandas as pd
 import matplotlib.pyplot as plt
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 ex_data=pd.read_excel('data.xlsx')
 factors=[
@@ -18,13 +20,15 @@ factors=[
     'Variable A^2*VarC'
     ]
 
-betas,facts,X,Y=phi.build_polynomial(ex_data,factors,'Response 1')
+betas,facts,X,Y,eqstr=phi.build_polynomial(ex_data,factors,'Response 1')
+
 plt.figure()
 plt.plot(Y,X@betas,'.')
 plt.xlabel('Observed')
 plt.ylabel('Pred')
 plt.title('Response 1') 
 plt.tight_layout()
+print(eqstr)
 
 newfactors=[ 
     'Variable A',
@@ -33,10 +37,11 @@ newfactors=[
      'Variable A^2*VarC'
      ]
 
-betas,facts,X,Y=phi.build_polynomial(ex_data,newfactors,'Response 1')
+betas,facts,X,Y,eqstr=phi.build_polynomial(ex_data,newfactors,'Response 1')
 plt.figure()
 plt.plot(Y,X@betas,'.')
 plt.xlabel('Observed')
 plt.ylabel('Pred')
 plt.title('Response 1') 
 plt.tight_layout()
+print(eqstr)
