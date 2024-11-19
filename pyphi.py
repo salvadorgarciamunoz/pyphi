@@ -5315,6 +5315,21 @@ def evalvar(data,vname):
             vals=False
     return vals
 
+def writeeq(beta_,features_):
+    eq_str=[]
+    for b,f,i in zip(beta_,features_,np.arange(len(features_))):
+        if f=='Bias':
+            if b<0:
+                eq_str.extend(str(b))
+            else:
+                eq_str.extend(' + '+ str(b)) 
+        else:
+            if b<0 or i==0:
+                eq_str.extend(str(b) +' * '+f)
+            else:
+                eq_str.extend(' + '+str(b) +' * '+f)
+    return ''.join(eq_str)
+
 def build_polynomial(data,factors,response,*,bias_term=True):
     '''
     Parameters
@@ -5334,11 +5349,13 @@ def build_polynomial(data,factors,response,*,bias_term=True):
                 
     response: string
             Response variable in the dataset (must be a column of 'data')
-    bias_term : True [Include a bias Term], False [exclude a bias term]       
 
     Returns
     -------
-    coeffs - polynomial coefficients per factor and bias term (if included)
+    betasOLSlssq : Coefficients for factors`
+    factors_out  : Factors
+    Xaug,Y       : Numpy Arrays with X and Y data
+    eqstr        : Full equation
 
     '''
 
@@ -5414,7 +5431,7 @@ def build_polynomial(data,factors,response,*,bias_term=True):
     for f in sorted_asc_factors:
         if f!=sorted_asc_factors[-1]:
             X_df_m.drop(f,axis=1,inplace=True)
-            pls_obj=pls(X_df_m,Y_df,X_df_m.shape[1]-1)
+            pls_obj=pls(X_df_m,Y_df,X_df_m.shape[1]-1,shush=True)
             Ypred=pls_pred(X_df_m,pls_obj)
             Ypred=Ypred['Yhat']
             RMSE.append(np.sqrt(np.mean((Y_df.values[:,1:].astype(float) -Ypred)**2  ) ))
@@ -5432,6 +5449,7 @@ def build_polynomial(data,factors,response,*,bias_term=True):
     factors_out=factors.copy()
     factors_out.append('Bias')
     betasOLSlssq,r1,r2,r3=np.linalg.lstsq(Xaug,Y)
-    
-    return betasOLSlssq,factors_out,Xaug,Y
+    eqstr=writeeq(betasOLSlssq,factors_out)
+
+    return betasOLSlssq,factors_out,Xaug,Y,eqstr
 
