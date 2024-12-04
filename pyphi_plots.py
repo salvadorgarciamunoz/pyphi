@@ -58,7 +58,7 @@ import matplotlib
 
 def timestr():
     now=datetime.now()
-    return now.strftime("%Y%m%d%H%M%S")
+    return now.strftime("%Y%m%d%H%M%S%f")
     
 
 def r2pv(mvm_obj,*,plotwidth=600,plotheight=400,addtitle='',material=False,zspace=False):
