@@ -4,11 +4,10 @@
 Plots for pyPhi
 
 @author: Sal Garcia <sgarciam@ic.ac.uk> <salvadorgarciamunoz@gmail.com>
+Addition on Jan 20 2025  Added barplot and lineplot
 Addition on Apr 29 2024  Made it compatible with Bokeh 3.4.1 replacing "circle" with "scatter"
-Addition on Feb 24 2024
-                         Replaced the randon number in the file names with a time string.
-Addition on Feb 21 2024
-                         Added ability to make score plots with a gradient color
+Addition on Feb 24 2024  Replaced the randon number in the file names with a time string.
+Addition on Feb 21 2024  Added ability to make score plots with a gradient color
                          of nbins based on a numerical value in the classids 
 Addition on Jan 18 2024  Added flag to score_scatter to include model scores in plot
                          replaced phi.unique -> np.unique
@@ -1728,111 +1727,6 @@ def contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,
     show(column(p_list))  
     return
 
-def plot_spectra(X,*,xaxis=False,plot_title='Main Title',tab_title='Tab Title',xaxis_label='X- axis',yaxis_label='Y- axis'): 
-    """
-    Simple way to plot Spectra with Bokeh. 
-    Programmed by Salvador Garcia-Munoz
-    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
-    
-    X:      A numpy array or a pandas object with Spectra to be plotted
-    xaxis:  wavenumbers or wavelengths to index the x axis of the plot 
-            * ignored if X is a pandas dataframe *
-            
-    optional: 
-    plot_title
-    tab_title
-    xaxis_label
-    yaxis_label
-    
-    """
-    
-    if isinstance(X,pd.DataFrame):
-        x=X.columns[1:].tolist()
-        x=np.array(x)
-        x=np.reshape(x,(1,-1))
-        y=X.values[:,1:].astype(float)
-    elif isinstance(X,np.ndarray):
-        y=X.copy()
-        if isinstance(xaxis,np.ndarray):
-            x=xaxis
-            x=np.reshape(x,(1,-1))
-        elif isinstance(xaxis,list):
-            x=np.array(xaxis)
-            x=np.reshape(x,(1,-1))
-        elif isinstance(xaxis,bool):
-            x=np.array(list(range(X.shape[1])))
-            x=np.reshape(x,(1,-1))
-    #rnd_num=str(int(np.round(1000*np.random.random_sample())))
-    rnd_num=timestr()                
-    output_file("Spectra"+rnd_num+".html",title=tab_title,mode='inline')
-
-    p = figure(title=plot_title)
-    p.xaxis.axis_label = xaxis_label
-    p.yaxis.axis_label = yaxis_label
-    p.multi_line(x.tolist()*y.shape[0],y.tolist())
-    show(p)
-    return
-
-def plot_line_pd(X,col_name,*,plot_title='Main Title',tab_title='Tab Title',xaxis_label='X- axis',plotheight=400,plotwidth=600): 
-    """
-    Simple way to plot a column of a Pandas DataFrame with Bokeh. 
-    Programmed by Salvador Garcia-Munoz
-    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
-    
-    X:      A a pandas object with Data to be plotted
-    col_name: The name of the column to plot
-
-            
-    optional: 
-    plot_title
-    tab_title
-    xaxis_label
-    yaxis_label
-    plotheight
-    plotwidth
-    
-    """
-    
-    if isinstance(col_name,str):
-        col_name=[col_name]
-    first_plot=True
-    
-    TOOLS = "save,wheel_zoom,box_zoom,pan,reset,box_select,lasso_select"
-    TOOLTIPS = [
-                ("Obs #", "@ObsNum"),
-                ("(x,y)", "($x, $y)"),
-                ("Obs: ","@ObsID")
-                ] 
-    #rnd_num=str(int(np.round(1000*np.random.random_sample())))
-    rnd_num=timestr()          
-    output_file("LinePlot"+rnd_num+".html",title=tab_title,mode='inline')
-    
-    for this_col_name in col_name:
-        ObsID_=X.values[:,0]
-        ObsID_=ObsID_.tolist()
-        aux=X.loc[:,this_col_name]
-        y_=aux.values  
-        x_=list(range(1,len(ObsID_)+1))
-        ObsNum_=[]    
-        for n in list(range(1,len(ObsID_)+1)):
-            ObsNum_.append('Obs #'+str(n))     
-        if not(first_plot):                   
-            plot_title=''    
-        p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)        
-        source = ColumnDataSource(data=dict(x=x_, y=y_,ObsID=ObsID_,ObsNum=ObsNum_))
-        p.xaxis.axis_label = xaxis_label
-        p.yaxis.axis_label = this_col_name
-        p.line('x', 'y', source=source)
-        #p.circle('x', 'y', source=source)
-        p.scatter('x', 'y', source=source)
-        if first_plot:
-            p_list=[p]
-            first_plot=False
-        else:
-            p_list.append(p)
-    show(column(p_list))  
-         
-    return
 
 def mb_weights(mvmobj,*,plotwidth=600,plotheight=400):
     """
@@ -1870,9 +1764,7 @@ def mb_weights(mvmobj,*,plotwidth=600,plotheight=400):
             p_list.append(px)
     show(column(p_list))  
 
-    return
-
-        
+    return 
 
 def mb_r2pb(mvmobj,*,plotwidth=600,plotheight=400):
     """
@@ -1957,3 +1849,145 @@ def mb_vip(mvmobj,*,plotwidth=600,plotheight=400):
     show(px)  
     return
 
+def barplot(yheights,*,plotwidth=600,plotheight=600,
+            addtitle='',xlabel='',ylabel='',xtick_labels=False,tabtitle='Bar Plot'):
+    """
+    Generic Bar plot with Bokeh
+        by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    yheights: Values of bars
+    xtick_labels: Variable identifiers for x axis
+    
+    """
+    rnd_num=timestr()
+    output_file("BarPlot_"+rnd_num+".html",title=tabtitle,mode='inline') 
+              
+    TOOLTIPS = [
+                ("Variable","@names")
+                ]
+    
+    p = figure(x_range=xtick_labels, title=addtitle,
+        tools="save,box_zoom,pan,reset",tooltips=TOOLTIPS,width=plotwidth)
+    
+    source1 = ColumnDataSource(data=dict(x_=xtick_labels, y_=yheights,names=xtick_labels)) 
+    
+    p.vbar(x='x_', top='y_', source=source1,width=0.5)
+    p.xgrid.grid_line_color = None
+    p.yaxis.axis_label = ylabel
+    p.xaxis.axis_label = xlabel
+    p.xaxis.major_label_orientation = 45
+    show(p)
+    return 
+
+def lineplot(X,col_name,*,plot_title='Main Title',tab_title='Tab Title',
+             xaxis_label='X- axis',plotheight=400,plotwidth=600,
+             linecolor='blue',linewidth=2,marker=False): 
+    """
+    Simple way to plot a column of a Pandas DataFrame with Bokeh. 
+    Programmed by Salvador Garcia-Munoz
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    X:      A a pandas object with Data to be plotted,first column is obs id
+    col_name: The list with names of the column to plot
+
+            
+    optional: 
+    plot_title
+    tab_title
+    xaxis_label
+    yaxis_label
+    plotheight
+    plotwidth
+    
+    """
+    
+    if isinstance(col_name,str):
+        col_name=[col_name]
+    first_plot=True
+    
+    TOOLS = "save,wheel_zoom,box_zoom,pan,reset,box_select,lasso_select"
+    TOOLTIPS = [
+                ("Obs #", "@ObsNum"),
+                ("(x,y)", "($x, $y)"),
+                ("Obs: ","@ObsID")
+                ] 
+    #rnd_num=str(int(np.round(1000*np.random.random_sample())))
+    rnd_num=timestr()          
+    output_file("LinePlot"+rnd_num+".html",title=tab_title,mode='inline')
+    if isinstance(X,pd.DataFrame):
+        for this_col_name in col_name:
+            ObsID_=X.values[:,0]
+            ObsID_=ObsID_.tolist()
+            aux=X.loc[:,this_col_name]
+            y_=aux.values  
+            x_=list(range(1,len(ObsID_)+1))
+            ObsNum_=[]    
+            for n in list(range(1,len(ObsID_)+1)):
+                ObsNum_.append('Obs #'+str(n))     
+            if not(first_plot):                   
+                plot_title=''    
+            p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)        
+            source = ColumnDataSource(data=dict(x=x_, y=y_,ObsID=ObsID_,ObsNum=ObsNum_))
+            p.xaxis.axis_label = xaxis_label
+            p.yaxis.axis_label = this_col_name
+            p.line('x', 'y', source=source,line_color=linecolor,line_width=linewidth)
+            #p.circle('x', 'y', source=source)
+            hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+            p.renderers.extend([hline])
+            if marker:
+                p.scatter('x', 'y', source=source)
+            if first_plot:
+                p_list=[p]
+                first_plot=False
+            else:
+                p_list.append(p)
+        show(column(p_list))         
+    return
+
+def plot_spectra(X,*,xaxis=False,plot_title='Main Title',tab_title='Tab Title',
+                 xaxis_label='X- axis',yaxis_label='Y- axis',
+                 linecolor='blue',linewidth=2): 
+    """
+    Simple way to plot Spectra with Bokeh. 
+    Programmed by Salvador Garcia-Munoz
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    X:      A numpy array or a pandas object with Spectra to be plotted
+    xaxis:  wavenumbers or wavelengths to index the x axis of the plot 
+            * ignored if X is a pandas dataframe *
+            
+    optional: 
+    plot_title
+    tab_title
+    xaxis_label
+    yaxis_label
+    
+    """
+    
+    if isinstance(X,pd.DataFrame):
+        x=X.columns[1:].tolist()
+        x=np.array(x)
+        x=np.reshape(x,(1,-1))
+        y=X.values[:,1:].astype(float)
+    elif isinstance(X,np.ndarray):
+        y=X.copy()
+        if isinstance(xaxis,np.ndarray):
+            x=xaxis
+            x=np.reshape(x,(1,-1))
+        elif isinstance(xaxis,list):
+            x=np.array(xaxis)
+            x=np.reshape(x,(1,-1))
+        elif isinstance(xaxis,bool):
+            x=np.array(list(range(X.shape[1])))
+            x=np.reshape(x,(1,-1))
+    #rnd_num=str(int(np.round(1000*np.random.random_sample())))
+    rnd_num=timestr()                
+    output_file("Spectra"+rnd_num+".html",title=tab_title,mode='inline')
+
+    p = figure(title=plot_title)
+    p.xaxis.axis_label = xaxis_label
+    p.yaxis.axis_label = yaxis_label
+    p.multi_line(x.tolist()*y.shape[0],y.tolist(),line_color=linecolor,line_width=linewidth)
+    show(p)
+    return

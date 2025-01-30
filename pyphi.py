@@ -2,6 +2,20 @@
 Phi for Python (pyPhi)
 
 By Sal Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
+Added Jan 30 2025
+        * Added a pinv alternative protection in spectra_savgol for the case where
+          inv fails
+Added Jan 20 2025
+        * Added the 'cca' flag to the pls routine to calculate CCA between
+          the Ts and each of the Ys (one by one), calculating loadings and scores 
+          equivalent to a perfectly orthogonalized OPLS model. The covariate scores (Tcv)
+          the covariate Loadings (Pcv) and predictive weights (Wcv) are added
+          as keys to the model object.
+          [The covariate loadings(Pcv) are equivalent to the predictive loadings in OPLS]
+          
+        * Added cca and cca-multi routines to perform PLS-CCA (alternative to OPLS)
+          as of now cca-multi remains unused.
+
 Added Nov 18th, 2024
         * replaced interp2d with RectBivariateSpline 
         * Protected SPE lim calculations for near zero residuals
@@ -707,7 +721,8 @@ def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
             pca_obj=1
             return pca_obj
   
-def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=True,shush=False,cross_val=0,cross_val_X=False):
+def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=True,shush=False,
+        cross_val=0,cross_val_X=False,cca=False):
     """ Projection to  Latent Structures routine
     
     by Salvador Garcia-Munoz 
@@ -736,15 +751,17 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=True,shus
                    
                    if ==   0:  Bypass cross-validation  *default if not sent*
                    
-        cross_val_X: 'True' : Calculates Q2 values for the X and Y matrices
-                     'False': Cross-validation strictly on Y matrix *default if not sent*
+        cross_val_X: True : Calculates Q2 values for the X and Y matrices
+                     False: Cross-validation strictly on Y matrix *default if not sent*
+                     
+        cca:         True : Calculates covariable space of X with Y (analog to OPLS)
     
     Output:
         A dictionary with all PLS loadings, scores and other diagnostics.
     
     """
     if cross_val==0:
-        plsobj = pls_(X,Y,A,mcsX=mcsX,mcsY=mcsY,md_algorithm=md_algorithm,force_nipals=force_nipals,shush=shush)  
+        plsobj = pls_(X,Y,A,mcsX=mcsX,mcsY=mcsY,md_algorithm=md_algorithm,force_nipals=force_nipals,shush=shush,cca=cca)  
         plsobj['type']='pls' 
     elif (cross_val > 0) and (cross_val<100):
         if isinstance(X,np.ndarray):
@@ -960,7 +977,7 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=True,shus
             Y_ = z2n(Y_,Ynanmap)
             
         # Fit full model
-        plsobj = pls_(X,Y,A,mcsX=mcsX,mcsY=mcsY,shush=True)
+        plsobj = pls_(X,Y,A,mcsX=mcsX,mcsY=mcsY,shush=True,cca=cca)
         for a in list(range(A-1,0,-1)):
              r2X[a]     = r2X[a]-r2X[a-1]
              r2Xpv[:,a] = r2Xpv[:,a]-r2Xpv[:,a-1]
@@ -1170,7 +1187,7 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=True,shus
             Y_ = z2n(Y_,Ynanmap)
             
         # Fit full model
-        plsobj = pls_(X,Y,A,mcsX=mcsX,mcsY=mcsY,shush=True)
+        plsobj = pls_(X,Y,A,mcsX=mcsX,mcsY=mcsY,shush=True,cca=cca)
         for a in list(range(A-1,0,-1)):
              r2X[a]     = r2X[a]-r2X[a-1]
              r2Xpv[:,a] = r2Xpv[:,a]-r2Xpv[:,a-1]
@@ -1234,8 +1251,40 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=True,shus
     else:
         plsobj='Cannot cross validate  with those options'
     return plsobj    
-        
-def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,shush=False):
+
+def pls_cca(pls_obj,Xmcs,Ymcs,not_Xmiss):
+    Tcv=[]
+    Pcv=[]
+    Wcv=[]
+    Betacv=[]
+    firstone=True
+    for i in np.arange(Ymcs.shape[1]):
+        y_         = Ymcs[:,i]
+        y_         = y_.reshape(-1,1)
+        corr,wt,wy = cca(pls_obj['T'],y_)
+        t_cv       = pls_obj['T']@wt
+        t_cv       = t_cv.reshape(-1,1)
+        beta       = np.linalg.lstsq(t_cv, y_,rcond=None)[0]
+        w_cv       = pls_obj['Ws']@wt
+        w_cv       = w_cv.reshape(-1,1)
+        tcvmat     = np.tile(t_cv,(1,Xmcs.shape[1]))
+        p_cv       = (np.sum(Xmcs*tcvmat,axis=0))/(np.sum((tcvmat*not_Xmiss)**2,axis=0))
+        p_cv       = p_cv.reshape(-1,1)
+        if firstone:
+            Tcv=t_cv
+            Pcv=p_cv
+            Wcv=w_cv
+            Betacv=beta[0][0]
+            firstone=False
+        else:
+            Tcv=np.hstack((Tcv,t_cv))
+            Pcv=np.hstack((Pcv,p_cv))
+            Wcv=np.hstack((Wcv,w_cv))
+            Betacv=np.vstack((Betacv,beta[0][0]))
+    return  Tcv,Pcv,Wcv,Betacv
+
+def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=True,shush=False,
+         cca=False):
     if isinstance(X,np.ndarray):
         X_ = X.copy()
         obsidX = False
@@ -1287,8 +1336,8 @@ def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,sh
         #only center      
     elif mcsY=='autoscale':
         #only autoscale
-        Y_,y_mean,y_std = meancenterscale(Y_,mcs='autoscale')    
-        
+        Y_,y_mean,y_std = meancenterscale(Y_,mcs='autoscale') 
+   
     #Generate Missing Data Map    
     X_nan_map = np.isnan(X_)
     not_Xmiss = (np.logical_not(X_nan_map))*1
@@ -1296,7 +1345,10 @@ def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,sh
     not_Ymiss = (np.logical_not(Y_nan_map))*1
     
     if (not(X_nan_map.any()) and not(Y_nan_map.any())) and not(force_nipals):
-        #no missing elements
+       #no missing elements
+        if cca==True:    
+           Xmcs=X_.copy()
+           Ymcs=Y_.copy() 
         if not(shush):
             print('phi.pls using SVD executed on: '+ str(datetime.datetime.now()) )
         TSSX   = np.sum(X_**2)
@@ -1397,6 +1449,12 @@ def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,sh
         pls_obj['speY']        = speY
         pls_obj['speY_lim99']  = speY_lim99
         pls_obj['speY_lim95']  = speY_lim95
+        if cca==True:
+            Tcv,Pcv,Wcv,Betacv=pls_cca(pls_obj,Xmcs,Ymcs,not_Xmiss)
+            pls_obj['Tcv']=Tcv
+            pls_obj['Pcv']=Pcv
+            pls_obj['Wcv']=Wcv
+            pls_obj['Betacv']=Betacv
         return pls_obj
     else:
         if md_algorithm=='nipals':
@@ -1407,6 +1465,9 @@ def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,sh
              Y_,dummy=n2z(Y_)
              epsilon=1E-9
              maxit=2000
+             if cca==True:    
+                 Xmcs=X_.copy()
+                 Ymcs=Y_.copy() 
 
              TSSX   = np.sum(X_**2)
              TSSXpv = np.sum(X_**2,axis=0)
@@ -1556,6 +1617,12 @@ def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=False,sh
              pls_obj['speY']        = speY
              pls_obj['speY_lim99']  = speY_lim99
              pls_obj['speY_lim95']  = speY_lim95
+             if cca==True:
+                 Tcv,Pcv,Wcv,Betacv=pls_cca(pls_obj,Xmcs,Ymcs,not_Xmiss)
+                 pls_obj['Tcv']=Tcv
+                 pls_obj['Pcv']=Pcv
+                 pls_obj['Wcv']=Wcv
+                 pls_obj['Betacv']=Betacv
              return pls_obj   
                          
         elif md_algorithm=='nlp':
@@ -2197,7 +2264,10 @@ def spectra_savgol(ws,od,op,Dm):
         X = np.ones((2*ws+1,1))
         for oo in np.arange(1,op+1):
             X=np.hstack((X,x_vec**oo))
-        XtXiXt=np.linalg.inv(X.T @ X) @ X.T
+        try:    
+            XtXiXt=np.linalg.inv(X.T @ X) @ X.T
+        except:
+            XtXiXt=np.linalg.pinv(X.T @ X) @ X.T
         coeffs=XtXiXt[od,:] * factorial(od)
         coeffs=np.reshape(coeffs,(1,len(coeffs)))
         for i in np.arange(1,l-2*ws+1):
@@ -5453,3 +5523,136 @@ def build_polynomial(data,factors,response,*,bias_term=True):
 
     return betasOLSlssq,factors_out,Xaug,Y,eqstr
 
+def cca(X, Y, tol=1e-6, max_iter=1000):
+    """
+    Perform Canonical Correlation Analysis (CCA) on two datasets, X and Y.
+
+    Parameters:
+        X (numpy.ndarray): An (n x p) matrix where n is the number of samples and p is the number of features in X.
+        Y (numpy.ndarray): An (n x q) matrix where n is the number of samples and q is the number of features in Y.
+        tol (float): Tolerance for convergence. Default is 1e-6.
+        max_iter (int): Maximum number of iterations. Default is 1000.
+
+    Returns:
+        (tuple): Contains canonical correlation (float), and the canonical directions (w_x, w_y).
+    """
+    # Center the matrices
+    X = X - np.mean(X, axis=0)
+    Y = Y - np.mean(Y, axis=0)
+    
+    # Compute covariance matrices
+    Sigma_XX = np.dot(X.T, X)
+    Sigma_YY = np.dot(Y.T, Y)
+    Sigma_XY = np.dot(X.T, Y)
+    
+    # Initialize random vectors for w_x and w_y
+    w_x = np.random.rand(X.shape[1])
+    w_y = np.random.rand(Y.shape[1])
+    
+    # Normalize initial w_x and w_y
+    w_x /= np.linalg.norm(w_x)
+    w_y /= np.linalg.norm(w_y)
+    
+    # Iteratively update w_x and w_y
+    for iteration in range(max_iter):
+        # Save previous values to check for convergence
+        w_x_old = w_x.copy()
+        w_y_old = w_y.copy()
+        
+        # Update w_x and normalize
+        w_x = np.linalg.solve(Sigma_XX, Sigma_XY @ w_y)
+        w_x /= np.linalg.norm(w_x)
+        
+        # Update w_y and normalize
+        w_y = np.linalg.solve(Sigma_YY, Sigma_XY.T @ w_x)
+        w_y /= np.linalg.norm(w_y)
+        
+        # Calculate the correlation
+        correlation = w_x.T @ Sigma_XY @ w_y
+        
+        # Check for convergence
+        if np.linalg.norm(w_x - w_x_old) < tol and np.linalg.norm(w_y - w_y_old) < tol:
+            break
+    
+    return correlation, w_x, w_y
+
+
+
+def cca_multi(X, Y, num_components=1, tol=1e-6, max_iter=1000):
+    """
+    Perform Canonical Correlation Analysis (CCA) on two datasets, X and Y, to compute multiple canonical variates.
+
+    Parameters:
+        X (numpy.ndarray): An (n x p) matrix where n is the number of samples and p is the number of features in X.
+        Y (numpy.ndarray): An (n x q) matrix where n is the number of samples and q is the number of features in Y.
+        num_components (int): Number of canonical variates (components) to compute. Default is 1.
+        tol (float): Tolerance for convergence. Default is 1e-6.
+        max_iter (int): Maximum number of iterations. Default is 1000.
+
+    Returns:
+        (dict): Contains canonical correlations, and the canonical direction vectors for X and Y.
+    """
+    # Center the matrices
+    X = X - np.mean(X, axis=0)
+    Y = Y - np.mean(Y, axis=0)
+    
+    # Initialize lists to store results
+    correlations = []
+    W_X = []
+    W_Y = []
+    
+    # Deflate iteratively for each component
+    for component in range(num_components):
+        # Compute covariance matrices for current deflated X and Y
+        Sigma_XX = np.dot(X.T, X)
+        Sigma_YY = np.dot(Y.T, Y)
+        Sigma_XY = np.dot(X.T, Y)
+        
+        # Initialize random vectors for w_x and w_y
+        w_x = np.random.rand(X.shape[1])
+        w_y = np.random.rand(Y.shape[1])
+        
+        # Normalize initial w_x and w_y
+        w_x /= np.linalg.norm(w_x)
+        w_y /= np.linalg.norm(w_y)
+        
+        # Iteratively update w_x and w_y
+        for iteration in range(max_iter):
+            # Save previous values to check for convergence
+            w_x_old = w_x.copy()
+            w_y_old = w_y.copy()
+            
+            # Update w_x and normalize
+            w_x = np.linalg.solve(Sigma_XX, Sigma_XY @ w_y)
+            w_x /= np.linalg.norm(w_x)
+            
+            # Update w_y and normalize
+            w_y = np.linalg.solve(Sigma_YY, Sigma_XY.T @ w_x)
+            w_y /= np.linalg.norm(w_y)
+            
+            # Calculate the correlation
+            correlation = w_x.T @ Sigma_XY @ w_y
+            
+            # Check for convergence
+            if np.linalg.norm(w_x - w_x_old) < tol and np.linalg.norm(w_y - w_y_old) < tol:
+                break
+        
+        # Store results for this component
+        correlations.append(correlation)
+        W_X.append(w_x)
+        W_Y.append(w_y)
+        
+        # Deflate X and Y by removing the variance explained by the current canonical component
+        X -= np.dot(X @ w_x[:, np.newaxis], w_x[np.newaxis, :])
+        Y -= np.dot(Y @ w_y[:, np.newaxis], w_y[np.newaxis, :])
+    
+    # Convert lists to arrays
+    W_X = np.array(W_X).T  # Shape (p, num_components)
+    W_Y = np.array(W_Y).T  # Shape (q, num_components)
+    correlations = np.array(correlations)  # Shape (num_components,)
+
+    return {
+        'correlations': correlations,
+        'W_X': W_X,
+        'W_Y': W_Y
+    }
