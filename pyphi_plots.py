@@ -61,12 +61,20 @@ def timestr():
     
 
 def r2pv(mvm_obj,*,plotwidth=600,plotheight=400,addtitle='',material=False,zspace=False):
-    """
-    R2 per variable plots
+    """R2 per variable per component plots
+    
+    r2pv(mvm_obj,*,plotwidth=600,plotheight=400,addtitle='',material=False,zspace=False)
+    
+    Args:
+        mvm_obj: A model created with phi.pca or phi.pls
+    
+    Other Parameters:
+        material: To obtain the plot for the properties of a specific material
+                  When doing this for a JRPLS or TPLS mode
+        zspace:  If True will display the r2pv for the process space in a TPLS model
+        
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
-    
-    mvm_obj: A model created with phi.pca or phi.pls
     """
     mvmobj=mvm_obj.copy()
     A= mvmobj['T'].shape[1]
@@ -187,13 +195,20 @@ def r2pv(mvm_obj,*,plotwidth=600,plotheight=400,addtitle='',material=False,zspac
     return
     
 def loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=False,zspace=False):
-    """
-    Column plots of loadings
+    """Column plots of loadings
+    
+    loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=False,zspace=False)
+    
+    Args:
+        mvm_obj: A PCA,PLS, LPLS, JPLS or TPLS model 
+        
+    Other Parameters:
+        material: To obtain the plot for the properties of a specific material
+                  When doing this for a JRPLS or TPLS mode     
+        zspace:  If True will display the plot for the process space in a TPLS model
+
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
-    
-    mvm_obj: A model created with phi.pca or phi.pls
-    
     """
     mvmobj=mvm_obj.copy()
     space_lbl='X'
@@ -337,13 +352,21 @@ def loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=False,zspa
     return    
 
 def loadings_map(mvm_obj,dims,*,plotwidth=600,addtitle='',material=False,zspace=False,textalpha=0.75):
-    """
-    Scatter plot overlaying X and Y loadings 
+    """Scatter plot overlaying X and Y loadings 
+    
+    loadings_map(mvm_obj,dims,*,plotwidth=600,addtitle='',material=False,zspace=False,textalpha=0.75)
+    
+    Args:
+        mvm_obj: A PCA,PLS, LPLS, JPLS or TPLS model 
+        dims: Dimensions to plot in x and y axis (e.g. [1,2])
+        
+    Other Parameters:
+        material: To obtain the plot for the properties of a specific material
+          When doing this for a JRPLS or TPLS mode     
+          zspace:  If True will display the plot for the process space in a TPLS model
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     
-    mvm_obj: A model created with phi.pca or phi.pls
-    dims: what latent spaces to plot in x and y axes e.g. dims=[1,2]
     """
     mvmobj=mvm_obj.copy()
     A= mvmobj['T'].shape[1]
@@ -473,13 +496,20 @@ def loadings_map(mvm_obj,dims,*,plotwidth=600,addtitle='',material=False,zspace=
     return  
 
 def weighted_loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=False,zspace=False):
-    """
-    Column plots of loadings weighted by r2x/r2y correspondingly
+    """Column plots of loadings weighted by r2x/r2y correspondingly
+    
+    weighted_loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=False,zspace=False):
+    
+    Args:
+        mvm_obj: A PCA,PLS, LPLS, JPLS or TPLS model 
+        
+    Other Parameters:
+        material: To obtain the plot for the properties of a specific material
+                  When doing this for a JRPLS or TPLS mode     
+        zspace:  If True will display the plot for the process space in a TPLS model
+
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
-    
-    mvm_obj: A model created with phi.pca or phi.pls
-    
     """
     mvmobj=mvm_obj.copy()
     A= mvmobj['T'].shape[1]
@@ -622,8 +652,18 @@ def weighted_loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=F
     return  
  
 def vip(mvm_obj,*,plotwidth=600,material=False,zspace=False,addtitle=''):
-    """
-    Very Important to the Projection (VIP) plot
+    """Very Important to the Projection (VIP) plot
+    
+    vip(mvm_obj,*,plotwidth=600,material=False,zspace=False,addtitle='')
+    
+    Args:
+        mvm_obj: A PLS, LPLS, JPLS or TPLS model 
+        
+    Other Parameters:
+        material: To obtain the plot for the properties of a specific material
+                  When doing this for a JRPLS or TPLS mode     
+        zspace:  If True will display the vip for the process space in a TPLS model
+
         by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     
@@ -702,25 +742,31 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
                   add_ci=False,add_labels=False,add_legend=True,legend_cols=1, 
                   addtitle='',plotwidth=600,plotheight=600,
                   rscores=False,material=False,marker_size=7,nbins=False,include_model=False):
-    '''
-    Score scatter plot
-    by Salvador Garcia-Munoz 
-    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    '''Score scatter plot
     
-    mvm_obj     : PLS or PCA object from phyphi
-    xydim      : LV to plot on x and y axes. eg [1,2] will plot t1 vs t2
-    CLASSID    : Pandas DataFrame with CLASSIDS
-    colorby    : Category (one of the CLASSIDS) to color by
-    Xnew       : New data for which to make the score plot this routine evaluates and plots
-    add_ci     : when = True will add confidence intervals
-    add_labels : When = True labels each point with Obs ID
-    add_legend : When = True will add a legend with classid labels
-    legend_cols: Number of columns for legend
-    addtitle   : Additional text to be added to title
-    plotwidth  : If omitted, width is 600
-    plotheight : If omitted, height is 600
-    rscores    : Plot scores for all material space in lpls|jrpls|tpls
-    material   : Label for specific material to plot scores for in lpls|jrpls|tpls 
+    score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,nbins=False,Xnew=False,
+                      add_ci=False,add_labels=False,add_legend=True,legend_cols=1, 
+                      addtitle='',plotwidth=600,plotheight=600,
+                      rscores=False,material=False,marker_size=7,include_model=False):
+    Args:
+        mvm_obj     : PLS or PCA object from phyphi
+        xydim      : LV to plot on x and y axes. eg [1,2] will plot t1 vs t2
+        CLASSID    : Pandas DataFrame with CLASSIDS
+        colorby    : Category (one of the CLASSIDS) to color by
+        Xnew       : New data for which to make the score plot this routine evaluates and plots
+        nbins      : Number of groups to use when color coding by a numeric value
+        add_ci     : when = True will add confidence intervals
+        add_labels : When = True labels each point with Obs ID
+        add_legend : When = True will add a legend with classid labels
+        legend_cols: Number of columns for legend
+        addtitle   : Additional text to be added to title
+        plotwidth  : If omitted, width is 600
+        plotheight : If omitted, height is 600
+        rscores    : Plot scores for all material space in lpls|jrpls|tpls
+        material   : Label for specific material to plot scores for in lpls|jrpls|tpls 
+        include_model: Will plot model scores in gray as backgrpound
+        
+    by Salvador Garcia Munoz (sgarciam@imperial.ac.uk salvadorgarciamunoz@gmail.com)
     '''
     if not(isinstance(nbins, bool)):
          if colorby in CLASSID.columns.to_list():
@@ -991,20 +1037,23 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
     return    
 
 def score_line(mvmobj,dim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False,add_labels=False,add_legend=True,plotline=True,plotwidth=600,plotheight=600):
-    '''
-    Score scatter plot
+    '''Score line plot
+    
+    score_line(mvmobj,dim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False,add_labels=False,add_legend=True,plotline=True,plotwidth=600,plotheight=600):
+
+    Args:
+        mvmobj     : PLS or PCA object from phyphi
+        dim        : LV to plot eg "1" will plot t1 vs observation #
+        CLASSID    : Pandas DataFrame with CLASSIDS
+        colorby    : Category (one of the CLASSIDS) to color by
+        Xnew       : New data for which to make the score plot this routine evaluates and plots
+        add_ci     : When = True will add confidence intervals
+        add_labels : When =True will display Obs ID per point
+        plotwidth  : When Omitted is = 600
+        plotline   : Adds a conecting line between dots [True by default]
+    
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
-    
-    mvmobj     : PLS or PCA object from phyphi
-    dim        : LV to plot eg "1" will plot t1 vs observation #
-    CLASSID    : Pandas DataFrame with CLASSIDS
-    colorby    : Category (one of the CLASSIDS) to color by
-    Xnew       : New data for which to make the score plot this routine evaluates and plots
-    add_ci     : When = True will add confidence intervals
-    add_labels : When =True will display Obs ID per point
-    plotwidth  : When Omitted is = 600
-    plotline   : Adds a conecting line between dots [True by default]
     '''
     if not(isinstance(dim,list)):
         if isinstance(dim, int):
@@ -1155,23 +1204,24 @@ def score_line(mvmobj,dim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False,
 
 
 def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=600,ht2_logscale=False,spe_logscale=False):
-    """
-    Plot calculated Hotelling's T2 and SPE
+    """Hotelling's T2 and SPE
+    
+    diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=600,ht2_logscale=False,spe_logscale=False):
+ 
+    Args:
+        mvmobj: A model created with phi.pca or phi.pls
+    
+    Optional Parameters:
+        Xnew/Ynew:     Data used to calculate diagnostics[numpy arrays or pandas dataframes] 
+
+        score_plot_xydim: will add a score scatter plot at the bottom 
+                          if sent with a list of [dimx, dimy] where dimx/dimy 
+                          are integers and refer to the latent space to plot
+                          in the x and y axes of the scatter plot. e.g. [1,2] will
+                          add a t1-t2 plot 
+                      
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
-    
-    mvmobj: A model created with phi.pca or phi.pls
-    
-    Xnew/Ynew:     Data used to calculate diagnostics[numpy arrays or pandas dataframes] 
-    
-    optional:
-        
-    score_plot_xydim: will add a score scatter plot at the bottom 
-                      if sent with a list of [dimx, dimy] where dimx/dimy 
-                      are integers and refer to the latent space to plot
-                      in the x and y axes of the scatter plot. e.g. [1,2] will
-                      add a t1-t2 plot 
-    
     """
     
     if isinstance(score_plot_xydim,bool):
@@ -1363,22 +1413,24 @@ def diagnostics(mvmobj,*,Xnew=False,Ynew=False,score_plot_xydim=False,plotwidth=
     return
 
 def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
-    """
-    Plot observed vs predicted values
-    by Salvador Garcia-Munoz 
-    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    """    Plot observed vs predicted values
     
-    mvmobj: A model created with phi.pca or phi.pls
+    predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False)
     
-    X/Y:     Data [numpy arrays or pandas dataframes] 
-    
-    optional:
-    CLASSID: Pandas Data Frame with classifiers per observation, each column is a class
-    
-    colorby: one of the classes in CLASSID to color by
-    
-    x_space: = 'False' will skip plotting the obs. vs pred for X *default*
-               'True' will also plot obs vs pred for X
+    Args:
+        mvmobj: A model created with phi.pca or phi.pls 
+        X/Y:     Data [numpy arrays or pandas dataframes] 
+        
+    Optional Parameters:
+        CLASSID: Pandas Data Frame with classifiers per observation, each column is a class
+        
+        colorby: one of the classes in CLASSID to color by
+        
+        x_space: = 'False' will skip plotting the obs. vs pred for X *default*
+                   'True' will also plot obs vs pred for X
+                   
+   by Salvador Garcia-Munoz 
+   (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
 
     """
     num_varX=mvmobj['P'].shape[0]
@@ -1576,33 +1628,33 @@ def predvsobs(mvmobj,X,Y,*,CLASSID=False,colorby=False,x_space=False):
     return    
 
 def contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_space=False,plotwidth=800,plotheight=600,xgrid=False):
-    """
-    Calculate contributions to diagnostics
-    by Salvador Garcia-Munoz 
-    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    """Plot contributions to diagnostics
     
-    mvmobj : A dictionary created by phi.pls or phi.pca
-    
-    X/Y:     Data [numpy arrays or pandas dataframes] - Y space is optional
-    
-    cont_type: 'ht2'
-               'spe'
-               'scores'
-               
+contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_space=False,plotwidth=800,plotheight=600,xgrid=False):
+
+    Args:
+        mvmobj : A dictionary created by phi.pls or phi.pca    
+        X/Y:     Data [numpy arrays or pandas dataframes] - Y space is optional
+        cont_type: 'ht2'
+                   'spe'
+                   'scores'
+        to_obs: Scalar or list of scalars with observation(s) number(s)| first element is #0
+                  - OR -
+                Strings or list of strings with observation(s) name(s) [if X/Y are pandas data frames]
+     
+    Optional Parameters:
+        
     from_obs: Scalar or list of scalars with observation(s) number(s) | first element is #0
               - OR -
               Strings or list of strings with observation(s) name(s) [if X/Y are pandas data frames]
               Used to off set calculations for scores or ht2
               "False' will calculate with respect to origin *default if not sent*
-              
-    to_obs: Scalar or list of scalars with observation(s) number(s)| first element is #0
-              - OR -
-            Strings or list of strings with observation(s) name(s) [if X/Y are pandas data frames]
-            To calculate contributions for
-            
-            *Note: from_obs is ignored when cont_type='spe'*
+              *Note: from_obs is ignored when cont_type='spe'*
             
     lv_space: Latent spaces over which to do the calculations [applicable to 'ht2' and 'scores']
+    
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     """
     good_to_go=True
     if isinstance(X,pd.DataFrame):
@@ -1729,12 +1781,15 @@ def contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,
 
 
 def mb_weights(mvmobj,*,plotwidth=600,plotheight=400):
-    """
-    Super weights for Multi-block models
+    """Super weights for Multi-block models
+    
+    mb_weights(mvmobj,*,plotwidth=600,plotheight=400)
+    
+    Args:
+        mvmobj: A multi-block PLS model created with phi.mbpls
+        
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
-    
-    mvmobj: A multi-block PLS model created with phi.mbpls
     """
     A= mvmobj['T'].shape[1]
     lv_prefix='LV #'        
@@ -1767,12 +1822,15 @@ def mb_weights(mvmobj,*,plotwidth=600,plotheight=400):
     return 
 
 def mb_r2pb(mvmobj,*,plotwidth=600,plotheight=400):
-    """
-    Super weights for Multi-block models
+    """R2 for each block for Multi-block models
+    
+    mb_r2pb(mvmobj,*,plotwidth=600,plotheight=400)
+    
+    Args:
+        mvmobj: A multi-block PLS model created with phi.mbpls
+        
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
-    
-    mvmobj: A multi-block PLS model created with phi.mbpls
     """
     A= mvmobj['T'].shape[1]
     lv_prefix='LV #'        
@@ -1805,12 +1863,15 @@ def mb_r2pb(mvmobj,*,plotwidth=600,plotheight=400):
 
 
 def mb_vip(mvmobj,*,plotwidth=600,plotheight=400):
-    """
-    VIP per block for Multi-block models
+    """VIP per block for Multi-block models
+    
+    mb_vip(mvmobj,*,plotwidth=600,plotheight=400)
+    
+    Args:
+        mvmobj: A multi-block PLS model created with phi.mbpls
+        
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
-    
-    mvmobj: A multi-block PLS model created with phi.mbpls
     """
     A= mvmobj['T'].shape[1]
    
@@ -1851,13 +1912,17 @@ def mb_vip(mvmobj,*,plotwidth=600,plotheight=400):
 
 def barplot(yheights,*,plotwidth=600,plotheight=600,
             addtitle='',xlabel='',ylabel='',xtick_labels=False,tabtitle='Bar Plot'):
-    """
-    Generic Bar plot with Bokeh
-        by Salvador Garcia-Munoz 
+    """ Generic Bar plot with Bokeh
+
+    barplot(yheights,*,plotwidth=600,plotheight=600,
+                addtitle='',xlabel='',ylabel='',xtick_labels=False,tabtitle='Bar Plot'):
+
+    Args:
+        yheights: Values of bars
+        xtick_labels: Variable identifiers for x axis
+        
+    by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
-    
-    yheights: Values of bars
-    xtick_labels: Variable identifiers for x axis
     
     """
     rnd_num=timestr()
@@ -1883,22 +1948,28 @@ def barplot(yheights,*,plotwidth=600,plotheight=600,
 def lineplot(X,col_name,*,plot_title='Main Title',tab_title='Tab Title',
              xaxis_label='X- axis',plotheight=400,plotwidth=600,
              linecolor='blue',linewidth=2,marker=False): 
-    """
-    Simple way to plot a column of a Pandas DataFrame with Bokeh. 
-    Programmed by Salvador Garcia-Munoz
-    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    """  Simple way to plot a column of a Pandas DataFrame with Bokeh.
     
-    X:      A a pandas object with Data to be plotted,first column is obs id
-    col_name: The list with names of the column to plot
+    lineplot(X,col_name,*,plot_title='Main Title',tab_title='Tab Title',
+                 xaxis_label='X- axis',plotheight=400,plotwidth=600,
+                 linecolor='blue',linewidth=2,marker=False)
+    
+    Args:
+        
+        X:      A a pandas object with Data to be plotted,first column is obs id
+        col_name: The list with names of the column to plot
 
-            
-    optional: 
+    Optional Parameters:
     plot_title
     tab_title
     xaxis_label
     yaxis_label
     plotheight
     plotwidth
+    
+    Programmed by Salvador Garcia-Munoz
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
     
     """
     
@@ -1948,20 +2019,25 @@ def lineplot(X,col_name,*,plot_title='Main Title',tab_title='Tab Title',
 def plot_spectra(X,*,xaxis=False,plot_title='Main Title',tab_title='Tab Title',
                  xaxis_label='X- axis',yaxis_label='Y- axis',
                  linecolor='blue',linewidth=2): 
-    """
-    Simple way to plot Spectra with Bokeh. 
+    """Simple way to plot Spectra with Bokeh. 
+
+    plot_spectra(X,*,xaxis=False,plot_title='Main Title',tab_title='Tab Title',
+                     xaxis_label='X- axis',yaxis_label='Y- axis',
+                     linecolor='blue',linewidth=2)
+    Args:
+        
+        X:      A numpy array or a pandas object with Spectra to be plotted
+        xaxis:  wavenumbers or wavelengths to index the x axis of the plot 
+                * ignored if X is a pandas dataframe *
+            
+    Optional Parameters: 
+        plot_title
+        tab_title
+        xaxis_label
+        yaxis_label
+    
     Programmed by Salvador Garcia-Munoz
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
-    
-    X:      A numpy array or a pandas object with Spectra to be plotted
-    xaxis:  wavenumbers or wavelengths to index the x axis of the plot 
-            * ignored if X is a pandas dataframe *
-            
-    optional: 
-    plot_title
-    tab_title
-    xaxis_label
-    yaxis_label
     
     """
     

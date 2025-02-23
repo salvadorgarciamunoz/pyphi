@@ -52,13 +52,20 @@ cb_color_seq=['b','r','m','navy','bisque','silver','aqua','pink','gray']
 mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=cb_color_seq) 
 
 def unique(df,colid):    
-    '''
-    replacement of the np.unique routine, specifically for dataframes
-    returns unique values in the order found in the dataframe
-    df:     A pandas dataframe
-    colid:  Column identifier 
+    ''' Replacement of the np.unique routine, specifically for dataframes
     
+    unique(df,colid)
+    
+    Args:
+        df:     A pandas dataframe
+        colid:  Column identifier 
+    
+    Returns:
+        A list with unique values in the order found in the dataframe
+    
+    by Salvador Garcia (sgarciam@ic.ac.uk)
     '''
+    
     aux=df.drop_duplicates(subset=colid,keep='first')
     unique_entries=aux[colid].values.tolist()
     return unique_entries
@@ -82,16 +89,24 @@ def mean(X,axis):
     return x_mean.reshape(-1)
 
 def simple_align(bdata,nsamples):
-    '''
-    bdata is a Pandas DataFrame where 1st column is Batch Identifier
-          and following columns are variables, each row is a new
-          time sample. Batches are concatenated vertically.
+    ''' Simple alignment for bacth data using row number to linearly interpolate
+        to the same number of samples 
+    
+    bdata_aligned= simple_align(bdata,nsamples)
+    
+    Args:
+        bdata is a Pandas DataFrame where 1st column is Batch Identifier
+              and following columns are variables, each row is a new
+              time sample. Batches are concatenated vertically.
           
-    nsamples is the new number of samples to generate per batch 
-        irrespective of phase
+        nsamples is the new number of samples to generate per batch 
+            irrespective of phase
      
-    returns a pandas dataframe with batch data resampled to nsamples
-    for all batches
+    Returns:
+        A pandas dataframe with batch data resampled to nsamples
+        for all batches
+    
+    by Salvador Garcia Munoz (sgarciam@imperial.ac.uk, salvadorgarciamunoz@gmail.com)
     '''
     bdata_a=[]
     if (bdata.columns[1]=='PHASE') or \
@@ -133,21 +148,30 @@ def simple_align(bdata,nsamples):
             
 
 def phase_simple_align(bdata,nsamples):
-    '''
-    bdata is a Pandas DataFrame where 1st column is Batch Identifier
-          the second column is a phase indicator
-          and following columns are variables, each row is a new
-          time sample. Batches are concatenated vertically.
-          
+    ''' Simple batch alignment (0 to 100%) per phase
+    
+    bdata_aligned = phase_simple_align(bdata,nsamples)
+    
+    Args:
+        
+        bdata:  is a Pandas DataFrame where 1st column is Batch Identifier
+              the second column is a phase indicator
+              and following columns are variables, each row is a new
+              time sample. Batches are concatenated vertically.
+        
+        nsamples: if integer: Number of samples to collect per phase
                             
-    if nsamples is a dictionary: samples to generate per phase e.g.
+                  if dictionary: samples to generate per phase e.g.
     
-    nsamples = {'Heating':100,'Reaction':200,'Cooling':10}
+        nsamples = {'Heating':100,'Reaction':200,'Cooling':10}
+        
+        resampling is linear with respect to row number 
      
-    returns a pandas dataframe with batch data resampled (aligned)
+    Returns:
+        a pandas dataframe with batch data resampled (aligned)
     
-    resampling is linear with respect to row number 
-
+    by Salvador Garcia Munoz 
+    (sgarciam@imperial.ac.uk , salvadorgarciamunoz@gmail.com)
     '''
     bdata_a=[]
     if (bdata.columns[1]=='PHASE') or \
@@ -196,51 +220,60 @@ def phase_simple_align(bdata,nsamples):
         return bdata_a            
     
 def phase_iv_align(bdata,nsamples):
-    '''
-    bdata is a Pandas DataFrame where 1st column is Batch Identifier
-          the second column is a phase indicator
-          and following columns are variables, each row is a new
-          time sample. Batches are concatenated vertically.
-          
-                            
-    if nsamples is a dictionary: samples to generate per phase e.g.
+    ''' Batch alignment using an indicator variable
     
-    nsamples = {'Heating':100,'Reaction':200,'Cooling':10}
+    batch_aligned_data = phase_iv_align(bdata,nsamples)
     
-    * If an indicator variable is used, with known start and end values
-    indicate it with a list like this:
-    
-        [IVarID,num_samples,start_value,end_value]    
-    
-    example:
+    Args:
         
-    nsamples = {'Heating':['TIC101',100,30,50],'Reaction':200,'Cooling':10}
-    
-    
-        During the 'Heating' phase use TIC101 as an indicator variable
-        take 100 samples equidistant from TIC101=30 to TIC101=50 
-        and align against that variable as a measure of batch evolution (instead of time)
-        
-    * If an indicator variable is used, with unknown start but known end values
-    indicate it with a list like this:
-    
-        [IVarID,num_samples,end_value]    
-    
-    example:
-        
-    nsamples = {'Heating':['TIC101',100,50],'Reaction':200,'Cooling':10}
-    
-    
-        During the 'Heating' phase use TIC101 as an indicator variable
-        take 100 samples equidistant from the value of TIC101 at the start of the phase
-        to the point when TIC101=50 and align against that variable as a measure 
-        of batch evolution (instead of time)    
-        
-     
-    Returns a pandas dataframe with batch data resampled (aligned)
-    
-    If no IV is sent, the resampling is linear with respect to row number per phase
+        bdata is a Pandas DataFrame where 1st column is Batch Identifier
+              the second column is a phase indicator
+              and following columns are variables, each row is a new
+              time sample. Batches are concatenated vertically.
+              
+       nsamples:
+                     
+            if nsamples is a dictionary: samples to generate per phase e.g.
+            
+            nsamples = {'Heating':100,'Reaction':200,'Cooling':10}
+            
+            * If an indicator variable is used, with known start and end values
+            indicate it with a list like this:
+            
+                [IVarID,num_samples,start_value,end_value]    
+            
+            example:
+                
+            nsamples = {'Heating':['TIC101',100,30,50],'Reaction':200,'Cooling':10}
+            
+            
+                During the 'Heating' phase use TIC101 as an indicator variable
+                take 100 samples equidistant from TIC101=30 to TIC101=50 
+                and align against that variable as a measure of batch evolution (instead of time)
+                
+            * If an indicator variable is used, with unknown start but known end values
+            indicate it with a list like this:
+            
+                [IVarID,num_samples,end_value]    
+            
+            example:
+                
+            nsamples = {'Heating':['TIC101',100,50],'Reaction':200,'Cooling':10}
+            
+            
+                During the 'Heating' phase use TIC101 as an indicator variable
+                take 100 samples equidistant from the value of TIC101 at the start of the phase
+                to the point when TIC101=50 and align against that variable as a measure 
+                of batch evolution (instead of time)    
+                
+                If no IV is sent, the resampling is linear with respect to row number per phase
 
+             
+    Returns:
+            A pandas dataframe with batch data resampled (aligned)
+    
+    by Salvador Garcia Munoz
+    sgarciam@imperial.ac.uk  salvadorgarciamunoz@gmail.com
     '''
     bdata_a=[]
     if (bdata.columns[1]=='PHASE') or \
@@ -392,20 +425,27 @@ def phase_iv_align(bdata,nsamples):
     
 def plot_var_all_batches(bdata,*,which_var=False,plot_title='',mkr_style='.-',
                          phase_samples=False,alpha_=0.2,timecolumn=False,lot_legend=False):
-    '''
-    Plotting routine for batch data
-    bdata: Batch data organized as: column[0] = Batch Identifier column name is unrestricted
-                                    column[1] = Phase information per sample must be called 'Phase','phase', or 'PHASE'
-                                                this information is optional
-                                    column[2:]= Variables measured throughout the batch
-                                    
-                                    The data for each batch is one on top of the other in a vertical matrix
-    which_var:     Which variables are to be plotted, if not sent, all are.
-    plot_title:    Optional text to be used as the title of all figures
-    phase_samples: information used to align the batch, so that phases are marked in the plot
-    alpha_:        Transparency for the phase dividing line
-    timecolumn:    Name of the column that indicates time, if given all data is plotted against time
-    lot_legend:    Flag to add a legend for the batch identifiers
+    '''Plotting routine for batch data plot data for all batches in a dataset
+    
+    plot_var_all_batches(bdata,*,which_var=False,plot_title='',mkr_style='.-',
+                             phase_samples=False,alpha_=0.2,timecolumn=False,lot_legend=False):
+
+    Args:
+        bdata: Batch data organized as: column[0] = Batch Identifier column name is unrestricted
+                                        column[1] = Phase information per sample must be called 'Phase','phase', or 'PHASE'
+                                                    this information is optional
+                                        column[2:]= Variables measured throughout the batch
+                                        
+                                        The data for each batch is one on top of the other in a vertical matrix
+        which_var:     Which variables are to be plotted, if not sent, all are.
+        plot_title:    Optional text to be used as the title of all figures
+        phase_samples: information used to align the batch, so that phases are marked in the plot
+        alpha_:        Transparency for the phase dividing line
+        timecolumn:    Name of the column that indicates time, if given all data is plotted against time
+        lot_legend:    Flag to add a legend for the batch identifiers
+        
+    by Salvador Garcia Munoz
+    sgarciam@imperial.ac.uk salvadorgarciamunoz@gmail.com
     '''
     
     var_list=which_var
@@ -465,22 +505,29 @@ def plot_var_all_batches(bdata,*,which_var=False,plot_title='',mkr_style='.-',
         
 def plot_batch(bdata,which_batch,which_var,*,include_mean_exc=False,include_set=False,
                phase_samples=False,single_plot=False,plot_title=''):
-    '''
-       Plotting routine for batch data
-       bdata: Batch data organized as: column[0] = Batch Identifier column name is unrestricted
-                                       column[1] = Phase information per sample must be called 'Phase','phase', or 'PHASE'
-                                                   this information is optional
-                                       column[2:]= Variables measured throughout the batch
-                                       
-                                       The data for each batch is one on top of the other in a vertical matrix
-       
-       which_batch:      Which batches to plot
-       which_var:        Which variables are to be plotted, if not sent, all are.       
-       include_mean_exc: Include the mean trajectory of the set EXCLUDING the one batch being plotted
-       include_set:      Include all other trajectories (will be colored in light gray)
-       phase_samples:    Information used to align the batch, so that phases are marked in the plot
-       single_plot:      If True => Plot everything in a single axis
-       plot_title:       Optional text to be added to the title of all figures
+    '''Plotting routine for batch data
+    
+    plot_batch(bdata,which_batch,which_var,*,include_mean_exc=False,include_set=False,
+                   phase_samples=False,single_plot=False,plot_title='')
+    
+    Args:  
+        bdata: Batch data organized as: column[0] = Batch Identifier column name is unrestricted
+                                        column[1] = Phase information per sample must be called 'Phase','phase', or 'PHASE'
+                                                    this information is optional
+                                        column[2:]= Variables measured throughout the batch
+                                        
+                                        The data for each batch is one on top of the other in a vertical matrix
+        
+        which_batch:      Which batches to plot
+        which_var:        Which variables are to be plotted, if not sent, all are.       
+        include_mean_exc: Include the mean trajectory of the set EXCLUDING the one batch being plotted
+        include_set:      Include all other trajectories (will be colored in light gray)
+        phase_samples:    Information used to align the batch, so that phases are marked in the plot
+        single_plot:      If True => Plot everything in a single axis
+        plot_title:       Optional text to be added to the title of all figures
+        
+        by Salvador Garcia Munoz
+        sgarciam@imperial.ac.uk salvadorgarciamunoz@gmail.com
     '''
 
     if isinstance(which_batch,str) and not(isinstance(which_batch,list)):
@@ -687,13 +734,18 @@ def _uf_hor_mon_loadings(mvmobj):
     return mvmobj
 
 def loadings(mmvm_obj,dim,*,r2_weighted=False,which_var=False):
-    '''
-    Plot batch loadings for variables as a function of time/sample
+    ''' Plot batch loadings for variables as a function of time/sample
     
-    mmvm_obj:    Multiway PCA or PLS object
-    dim:         What component or latent variable to plot
-    r2_weighted: If True => weight the loading by the R2pv
-    which_var:   Variable for which the plot is done, if not sent all are plotted
+    loadings(mmvm_obj,dim,*,r2_weighted=False,which_var=False)
+    
+    Args:
+        mmvm_obj:    Multiway PCA or PLS object
+        dim:         What component or latent variable to plot
+        r2_weighted: If True => weight the loading by the R2pv
+        which_var:   Variable for which the plot is done, if not sent all are plotted
+        
+    by Salvador Garcia Munoz
+    sgarciam@imperial.ac.uk salvadorgarciamunoz@gmail.com
     '''
     dim=dim-1
     
@@ -855,12 +907,17 @@ def loadings(mmvm_obj,dim,*,r2_weighted=False,which_var=False):
             plt.tight_layout()   
             
 def loadings_abs_integral(mmvm_obj,*,r2_weighted=False,addtitle=False):
-    '''
-    plot the integral of the absolute value of loadings for a batch
-    Inputs:
+    '''Plot the integral of the absolute value of loadings for a batch
+    
+    loadings_abs_integral(mmvm_obj,*,r2_weighted=False,addtitle=False)
+    
+    Args:
         mmvm_obj: A multiway PCA or PLS model
         r2_weighted: Boolean flag, if True then in weights the loading by the R2pv
         addtitle: Text to place in the title of the figure
+        
+    by Salvador Garcia Munoz
+    sgarciam@imperial.ac.uk salvadorgarciamunoz@gmail.com
     '''
 
     if 'Q' in mmvm_obj:
@@ -928,11 +985,16 @@ def loadings_abs_integral(mmvm_obj,*,r2_weighted=False,addtitle=False):
             plt.tight_layout()   
 
 def batch_vip(mmvm_obj,*,addtitle=False):
-    '''
-    plot the summation across componets of the integral of the absolute value of loadings for a batch
+    ''' plot the summation across componets of the integral of the absolute value of loadings for a batch
     multiplied by the R2 [which kinda mimicks the VIP]
-    Inputs:
+    
+    batch_vip(mmvm_obj,*,addtitle=False)
+    
+    Args:
         mmvm_obj: A multiway PCA or PLS model
+        
+    by Salvador Garcia Munoz
+    sgarciam@imperial.ac.uk salvadorgarciamunoz@gmail.com
     '''
     r2_weighted=True
     if 'Q' in mmvm_obj:
@@ -995,11 +1057,16 @@ def batch_vip(mmvm_obj,*,addtitle=False):
             
 
 def r2pv(mmvm_obj,*,which_var=False):
-    '''
-    Plot batch r2 for variables as a function of time/sample
+    ''' Plot batch r2 for variables as a function of time/sample
     
-    mmvm_obj:    Multiway PCA or PLS object
-    which_var:   Variable for which the plot is done, if not sent all are plotted
+    r2pv(mmvm_obj,*,which_var=False)
+    
+    Args:
+        mmvm_obj:    Multiway PCA or PLS object
+        which_var:   Variable for which the plot is done, if not sent all are plotted
+        
+    by Salvador Garcia Munoz
+    sgarciam@imperial.ac.uk salvadorgarciamunoz@gmail.com
     '''
     
     if mmvm_obj['ninit']==0:
@@ -1131,19 +1198,26 @@ def r2pv(mmvm_obj,*,which_var=False):
             fig1.tight_layout()            
     
 def mpca(xbatch,a,*,unfolding='batch wise',phase_samples=False,cross_val=0):
-    '''
-    Multi-way PCA for batch analysis
+    ''' Multi-way PCA for batch analysis
     
-    xbatch: Pandas dataframe with aligned batch data it is assumed 
-             that all batches have the same number of samples
-            
-    a:      Number of PC's to fit
+    mpca_obj= mpca(xbatch,a,*,unfolding='batch wise',phase_samples=False,cross_val=0)
     
-    unfolding: 'batch wise' or 'variable wise'
-    
-    phase_samples: information about samples per phase [optional]
-    cross_val: percent of elements for cross validation (defult is 0 = no cross val)
-    
+    Args:
+        xbatch: Pandas dataframe with aligned batch data it is assumed 
+                 that all batches have the same number of samples
+                
+        a:      Number of PC's to fit
+        
+        unfolding: 'batch wise' or 'variable wise'
+        
+        phase_samples: information about samples per phase [optional]
+        cross_val: percent of elements for cross validation (defult is 0 = no cross val)
+
+    Returns:
+        mpca_obj: A Dictionary with all the parameters for the MPCA model
+        
+    by Salvador Garcia Munoz
+    sgarciam@imperial.ac.uk salvadorgarciamunoz@gmail.com
     '''    
     if (xbatch.columns[1]=='PHASE') or \
         (xbatch.columns[1]=='phase') or \
@@ -1394,22 +1468,34 @@ def _mimic_monitoring(mmvm_obj_f,bdata,which_batch,*,zinit=False,shush=False,sof
         return diags  
    
 def monitor(mmvm_obj,bdata,*,which_batch=False,zinit=False,build_ci=True,shush=False,soft_sensor=False):
-    '''
-     usage: monitor(mmvm_obj,bdata)  
+    ''' Routine to mimic the real-time monitoring of a batch given a model
+    
+    monitor(mmvm_obj,bdata,*,which_batch=False,zinit=False,build_ci=True,shush=False,soft_sensor=False):
+     
+  
+     usage: 1st you need to run: monitor(mmvm_obj,bdata)  
                 to mimic monitoring for all bdata batches and build CI
+                these new parameters are written back to mmvm_obj
                 
-            monitor(mmvm,bdata,which_batch=your_batchid) 
+            Then you can run:
+                
+            diagnostics = monitor(mmvm_obj,bdata,which_batch=your_batchid) 
                 to mimic monitoring for your_batchid and will produce all dynamic metrics
                 and forecasts
                 
-            monitor(mmvm,bdata,which_batch=your_batchid,zinit=your_z_data)  
+            diagnostics = monitor(mmvm_obj,bdata,which_batch=your_batchid,zinit=your_z_data)  
                 to mimic monitoring for your_batchid  using initial conditions
                 will produce all dynamic metrics and forecasts 
                 
-            monitor(mmvm,bdata,which_batch=your_batchid,soft_sensor=your_variable)  
+            diagnostics = monitor(mmvm_obj,bdata,which_batch=your_batchid,soft_sensor=your_variable)  
                 to mimic monitoring for your_batchid will produce all dynamic metrics 
                 and forecasts and produce soft-sensor predictions for your_variable
-                
+     Returns:
+         
+        diagnostics:A dictionary with all the monitoring diagnostics and contributions
+
+    by Salvador Garcia Munoz
+        sgarciam@imperial.ac.uk salvadorgarciamunoz@gmail.com           
     '''
     mmvm_obj_f       = mmvm_obj.copy()
     mmvm_obj_f       = _uf_hor_mon_loadings(mmvm_obj_f)
@@ -1585,23 +1671,29 @@ def monitor(mmvm_obj,bdata,*,which_batch=False,zinit=False,build_ci=True,shush=F
             return 'error batch not found'
 
 def mpls(xbatch,y,a,*,zinit=False,phase_samples=False,mb_each_var=False,cross_val=0,cross_val_X=False):
-    '''
-    Multi-way PLS for batch analysis
+    ''' Multi-way PLS for batch analysis
     
-    xbatch: Pandas dataframe with aligned batch data it is assumed 
-             that all batches have the same number of samples
-             
-    y     : Response to predict, one row per batch
-            
-    a:      Number of PC's to fit
-    
-    zinit: Initial conditions <optional>
-    
-    phase_samples: alignment information
-    
-    mb_each_var: if "True" will make each variable measured a block
-                 otherwise zinit is one block and xbatch another
-    
+    mpls_obj = mpls(xbatch,y,a,*,zinit=False,phase_samples=False,mb_each_var=False,cross_val=0,cross_val_X=False):
+
+    Args:
+        xbatch: Pandas dataframe with aligned batch data it is assumed 
+                 that all batches have the same number of samples
+                 
+        y     : Response to predict, one row per batch
+                
+        a:      Number of PC's to fit
+        
+        zinit: Initial conditions <optional>
+        
+        phase_samples: alignment information
+        
+        mb_each_var: if "True" will make each variable measured a block
+                     otherwise zinit is one block and xbatch another
+    Returns:
+        mpls_obj: A dictionary with all the parameters of the MPLS model
+        
+    by Salvador Garcia Munoz
+        sgarciam@imperial.ac.uk salvadorgarciamunoz@gmail.com   
     '''    
     if (xbatch.columns[1]=='PHASE') or \
         (xbatch.columns[1]=='phase') or \
@@ -1748,7 +1840,7 @@ def find(a, func):
     return [i for (i, val) in enumerate(a) if func(val)]
      
 def clean_empty_rows(X,*,shush=False):
-    '''
+    ''' Cleans empty rows in batch data
     Input: 
         X: Batch data to be cleaned of empty rows (all np.nan) DATAFRAME
     Output:
@@ -1784,19 +1876,25 @@ def clean_empty_rows(X,*,shush=False):
         return X
     
 def phase_sampling_dist(bdata,time_column=False,addtitle=False,use_phases=False):    
-    '''
-    Count and plot a histogram of the distribution of  samples (or time if time_column is indicated)
+    ''' Count and plot a histogram of the distribution of  samples (or time if time_column is indicated)
     consumed per phase on a batch dataset
     
-    bdata: Batch data organized as: column[0] = Batch Identifier column name is unrestricted
-                                    column[1] = Phase information per sample must be called 'Phase','phase', or 'PHASE'
-                                                this information is optional
-                                    column[2:]= Variables measured throughout the batch
-    time_column: Indicates the name of the column with time, if not sent, counting is done in terms samples
+    phase_sampling_dist(bdata,time_column=False,addtitle=False,use_phases=False)
     
-    add_title:  Optional text to be placed as the figure title
-    use_phases: In case the user wants to only do counting for a subset of phases
-    
+    Args:
+        
+        bdata: Batch data organized as: column[0] = Batch Identifier column name is unrestricted
+                                        column[1] = Phase information per sample must be called 'Phase','phase', or 'PHASE'
+                                                    this information is optional
+                                        column[2:]= Variables measured throughout the batch
+        time_column: Indicates the name of the column with time, if not sent, counting is done in terms samples
+        
+        add_title:  Optional text to be placed as the figure title
+        use_phases: In case the user wants to only do counting for a subset of phases
+        
+    by Salvador Garcia Munoz
+        sgarciam@imperial.ac.uk salvadorgarciamunoz@gmail.com   
+        
     '''
     data={}
     if bdata.columns[1]=='phase' or bdata.columns[1]=='Phase' or bdata.columns[1]=='PHASE':        
@@ -1850,17 +1948,21 @@ def phase_sampling_dist(bdata,time_column=False,addtitle=False,use_phases=False)
         print('Data is missing phase information or phase column is nor properly labeled')
         
 def predict(xbatch,mmvm_obj,*,zinit=False):    
-    '''
-    Generate predictions for a Multi-way PCA/PLS model
+    ''' Generate predictions for a Multi-way PCA/PLS model
     
-    Input:
+    predictions = predict(xbatch,mmvm_obj,*,zinit=False)
+    
+    Args:
         xbatch:   Batch data with same variables and alignment as model will generate predictions for all batches
         mmvm_obj: Multi-way PLS or PCA
         zinit:    Initial conditions [if any]
-    Output:
         
+    Returns:
         preds: A dictionary with keys ['Yhat', 'Xhat', 'Tnew', 'speX', 'T2']
-    
+   
+            
+    by Salvador Garcia Munoz
+        sgarciam@imperial.ac.uk salvadorgarciamunoz@gmail.com   
     '''
     if 'Q' in mmvm_obj:    
         x_uf,colnames,bid_o = unfold_horizontal(xbatch)  # colnames is original set of columns        
@@ -2016,18 +2118,27 @@ def _plot_contribs(bdata,ylims,*,var_list=False,phase_samples=False,alpha_=0.2,p
 def contributions (mmvmobj,X,cont_type,*,to_obs=False,from_obs=False,
                    lv_space=False,phase_samples=False,dyn_conts=False,which_var=False,
                    plot_title=''):
-    '''
-    Batch contribution plots to Scores, HT2 or SPE
-    mmvmobj= Multiway Model
-    X      = batch data
-    cont_type = 'scores' | 'ht2' | 'spe'
-    to_obs    = Observation to calculate contributions to
-    from_obs  = Relative basis to calculate contributions to [for 'scores' and 'ht2' only]
-                if not sent the origin of the model us used as the base.
+    ''' Plot batch contribution plots to Scores, HT2 or SPE
     
+    contributions (mmvmobj,X,cont_type,*,to_obs=False,from_obs=False,
+                       lv_space=False,phase_samples=False,dyn_conts=False,which_var=False,
+                       plot_title='')
+    
+    Args:
+        mmvmobj= Multiway Model
+        X      = batch data
+        cont_type = 'scores' | 'ht2' | 'spe'
+        to_obs    = Observation to calculate contributions to
+        from_obs  = Relative basis to calculate contributions to [for 'scores' and 'ht2' only]
+                    if not sent the origin of the model us used as the base.
+        
     Returns:
         contribution_vector
+        
+    by Salvador Garcia Munoz
+        sgarciam@imperial.ac.uk salvadorgarciamunoz@gmail.com
     '''
+    
     #translate from batch numbers to indexes
     #Check logic and warn user
     if (X.columns[1]=='PHASE') or \
@@ -2080,9 +2191,15 @@ def contributions (mmvmobj,X,cont_type,*,to_obs=False,from_obs=False,
         plt.tight_layout()
         
 def build_rel_time(bdata,*,time_unit='min'):
-    '''
-     Converts the column 'Timestamp' into 'Time' in time_units relative to
+    ''' Converts the column 'Timestamp' into 'Time' in time_units relative to
      the start of each batch
+     
+     bdata_new = build_rel_time(bdata,*,time_unit='min')
+     
+     
+     by Salvador Garcia Munoz
+         sgarciam@imperial.ac.uk salvadorgarciamunoz@gmail.com
+         
     '''
     
     aux=bdata.drop_duplicates(subset=bdata.columns[0],keep='first')
@@ -2106,9 +2223,11 @@ def build_rel_time(bdata,*,time_unit='min'):
     return bdata_n
 
 def descriptors(bdata,which_var,desc,*,phase=False):
-    '''
-    Get descriptor values for a batch trajectory
-    Inputs:
+    '''Get descriptor values for a batch trajectory
+    
+    descriptors_df = descriptors(bdata,which_var,desc,*,phase=False)
+    
+    Args:
         bdata: Dataframe of batch data, first column is batch ID, second column can be phase id
         
         which_var: List of variables to get descriptors for
@@ -2125,9 +2244,12 @@ def descriptors(bdata,which_var,desc,*,phase=False):
                 
         phase: to specify what phases to do this for
         
-    Outputs:
+    Returns:
         descriptors: A dataframe with the descriptors per batch
-
+        
+     by Salvador Garcia Munoz
+         sgarciam@imperial.ac.uk salvadorgarciamunoz@gmail.com
+         
     '''
     has_phase=False
     if ((bdata.columns[1]=='Phase') or 

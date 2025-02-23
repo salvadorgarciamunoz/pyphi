@@ -8,10 +8,10 @@ Added Jan 30 2025
 Added Jan 20 2025
         * Added the 'cca' flag to the pls routine to calculate CCA between
           the Ts and each of the Ys (one by one), calculating loadings and scores 
-          equivalent to a perfectly orthogonalized OPLS model. The covariate scores (Tcv)
-          the covariate Loadings (Pcv) and predictive weights (Wcv) are added
+          equivalent to a perfectly orthogonalized OPLS model. The covariant scores (Tcv)
+          the covariant Loadings (Pcv) and predictive weights (Wcv) are added
           as keys to the model object.
-          [The covariate loadings(Pcv) are equivalent to the predictive loadings in OPLS]
+          [The covariant loadings(Pcv) are equivalent to the predictive loadings in OPLS]
           
         * Added cca and cca-multi routines to perform PLS-CCA (alternative to OPLS)
           as of now cca-multi remains unused.
@@ -197,6 +197,18 @@ if not(pyomo_ok) or (not(ipopt_ok) and not(gams_ok)):
     print('Will be using the NEOS server in the absence of IPOPT and GAMS')
     
 def clean_htmls():
+    ''' Routine to clean html files
+    
+    pyphi.clean_htmls()
+    
+    Deletes all .html files in the current directory
+    
+    Args:
+        none
+    Returns:
+        none
+
+    '''
     files_here=os.listdir('.')
     for f in files_here:
         if 'html' in f:
@@ -204,15 +216,18 @@ def clean_htmls():
     return
 
 def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cross_val=0):
-    """ Principal Components Analysis routine
+    ''' Function to creat a  Principal Components Analysis model
     
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     
-    Inputs:
-        X : Either a pandas dataframe, or a Numpy Matrix
+    pca_object = pyphi.pca (X,A,<mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cross_val=0>)
+    
+    Args:
+        X (Dataframe or Numpy) : Data to train the model
+        A (int): Number of Principal Components to calculate
         
-        A : Number of Principal Components to calculate
+    Other Parameters:
         
         mcs: 'True'      : Meancenter + autoscale *default if not sent* 
              'False'     : No pre-processing
@@ -233,10 +248,10 @@ def pca (X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False,cro
                    element wise removing cross_val% of the data every round
                    
                    if ==   0:  Bypass cross-validation  *default if not sent*
-    Output:
+    Returns:
         A dictionary with all PCA loadings, scores and other diagnostics.
     
-    """      
+    '''      
         
     if cross_val==0:
         pcaobj= pca_(X,A,mcs=mcs,md_algorithm=md_algorithm,force_nipals=force_nipals,shush=shush)
@@ -723,15 +738,19 @@ def pca_(X,A,*,mcs=True,md_algorithm='nipals',force_nipals=False,shush=False):
   
 def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=True,shush=False,
         cross_val=0,cross_val_X=False,cca=False):
-    """ Projection to  Latent Structures routine
+    ''' Function to create a Projection to  Latent Structures model
     
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     
-    Inputs:
-        X,Y : Either a pandas dataframe, or a Numpy Matrix
+    pls_object = pyphi.pls(X,Y,A,<mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=True,shush=False,
+            cross_val=0,cross_val_X=False,cca=False>)
+    Args:
+        X,Y (DataFrame or Numpy) : Training Data
         
-        A : Number of Principal Components to calculate
+        A (int) : Number of Latent Variables to calculate
+        
+    Other Parameters:
         
         mcsX/mcsY:  'True'      : Will meancenter and autoscale the data *default if not sent*  
                     'False'     : No pre-processing
@@ -754,12 +773,14 @@ def pls(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=True,shus
         cross_val_X: True : Calculates Q2 values for the X and Y matrices
                      False: Cross-validation strictly on Y matrix *default if not sent*
                      
-        cca:         True : Calculates covariable space of X with Y (analog to OPLS)
+        cca:         True : Calculates covariable space of X with Y (analog to the predictive space in OPLS)
+                            "Tcv" and "Pcv" and the covariant scores and loadings if more than one Y, then
+                            there will be as many Tcv and Pcv vectors as columns in Y
     
-    Output:
+    Returns:
         A dictionary with all PLS loadings, scores and other diagnostics.
     
-    """
+    '''
     if cross_val==0:
         plsobj = pls_(X,Y,A,mcsX=mcsX,mcsY=mcsY,md_algorithm=md_algorithm,force_nipals=force_nipals,shush=shush,cca=cca)  
         plsobj['type']='pls' 
@@ -1894,20 +1915,26 @@ def pls_(X,Y,A,*,mcsX=True,mcsY=True,md_algorithm='nipals',force_nipals=True,shu
             return pls_obj 
 
 def lwpls(xnew,loc_par,mvmobj,X,Y,*,shush=False):
-    """
-    LWPLS algorithm in: International Journal of Pharmaceutics 421 (2011) 269– 274
+    ''' LWPLS algorithm as in: International Journal of Pharmaceutics 421 (2011) 269– 274
     
     Implemented by Salvador Garcia-Munoz
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     
-    xnew   : Regressor vector to make prediction
-    loc_par: Localization parameter
-    mvmobj : PLS model between X and Y 
-    X,Y    : Training set for mvmobj (PLS model) numpy arrays or pandas dataframes
-    shush  : ='True'  will silent outpuit
-              'False' will display outpuit  *default if not sent*
+    yhat = pyphi.lwpls(xnew,loc_par,mvmobj,X,Y,<shush=False>)
     
-    """
+    Args:
+        xnew (Numpy vector): Regressor vector to make prediction
+        loc_par (scalar): Localization parameter
+        mvmobj : PLS model between X and Y built with PLS routine
+        X,Y (DataFrame or Numpy): Training set for mvmobj (PLS model) 
+        
+    Other Parameters:
+        shush  : ='True'  will silent outpuit
+                  'False' will display outpuit  *default if not sent*
+    Returns:
+        y prediction from xnew
+        
+    '''
     if not(shush):
         print('phi.lwpls executed on: '+ str(datetime.datetime.now()) )
     xnew=np.reshape(xnew,(-1,1))     
@@ -1958,6 +1985,18 @@ def lwpls(xnew,loc_par,mvmobj,X,Y,*,shush=False):
     
     
 def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
+    '''Function to evaluate new data using an already built PCA model
+    
+    pred = pyphi.pca_pred(Xnew,pcaobj)
+    
+    Args:
+        X (DataFrame): Data to be evaluated with the given PCA model
+        pcaobj: PCA object created by pyphi.pca routine
+    Returns:
+        pred: Dictionary with reconstructed values for X, Scores, Hotellings T2 and SPE for Xnew
+    
+    '''
+    
     if isinstance(Xnew,np.ndarray):
         X_=Xnew.copy()
         if X_.ndim==1:
@@ -2004,7 +2043,22 @@ def pca_pred(Xnew,pcaobj,*,algorithm='p2mp'):
         xpred={'Xhat':xhat,'Tnew':tnew, 'speX':spe,'T2':htt2}
     return xpred
 
-def pls_pred(Xnew,plsobj,*,algorithm='p2mp',force_deflation=False):
+def pls_pred(Xnew,plsobj):
+    ''' Function to evaluate new data using an already built PLS model
+    by Salvador Garcia (sgarciam@ic.ac.uk) / (salvadorgarciamunoz@gmail.com)
+    pred = pyphi.pls_pred(Xnew,plsobj)
+    
+    Args:
+        X: Dataframe with new data to be project onto the PCA model
+        plsobj: PLS object created by pyphi.pls routine
+    Returns:
+        pred: Dictionary with predicted values for X and Y, Scores  Hotellings T2 and SPE for Xnew
+        if CCA = True in plsobj, then Tcv is also calculated
+    
+    '''
+    algorithm='p2mp'
+    force_deflation=False
+    
     if isinstance(Xnew,np.ndarray):
         X_=Xnew.copy()
         if X_.ndim==1:
@@ -2069,7 +2123,10 @@ def pls_pred(Xnew,plsobj,*,algorithm='p2mp',force_deflation=False):
         speX  = ((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1))))-(tnew @ plsobj['P'].T)
         speX  = speX*not_Xmiss
         speX  = np.sum(speX**2,axis=1,keepdims=True) 
-        ypred ={'Yhat':yhat,'Xhat':xhat,'Tnew':tnew,'speX':speX,'T2':htt2}     
+        ypred ={'Yhat':yhat,'Xhat':xhat,'Tnew':tnew,'speX':speX,'T2':htt2} 
+        if 'Wcv' in plsobj:
+            Tcv=((X_-np.tile(plsobj['mx'],(X_.shape[0],1)))/(np.tile(plsobj['sx'],(X_.shape[0],1)))) @ plsobj['Wcv']
+            ypred['Tcv']=Tcv
     return ypred
 
 def hott2(mvmobj,*,Xnew=False,Tnew=False):
@@ -2166,10 +2223,17 @@ def std(X):
     return x_std
    
 def meancenterscale(X,*,mcs=True):
-    '''
-    Inputs:
-        X: Matrix to be meancenterd ONLY works with Numpy matrices
-        mcs = True | center | autoscale        
+    ''' Function to mean center and scale a matrix
+    by Salvador Garcia (sgarciam@ic.ac.uk) / (salvadorgarciamunoz@gmail.com)
+
+    X,xmean,xstd= pyphi.meancenterscale(X,<mcs=Flag>)
+    Args:
+        X: Matrix to be meancenterd this call ONLY works with Numpy matrices
+        mcs = True | 'center' | 'autoscale'    
+    Returns:
+        X: Post-processed X matrix
+        xmean: Mean values per column
+        xstd: Standard Deviation values per column
     '''
         
     if isinstance(mcs,bool):
@@ -2195,12 +2259,16 @@ def meancenterscale(X,*,mcs=True):
     return X,x_mean,x_std
 
 def spectra_snv (x):
-    """
-    Inputs:
-        x: Spectra
-    Outputs:
-        x: Post-processed Spectra
-    """
+    ''' Function to do row wise SNV transform for spectroscopic data
+    by Salvador Garcia (sgarciam@ic.ac.uk) / (salvadorgarciamunoz@gmail.com)
+
+    X=pyphi.spectra_snv(X)
+    
+    Args:
+        x: Spectra dataframe
+    Returns:
+        x: Post-processed Spectra dataframe
+    '''
     
     if isinstance(x,pd.DataFrame):
         x_columns=x.columns
@@ -2226,21 +2294,20 @@ def spectra_snv (x):
             return x
     
 def spectra_savgol(ws,od,op,Dm):
-    """
-    Savitzky-Golay filter for spectra
-    inputs:
-    ws : Window Size
-    od: Order of the derivative
-    op: Order of the polynomial
-    Dm: Spectra
-    
-    Outputs:
-        Dm_sg, M
-        
-        Dm_sg: Processed Spectra
-        M:     Transformation Matrix for new samples
+    '''Function to do row wise Savitzky-Golay filter for spectra
+    by Salvador Garcia (sgarciam@ic.ac.uk) / (salvadorgarciamunoz@gmail.com)
 
-    """
+    Dm_sg, M = pyphi.spectra_savgol(ws,od,op,Dm)
+    Args:
+        ws : Window Size
+        od: Order of the derivative
+        op: Order of the polynomial
+        Dm: Spectra
+    
+    Returns:
+        Dm_sg: Processed Spectra
+        M:     Transformation Matrix for new vector samples
+    '''
     if isinstance(Dm,pd.DataFrame):
         x_columns=Dm.columns.tolist()
         FirstElement=[x_columns[0]]
@@ -2287,6 +2354,16 @@ def spectra_savgol(ws,od,op,Dm):
         return Dm_sg,M
 
 def np2D2pyomo(arr,*,varids=False):
+    """ Routine to convert a Numpy matrix in to a 2D dictionary for Pyomo
+    by Salvador Garcia (sgarciam@ic.ac.uk) / (salvadorgarciamunoz@gmail.com)
+
+    Xdic=pyphi.np2D2pyomo(X,<varids=varId_list>)
+    Args:
+        X (Numpy): Matrix to be converted
+        varids: False | table of ids to be assigned as indexes
+    Returns:
+        Xdic: Matrix in dictionary format (as Pyomo likes it)
+    """
     if not(varids):
         output=dict(((i+1,j+1), arr[i][j]) for i in range(arr.shape[0]) for j in range(arr.shape[1]))
     else:
@@ -2294,6 +2371,16 @@ def np2D2pyomo(arr,*,varids=False):
     return output
 
 def np1D2pyomo(arr,*,indexes=False):
+    ''' Routine to convert a vector in to a 1D dictionary for Pyomo
+    by Salvador Garcia (sgarciam@ic.ac.uk) / (salvadorgarciamunoz@gmail.com)
+
+    Xdic=pyphi.np1D2pyomo(X,<varids=varId_list>)
+    Args:
+        X (Numpy): Vector to be converted
+        varids: False | table of ids to be assigned as indexes
+    Returns:
+        Xdic: Vector in dictionary format (as Pyomo likes it)
+    '''
     if arr.ndim==2:
         arr=arr[0]
     if isinstance(indexes,bool):
@@ -2303,9 +2390,24 @@ def np1D2pyomo(arr,*,indexes=False):
     return output
 
 
-
-
 def adapt_pls_4_pyomo(plsobj,*,use_var_ids=False):
+    '''Routine to create all the parameters in a PLS object 
+    to the structure needed by Pyomo
+    by Salvador Garcia (sgarciam@ic.ac.uk) / (salvadorgarciamunoz@gmail.com)
+
+    All parameters are added to the original plsobj with the prefix pyo_
+
+    plsobj_pyomo = pyphi.adapt_pls_4_pyomo(plsobj, <use_var_ids=False>)
+    
+    Args: 
+        plsobj: A PLS object created with pyphi.pls
+        
+        use_var_ids: If True then al Variable IDs from plsobj are used as
+                     indexes for the dictionaries requried by Pyomo
+    Returns:
+        plsobj_pyomo: A dictionary augmented with all parameters in dictionary format
+    
+    '''
     plsobj_ = plsobj.copy()
     
     A = plsobj['T'].shape[1]
@@ -2414,11 +2516,6 @@ def spe_ci(spe):
     return lim95,lim99
 
 def single_score_conf_int(t):
-    '''
-    Confidence intervals for a single t-score (used for bar and line plots)
-    Input: a column vector of t-scores values
-    Outputs: the two limits based on a t-distribution
-    '''
     tstud =np.array(
             [[1,       12.706,       63.657],
              [2,        4.303,        9.925],
@@ -2593,26 +2690,33 @@ def scores_conf_int_calc(st,N):
     return xd95,xd99,yd95p,yd95n,yd99p,yd99n
 
 def contributions(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_space=False):
-    """
-    Calculate contributions to diagnostics
+    ''' Function to calculate contributions to diagnostics
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     
-    mvmobj : A dictionary created by phi.pls or phi.pca
+    contrib =  pyphi.contributions(mvmobj,X,cont_type,<Y=False,from_obs=False,to_obs=False,lv_space=False>)
     
-    X/Y:     Data [numpy arrays or pandas dataframes] - Y space is optional
-    
-    cont_type: 'ht2'
-               'spe'
-               'scores'
-               
-    from_obs: Scalar or list of scalars with observation(s) number(s) to offset (FROM)
-              
-    to_obs: Scalar or list of scalars with observation(s) number(s) to calculate contributions (TO)          
-            *Note: from_obs is ignored when cont_type='spe'*
-            
-    lv_space: Latent spaces over which to do the calculations [applicable to 'ht2' and 'scores']
-    """
+    Args:
+        mvmobj : A dictionary created by phi.pls or phi.pca
+        
+        X/Y:     Data [numpy arrays or pandas dataframes] - Y space is optional
+        
+        cont_type: 'ht2' - Contributions to Hotelling's T2
+                   'spe' - Contributions to SPE space
+                   'scores' - Contribution to scores
+                   
+        to_obs: Scalar or list of scalars with observation(s) number(s) to calculate contributions (TO)          
+                *Note: from_obs is ignored when cont_type='spe'*
+                
+                
+        from_obs: Scalar or list of scalars with observation(s) number(s) to offset (FROM) if not sent,
+                  contribution are calculated with respect to the mean.
+                  
+        lv_space: Latent spaces over which to do the calculations [applicable to 'ht2' and 'scores'] if not sent
+                  all dimensions are considered.
+    Returns:
+        contrib: A vector of scalars with the corresponding contributions
+    '''
     if isinstance(lv_space,bool):
         lv_space=list(range(mvmobj['T'].shape[1]))
     elif isinstance(lv_space,int):
@@ -2704,11 +2808,17 @@ def contributions(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_sp
             return contsX
 
 def clean_empty_rows(X,*,shush=False):
-    '''
-    Input: 
+    '''Routine to clean a matrix from rows containing all missing data
+    by Salvador Garcia (sgarciam@ic.ac.uk) / (salvadorgarciamunoz@gmail.com)
+
+    X,rows_removed = pyphi.clean_empty_rows(X)
+    
+    Args: 
         X: Matrix to be cleaned of empty rows (all np.nan)
-    Output:
-        X: Without observations removed
+    Returns:
+        X: Matrix without observations removed
+        rows_removed: List of rows removed from X
+        
     '''
     if isinstance(X,np.ndarray):
         X_     = X.copy()
@@ -2740,13 +2850,18 @@ def clean_empty_rows(X,*,shush=False):
         return X,rows_rem
     
 def clean_low_variances(X,*,shush=False,min_var=1E-10):
-    '''
- Input:
-     X: Matrix to be cleaned for columns of low variance
-     shush: 'True' disables output to console
-Returns:     
-X_clean:  Matrix without low variance columns
-cols_removed:  Columns removed
+    '''Routine to remove columns of neglegible variance
+    by Salvador Garcia (sgarciam@ic.ac.uk) / (salvadorgarciamunoz@gmail.com)
+
+    X,columns_removed = pyphi.clean_low_variances(X,<min_var=1E-10,shush=False>)
+
+    Args:
+         X: Matrix to be cleaned for columns of low variance
+         min_var: minimum required variance to keep a colum (default = 1E-10)
+         shush: 'True' disables output to console
+    Returns:     
+        X_clean:  Matrix without low variance columns
+        cols_removed:  Columns removed
     '''
     cols_removed=[]
     if isinstance(X,pd.DataFrame):
@@ -2814,6 +2929,7 @@ cols_removed:  Columns removed
     
 def find(a, func):
     return [i for (i, val) in enumerate(a) if func(val)]
+
 
 def conv_pls_2_eiot(plsobj,*,r_length=False):
     plsobj_ = plsobj.copy()
@@ -2966,14 +3082,17 @@ def prep_pls_4_MDbyNLP(plsobj,X,Y):
     return plsobj_   
 
 def cat_2_matrix(X):
-    '''
-    cat_2_matrix(X) - Convert categorical data into binary matrices
+    '''Function to convert categorical data into binary matrices for regression
+    by Salvador Garcia (sgarciam@ic.ac.uk) / (salvadorgarciamunoz@gmail.com)
+
+    Xmat,XmatMB = cat_2_matrix(X)
     
-    X is a Pandas Data Frame with categorical descriptors
+    Args:
+        X is a Pandas Data Frame with categorical descriptors for each observation
     
-    returns Xmat, XmatMB - 
-    Xmat is matrix of binary coded data, 
-    XmatMB same data, orgainzed as a list of matrices for Multi-block modeling
+    Returns: 
+        Xmat   :  matrix of binary coded data, 
+        XmatMB :  binary coded data orgainzed as a list of matrices for Multi-block modeling
     
     '''
     FirstOne=True
@@ -3011,21 +3130,29 @@ def cat_2_matrix(X):
     return Xmat,XmatMB
 
 def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=False,shush_=False,cross_val_=0,cross_val_X_=False):
-    '''
+    ''' Function to calculate a Multi-Block PLS model
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
     Multi-block PLS model using the approach by Westerhuis, J. Chemometrics, 12, 301–321 (1998)
     
-    Inputs
-    ----------
-    XMB : Dictionary or PandasDataFrame
-        Dictionary structure:
-        {'BlockName1':block_1_data_pd,
-         'BlockName2':block_2_data_pd}
-
-    YMB : Dictionary or PandasDataFrame
-        Dictionary structure:
-        {'BlockName1':block_1_data_pd,
-         'BlockName2':block_2_data_pd}
-          
+    mbpls_obj = pyphi.mbpls(XMB,YMB,A,<mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=False,
+                                      shush_=False,cross_val_=0,cross_val_X_=False>)
+    
+    Args:
+        XMB : Dictionary or PandasDataFrames one key per block of data
+            Dictionary structure:
+            {'BlockName1':block_1_data_pd,
+             'BlockName2':block_2_data_pd}
+    
+        YMB : Dictionary or PandasDataFrame
+            Dictionary structure:
+            {'BlockName1':block_1_data_pd,
+             'BlockName2':block_2_data_pd}
+            
+    Returns:
+        mbpls_obj: Dictionary with all the parameters of a Multi-block PLS model
+    
     '''
     x_means=[]
     x_stds=[]
@@ -3377,6 +3504,23 @@ def replicate_data(mvm_obj,X,num_replicates,*,as_set=False):
     return new_set_pd
 
 def export_2_gproms(mvmobj,*,fname='phi_export.txt'):
+    '''Function to export PLS model to be build a hybrid model in gPROMS
+     
+     by Salvador Garcia-Munoz 
+     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+     
+    pyphi.export_2_gproms(mvmobj,fname='phi_export.txt')
+    
+    Exports the multivariate object coded in gPROMS syntax
+    
+    typically one would use the variables X_NEW and Y_PRED as the Input/Output variables
+    Args:
+        mvmobj: A PLS model createdy with pyphi.pls
+        fname: Name of the text file to be created
+    Returns:
+        None
+    '''
+    
     top_lines=[     
     'PARAMETER',
     'X_VARS AS ORDERED_SET',
@@ -3472,19 +3616,29 @@ def export_2_gproms(mvmobj,*,fname='phi_export.txt'):
 
         return
 def unique(df,colid):    
-    '''
+    ''' returns unique values in the column of a DataFrame in order of occurence
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
     replacement of the np.unique routine, specifically for dataframes
     returns unique values in the order found in the dataframe
-    df:     A pandas dataframe
-    colid:  Column identifier 
+    unique_values = pyphi.unique(df,columnid)
     
+    Args:
+        df:     A pandas dataframe
+        columnid:  Column identifier 
+    Returns:
+        unique_values: List of unique values in the order they appear
     '''
     aux=df.drop_duplicates(subset=colid,keep='first')
     unique_entries=aux[colid].values.tolist()
     return unique_entries
     
 def parse_materials(filename,sheetname):
-    '''
+    ''' Function to build R matrices for JRPLS model from linear table 
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
     Routine to parse out compositions from linear table
     This reads an excel file with four columns:
         'Finished Product Lot'	'Material Lot'	'Ratio or Quantity'	'Material'
@@ -3498,7 +3652,9 @@ def parse_materials(filename,sheetname):
         .                    .                 .                 .
         .                    .                 .                 .
         .                    .                 .                 .
-        
+    Args:
+        filename: Name of excel workbook containing the data
+        sheetname: Name of the sheet in the workbook with the data
     Returns:
         JR = Joint R matrix of material consumption, list of dataframes
         materials_used = Names of materials 
@@ -3551,6 +3707,18 @@ def isin_ordered_col0(df,alist):
     return df_
     
 def reconcile_rows(df_list):
+    ''' Function to reconcile observations across multiple dataframes
+     
+     by Salvador Garcia-Munoz 
+     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+     
+     df_list_reconciled = pyphi.reconcile_rows(df_list)
+    
+    Routine to reconcile the observation names in a list of dataframes
+    The returned list of df's has exacly the same observation names in the same order
+    handy when analyzing  data for TPLS, LPLS and JRPLS
+
+    '''
     all_rows=[]
     for df in df_list:
         all_rows.extend(df[df.columns[0]].values.tolist())
@@ -3569,6 +3737,19 @@ def reconcile_rows(df_list):
     return new_df_list
     
 def reconcile_rows_to_columns(df_list_r,df_list_c): 
+    '''Function to reconcile the rows of the dataframes in df_list_r with the
+     columns in the list of dataframes df_list_r
+     
+     by Salvador Garcia-Munoz 
+     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+ 
+     df_list_reconciled_r,df_list_reconciled_c = pyphi.reconcile_rows_to_columns(df_list_r,df_list_c)
+    
+    handy to align X - R datasets for TPLS, LPLS and JRPLS
+
+    '''
+    
+    
     df_list_r_o=[]
     df_list_c_o=[]
     allids=[]
@@ -3605,13 +3786,21 @@ def _Ab_btbinv(A,b,A_not_nan_map):
     return c.reshape(-1,1)    
 
 def lpls(X,R,Y,A,*,shush=False):
-    '''
-    #LPLS Algorithm per Muteki et. al Chemom.Intell.Lab.Syst.85(2007) 186 – 194
-    # X = [ m x p ] Phys. Prop. DataFrame of             materials x mat. properties
-    # R = [ b x m ] Blending ratios DataFrame of         blends    x materials
-    # Y = [ b x n ] Product characteristics DataFrame of blends    x prod. properties
-    #first column of all dataframes is the observation identifier
-    # A = Number of components
+    ''' LPLS Algorithm per Muteki et. al Chemom.Intell.Lab.Syst.85(2007) 186 – 194
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    lpls_obj = pyphi.lpls(X,R,Y,A)
+    
+    Args:
+         X = [ m x p ] Phys. Prop. DataFrame of             materials x mat. properties
+         R = [ b x m ] Blending ratios DataFrame of         blends    x materials
+         Y = [ b x n ] Product characteristics DataFrame of blends    x prod. properties
+        first column of all dataframes is the observation identifier
+         A = Number of components
+    Returns:
+        lspls_obj: A dictionary with all the LPLS parameters
+    
     '''
     if isinstance(X,np.ndarray):
         X_ = X.copy()
@@ -3867,15 +4056,20 @@ def lpls(X,R,Y,A,*,shush=False):
     return lpls_obj       
     
 def lpls_pred(rnew,lpls_obj):
-    '''
+    ''' Function to evaluate a new observation for LPLS
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
     Do a prediction with an LPLS model
-    INPUTS:
-        rnew: np.array, list or dataframe with elements of rew
+    pred = pyphi.lpls_pred(rnew,lpls_obj)
+    
+    Args:
+        rnew: np.array, list or dataframe with elements of rnew
               if multiple rows are passed, then multiple predictions are done
         
         lpls_obj: LPLS object built with pyphi.lpls routine
     
-    OUTPUTS:
+    Returns:
         pred: A dictionary {'Tnew':tnew,'Yhat':yhat,'speR':sper}   
 
     '''
@@ -3907,23 +4101,29 @@ def lpls_pred(rnew,lpls_obj):
     return preds
 
 def jrpls(Xi,Ri,Y,A,*,shush=False):
-    '''
-    JRPLS Algorithm per Garcia-Munoz Chemom.Intel.Lab.Syst., 133, pp.49-62.
-    
-     X =  Phys. Prop. dictionary of Dataframes of materials_i x mat. properties
-         X = {'MatA':df_with_props_for_mat_A (one row per lot of MatA, one col per property),
-              'MatB':df_with_props_for_mat_B (one row per lot of MatB, one col per property)}
+    '''    JRPLS Algorithm per Garcia-Munoz Chemom.Intel.Lab.Syst., 133, pp.49-62.
+
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+
+    jrpls_obj = pyphi.jrpls(Xi,Ri,Y,A)
+    Args:
+         X =  Phys. Prop. dictionary of Dataframes of materials_i x mat. properties
+             X = {'MatA':df_with_props_for_mat_A (one row per lot of MatA, one col per property),
+                  'MatB':df_with_props_for_mat_B (one row per lot of MatB, one col per property)}
+             
+         R = Blending ratios dictionary of Dataframes of  blends x materials_i
+             R = {'MatA': df_with_ratios_of_lots_of_A_used_per_blend,
+                  'MatB': df_with_ratios_of_lots_of_B_used_per_blend,
+                  } 
+         Rows of X[i] must correspond to Columns of R[i] 
+             
+         Y = [ b x n ]   Product characteristics dataframe of blends x prod. properties
          
-     R = Blending ratios dictionary of Dataframes of  blends x materials_i
-         R = {'MatA': df_with_ratios_of_lots_of_A_used_per_blend,
-              'MatB': df_with_ratios_of_lots_of_B_used_per_blend,
-              } 
-     Rows of X[i] must correspond to Columns of R[i] 
-         
-     Y = [ b x n ]   Product characteristics dataframe of blends x prod. properties
+         first column of all dataframes is the observation identifier
      
-     first column of all dataframes is the observation identifier
-     
+    Returns:
+        jrpls_obj: A dictionary with all the parameters for the JRPLS model 
     '''
     X=[]
     varidX=[]
@@ -4334,12 +4534,14 @@ def jrpls(Xi,Ri,Y,A,*,shush=False):
 
      
 def jrpls_pred(rnew,jrplsobj):
-    '''
-    Routine to produce the prediction for a new observation of Ri
-    using a JRPLS model
-    preds = (rnew,jrplsobj)
+    '''Routine to produce the prediction for a new observation of Ri in a JRPLS model
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+
     
-    Inputs:
+    preds = pyphi.jrpls_pred(rnew,jrplsobj)
+    
+    Args:
         rnew: A dictionary with the format: 
             rnew={ 
                 'matid':[(lotid,rvalue )],
@@ -4355,7 +4557,7 @@ def jrpls_pred(rnew,jrplsobj):
         MgSt	        M0012	    0.02
         MCC      	MCC0017	    0.18
         
-        use:
+        would be encoded like:
             
         rnew={
             'API':[('A0129',0.5)],
@@ -4364,7 +4566,7 @@ def jrpls_pred(rnew,jrplsobj):
             'MCC':[('MCC0017',0.18)],
             }    
         
-    Outputs:
+    Returns:
         preds a dictionary of the form:
             
             preds ={'Tnew':tnew,'Yhat':yhat,'speR':sper} 
@@ -4447,25 +4649,32 @@ def jrpls_pred(rnew,jrplsobj):
         return 'dimensions of rnew did not macth model'
     
 def tpls(Xi,Ri,Z,Y,A,*,shush=False):
-    '''
-     TPLS Algorithm per Garcia-Munoz Chemom.Intel.Lab.Syst., 133, pp.49-62.
+    ''' TPLS Algorithm per Garcia-Munoz Chemom.Intel.Lab.Syst., 133, pp.49-62.
+
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+
+     tpls_obj = pyphi.tpls(Xi,Ri,Z,Y,A)
+    Args:
+         X = Phys. Prop. dictionary of Dataframes of materials_i x mat. properties
+             X = {'MatA':df_with_props_for_mat_A (one row per lot of MatA, one col per property),
+                  'MatB':df_with_props_for_mat_B (one row per lot of MatB, one col per property)}
+             
+         R =  Blending ratios dictionary of Dataframes of  blends x materials_i
+             R = {'MatA': df_with_ratios_of_lots_of_A_used_per_blend,
+                  'MatB': df_with_ratios_of_lots_of_B_used_per_blend,
+                  } 
+         Rows of X[i] must correspond to Columns of R[i] 
+             
+         Y = [ b x n ]   Product characteristics dataframe of blends x prod. properties
+         
+         Z = [b x p]  Process conditions dataframe of  blends x process variables
+         
+         first column of all dataframes is the observation identifier
     
-     X = Phys. Prop. dictionary of Dataframes of materials_i x mat. properties
-         X = {'MatA':df_with_props_for_mat_A (one row per lot of MatA, one col per property),
-              'MatB':df_with_props_for_mat_B (one row per lot of MatB, one col per property)}
+    Returns:
+        tpls_obj: A dictionary with all the parameters for the TPLS model
          
-     R =  Blending ratios dictionary of Dataframes of  blends x materials_i
-         R = {'MatA': df_with_ratios_of_lots_of_A_used_per_blend,
-              'MatB': df_with_ratios_of_lots_of_B_used_per_blend,
-              } 
-     Rows of X[i] must correspond to Columns of R[i] 
-         
-     Y = [ b x n ]   Product characteristics dataframe of blends x prod. properties
-     
-     Z = [b x p]  Process conditions dataframe of  blends x process variables
-     
-     first column of all dataframes is the observation identifier
-     
     '''
     X=[]
     varidX=[]
@@ -4942,12 +5151,13 @@ def tpls(Xi,Ri,Z,Y,A,*,shush=False):
     return tpls_obj       
 
 def tpls_pred(rnew,znew,tplsobj):
-    '''
-    Routine to produce the prediction for a new observation of Ri
-    using a TPLS model
-    preds = (rnew,znew,tplsobj)
+    '''Routine to produce the prediction for a new observation of Ri using a TPLS model
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+
+    preds = pyphi.tpls_pred(rnew,znew,tplsobj)
     
-    Inputs:
+    Args:
         rnew: A dictionary with the format: 
             rnew={ 
                 'matid':[(lotid,rvalue )],
@@ -4974,7 +5184,7 @@ def tpls_pred(rnew,znew,tplsobj):
         
         znew: Dataframe or numpy with new observation
         
-    Outputs:
+    Returns:
         preds a dictionary of the form:
             
             preds ={'Tnew':tnew,'Yhat':yhat,'speR':sper,'speZ':spez} 
@@ -5097,6 +5307,22 @@ def varimax_(X, gamma = 1.0, q = 20, tol = 1e-6):
     return dot(X, R)
 
 def varimax_rotation(mvm_obj,X,*,Y=False):
+    ''' Function to do a Varimax Rotation on a PCA or PLS model
+    by Salvador Garcia-Munoz 
+    (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
+    
+    Routine to perform a VariMax rotation on a PCA or PLS model
+    (I have also tested it with MBPLS models)
+    
+    rotated_model=varimax_rotation(model_object,X,<Y=Ydata>)
+    
+    Args:
+        model_object: A PCA or PLS or MBPLS model object
+    Returns:
+        rotated_model: The same model after VariMax rotation, scores and loadings are all rotated
+
+    '''
+    
     mvmobj=mvm_obj.copy()
     if isinstance(X,np.ndarray):
         X_=X.copy
@@ -5224,8 +5450,7 @@ def varimax_rotation(mvm_obj,X,*,Y=False):
         
 
 def spectra_mean_center(Dm):
-    """
-    Mean centering all spectra to have mean zero. 
+    """ Mean centering all spectra to have mean zero. 
     Dm: Spectra
 
     Outputs:
@@ -5248,8 +5473,7 @@ def spectra_mean_center(Dm):
             return mean_centered
 
 def spectra_autoscale(Dm):
-    """
-    Autoscaling all spectra to have variance one. 
+    """Autoscaling all spectra to have variance one. 
     Dm: Spectra
 
     Outputs:
@@ -5274,8 +5498,7 @@ def spectra_autoscale(Dm):
 
     
 def spectra_baseline_correction(Dm):
-    """
-    Shifiting all spectra to have minimum zero. 
+    """Shifiting all spectra to have minimum zero. 
     Only works with pandas dataframe. 
     Dm: Spectra
 
@@ -5299,6 +5522,10 @@ def spectra_baseline_correction(Dm):
             return shifted
 
 def spectra_msc(Dm, reference_spectra = None):
+    ''' Perform Multivariate Scatter Correction transform
+    
+    '''
+    
     if isinstance(Dm,pd.DataFrame):
         Dm_columns =Dm.columns
         Dm_values  = Dm.values
@@ -5401,31 +5628,30 @@ def writeeq(beta_,features_):
     return ''.join(eq_str)
 
 def build_polynomial(data,factors,response,*,bias_term=True):
-    '''
-    Parameters
-    ----------
-    data : DataFrame
-            Pandas data frame, first column is the observation id column
-    factors : List
-            list of factors to be included in expression. Powers, Mutliplications
-            and divisions are allowed. Eg:
-                structure=[
-                    'Variable 1'
-                    'Variable 1^2'
-                    'Variable 2'
-                    'Variable 3 * Variable 1'
-                    'Variable 1^2 / Variable 4'
-                    ]
-                
-    response: string
-            Response variable in the dataset (must be a column of 'data')
+    '''Function to create linear regression models with variable selection assited by PLS
+      
+    Args:
+        data : DataFrame
+                Pandas data frame, first column is the observation id column
+        factors : List
+                list of factors to be included in expression. Powers, Mutliplications
+                and divisions are allowed. Eg:
+                    structure=[
+                        'Variable 1'
+                        'Variable 1^2'
+                        'Variable 2'
+                        'Variable 3 * Variable 1'
+                        'Variable 1^2 / Variable 4'
+                        ]
+                    
+        response: string
+                Response variable in the dataset (must be a column of 'data')
 
-    Returns
-    -------
-    betasOLSlssq : Coefficients for factors`
-    factors_out  : Factors
-    Xaug,Y       : Numpy Arrays with X and Y data
-    eqstr        : Full equation
+    Returns:
+        betasOLSlssq : Coefficients for factors`
+        factors_out  : Factors
+        Xaug,Y       : Numpy Arrays with X and Y data
+        eqstr        : Full equation
 
     '''
 
@@ -5524,9 +5750,8 @@ def build_polynomial(data,factors,response,*,bias_term=True):
     return betasOLSlssq,factors_out,Xaug,Y,eqstr
 
 def cca(X, Y, tol=1e-6, max_iter=1000):
-    """
-    Perform Canonical Correlation Analysis (CCA) on two datasets, X and Y.
-
+    """Perform Canonical Correlation Analysis (CCA) on two datasets, X and Y.
+    by sgarcia@imperial.ac.uk
     Parameters:
         X (numpy.ndarray): An (n x p) matrix where n is the number of samples and p is the number of features in X.
         Y (numpy.ndarray): An (n x q) matrix where n is the number of samples and q is the number of features in Y.
@@ -5579,10 +5804,10 @@ def cca(X, Y, tol=1e-6, max_iter=1000):
 
 
 def cca_multi(X, Y, num_components=1, tol=1e-6, max_iter=1000):
-    """
-    Perform Canonical Correlation Analysis (CCA) on two datasets, X and Y, to compute multiple canonical variates.
-
-    Parameters:
+    """ Perform Canonical Correlation Analysis (CCA) on two datasets, X and Y, to compute multiple canonical variates.
+    by sgarciam@imperial.ac.uk
+    
+    Args::
         X (numpy.ndarray): An (n x p) matrix where n is the number of samples and p is the number of features in X.
         Y (numpy.ndarray): An (n x q) matrix where n is the number of samples and q is the number of features in Y.
         num_components (int): Number of canonical variates (components) to compute. Default is 1.
