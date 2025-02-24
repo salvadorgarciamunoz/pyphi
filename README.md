@@ -2,7 +2,7 @@
 ## pyphi Release 4.0
 Phi toolbox for multivariate analysis by Sal Garcia (salvadorgarciamunoz@gmail.com, sgarciam@ic.ac.uk)
 
-Documentation: https://salvadorgarciamunoz.github.io/pyphi/
+Documentation: https://salvadorgarciamunoz.github.io/pyphi/index.html
 
 ## pyphi_plots
 A variety of plotting tools for models created with pyphi.
