@@ -1,0 +1,1376 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pyphi module &mdash; PyPhi 4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=71af5d5d"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pyphi_batch package" href="pyphi_batch.html" />
+    <link rel="prev" title="pyphi-master" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PyPhi
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">pyphi-master</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">pyphi module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.adapt_pls_4_pyomo"><code class="docutils literal notranslate"><span class="pre">adapt_pls_4_pyomo()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.bootstrap_pls"><code class="docutils literal notranslate"><span class="pre">bootstrap_pls()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.bootstrap_pls_pred"><code class="docutils literal notranslate"><span class="pre">bootstrap_pls_pred()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.build_polynomial"><code class="docutils literal notranslate"><span class="pre">build_polynomial()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.cat_2_matrix"><code class="docutils literal notranslate"><span class="pre">cat_2_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.cca"><code class="docutils literal notranslate"><span class="pre">cca()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.cca_multi"><code class="docutils literal notranslate"><span class="pre">cca_multi()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.clean_empty_rows"><code class="docutils literal notranslate"><span class="pre">clean_empty_rows()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.clean_htmls"><code class="docutils literal notranslate"><span class="pre">clean_htmls()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.clean_low_variances"><code class="docutils literal notranslate"><span class="pre">clean_low_variances()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.contributions"><code class="docutils literal notranslate"><span class="pre">contributions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.conv_pls_2_eiot"><code class="docutils literal notranslate"><span class="pre">conv_pls_2_eiot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.evalvar"><code class="docutils literal notranslate"><span class="pre">evalvar()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.export_2_gproms"><code class="docutils literal notranslate"><span class="pre">export_2_gproms()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.f95"><code class="docutils literal notranslate"><span class="pre">f95()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.f99"><code class="docutils literal notranslate"><span class="pre">f99()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.find"><code class="docutils literal notranslate"><span class="pre">find()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.findstr"><code class="docutils literal notranslate"><span class="pre">findstr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.hott2"><code class="docutils literal notranslate"><span class="pre">hott2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.isin_ordered_col0"><code class="docutils literal notranslate"><span class="pre">isin_ordered_col0()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.jrpls"><code class="docutils literal notranslate"><span class="pre">jrpls()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.jrpls_pred"><code class="docutils literal notranslate"><span class="pre">jrpls_pred()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.lpls"><code class="docutils literal notranslate"><span class="pre">lpls()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.lpls_pred"><code class="docutils literal notranslate"><span class="pre">lpls_pred()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.lwpls"><code class="docutils literal notranslate"><span class="pre">lwpls()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.ma57_dummy_check"><code class="docutils literal notranslate"><span class="pre">ma57_dummy_check()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.mbpls"><code class="docutils literal notranslate"><span class="pre">mbpls()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.mean"><code class="docutils literal notranslate"><span class="pre">mean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.meancenterscale"><code class="docutils literal notranslate"><span class="pre">meancenterscale()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.n2z"><code class="docutils literal notranslate"><span class="pre">n2z()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.np1D2pyomo"><code class="docutils literal notranslate"><span class="pre">np1D2pyomo()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.np2D2pyomo"><code class="docutils literal notranslate"><span class="pre">np2D2pyomo()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.parse_materials"><code class="docutils literal notranslate"><span class="pre">parse_materials()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.pca"><code class="docutils literal notranslate"><span class="pre">pca()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.pca_"><code class="docutils literal notranslate"><span class="pre">pca_()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.pca_pred"><code class="docutils literal notranslate"><span class="pre">pca_pred()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.pls"><code class="docutils literal notranslate"><span class="pre">pls()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.pls_"><code class="docutils literal notranslate"><span class="pre">pls_()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.pls_cca"><code class="docutils literal notranslate"><span class="pre">pls_cca()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.pls_pred"><code class="docutils literal notranslate"><span class="pre">pls_pred()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.prep_pca_4_MDbyNLP"><code class="docutils literal notranslate"><span class="pre">prep_pca_4_MDbyNLP()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.prep_pls_4_MDbyNLP"><code class="docutils literal notranslate"><span class="pre">prep_pls_4_MDbyNLP()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.reconcile_rows"><code class="docutils literal notranslate"><span class="pre">reconcile_rows()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.reconcile_rows_to_columns"><code class="docutils literal notranslate"><span class="pre">reconcile_rows_to_columns()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.replicate_data"><code class="docutils literal notranslate"><span class="pre">replicate_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.scores_conf_int_calc"><code class="docutils literal notranslate"><span class="pre">scores_conf_int_calc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.single_score_conf_int"><code class="docutils literal notranslate"><span class="pre">single_score_conf_int()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.spe"><code class="docutils literal notranslate"><span class="pre">spe()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.spe_ci"><code class="docutils literal notranslate"><span class="pre">spe_ci()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.spectra_autoscale"><code class="docutils literal notranslate"><span class="pre">spectra_autoscale()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.spectra_baseline_correction"><code class="docutils literal notranslate"><span class="pre">spectra_baseline_correction()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.spectra_mean_center"><code class="docutils literal notranslate"><span class="pre">spectra_mean_center()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.spectra_msc"><code class="docutils literal notranslate"><span class="pre">spectra_msc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.spectra_savgol"><code class="docutils literal notranslate"><span class="pre">spectra_savgol()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.spectra_snv"><code class="docutils literal notranslate"><span class="pre">spectra_snv()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.std"><code class="docutils literal notranslate"><span class="pre">std()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.tpls"><code class="docutils literal notranslate"><span class="pre">tpls()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.tpls_pred"><code class="docutils literal notranslate"><span class="pre">tpls_pred()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.unique"><code class="docutils literal notranslate"><span class="pre">unique()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.varimax_"><code class="docutils literal notranslate"><span class="pre">varimax_()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.varimax_rotation"><code class="docutils literal notranslate"><span class="pre">varimax_rotation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.writeeq"><code class="docutils literal notranslate"><span class="pre">writeeq()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pyphi.z2n"><code class="docutils literal notranslate"><span class="pre">z2n()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pyphi_batch.html">pyphi_batch package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyphi_plots.html">pyphi_plots package</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyPhi</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pyphi-master</a></li>
+      <li class="breadcrumb-item active">pyphi module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/pyphi.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-pyphi">
+<span id="pyphi-module"></span><h1>pyphi module<a class="headerlink" href="#module-pyphi" title="Link to this heading"></a></h1>
+<p>Phi for Python (pyPhi)</p>
+<p>By Sal Garcia (<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> <a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>)
+Added Jan 30 2025</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Added a pinv alternative protection in spectra_savgol for the case where
+inv fails</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>Added Jan 20 2025</dt><dd><ul class="simple">
+<li><p>Added the ‘cca’ flag to the pls routine to calculate CCA between
+the Ts and each of the Ys (one by one), calculating loadings and scores
+equivalent to a perfectly orthogonalized OPLS model. The covariant scores (Tcv)
+the covariant Loadings (Pcv) and predictive weights (Wcv) are added
+as keys to the model object.
+[The covariant loadings(Pcv) are equivalent to the predictive loadings in OPLS]</p></li>
+<li><p>Added cca and cca-multi routines to perform PLS-CCA (alternative to OPLS)
+as of now cca-multi remains unused.</p></li>
+</ul>
+</dd>
+<dt>Added Nov 18th, 2024</dt><dd><ul class="simple">
+<li><p>replaced interp2d with RectBivariateSpline</p></li>
+<li><p>Protected SPE lim calculations for near zero residuals</p></li>
+<li><p>Added build_polynomial function to create linear regression
+models with variable selection assited by PLS</p></li>
+</ul>
+</dd>
+<dt>by merge from James</dt><dd><ul class="simple">
+<li><p>Added spectra preprocessing methods</p></li>
+<li><p>bootstrap PLS</p></li>
+</ul>
+</dd>
+</dl>
+<p>by Salvador Garcia (<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> <a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>)
+Added Dec 19th 2023</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>phi.clean_htmls  removes all html files in the working directory</p></li>
+<li><p>clean_empty_rows returns also the names of the rows removed</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>Added May 1st</dt><dd><ul class="simple">
+<li><p>YMB is now added in the same structure as the XMB</p></li>
+<li><p>Corrected the dimensionality of the lwpls prediction, it was a double-nested array.</p></li>
+</ul>
+</dd>
+<dt>Added Apr 30 {feliz día de los niños}</dt><dd><ul class="simple">
+<li><p>Modified Multi-block PLS to include the block name in the variable name</p></li>
+</ul>
+</dd>
+<dt>Added Apr 29</dt><dd><ul class="simple">
+<li><p>Included the unique routine and adjusted the parse_materials routine so materials
+and lots are in the same order as in the raw data</p></li>
+</ul>
+</dd>
+<dt>Added Apr 27</dt><dd><ul class="simple">
+<li><p>Enhanced adapt_pls_4_pyomo to use variable names as indices if flag is sent</p></li>
+</ul>
+</dd>
+<dt>Added Apr 25</dt><dd><ul class="simple">
+<li><p>Enhanced the varimax_rotation to adjust the r2 and r2pv to the rotated loadings</p></li>
+</ul>
+</dd>
+<dt>Added Apr 21</dt><dd><ul class="simple">
+<li><p>Re added varimax_rotation with complete model rotation for PCA and PLS</p></li>
+</ul>
+</dd>
+<dt>Added Apr 17</dt><dd><ul class="simple">
+<li><p>Added tpls and tpls_pred</p></li>
+</ul>
+</dd>
+<dt>Added Apr 15</dt><dd><ul class="simple">
+<li><p>Added jrpls model and jrpls_pred</p></li>
+<li><p>Added routines to reconcile columns to rows identifier so that X and R materices
+correspond correctly</p></li>
+<li><p>Added routines to reconcile rows across a list of dataframes and produces a list
+of dataframes containing only those observations present in all dataframes</p></li>
+</ul>
+</dd>
+<dt>Added on Apr 9 2023</dt><dd><ul class="simple">
+<li><p>Added lpls and lpls_pred routines</p></li>
+<li><p>Added parse_materials to read linear table and produce R or Ri</p></li>
+</ul>
+</dd>
+<dt>Release as of Nov 23 2022</dt><dd><ul class="simple">
+<li><p>Added a function to export PLS model to gPROMS code</p></li>
+</ul>
+</dd>
+</dl>
+<p>Release as of Aug 22 2022
+What was done:</p>
+<blockquote>
+<div><p><a href="#id1"><span class="problematic" id="id2">*</span></a>Fixed access to NEOS server and use of GAMS instead of IPOPT</p>
+</div></blockquote>
+<p>Release as of Aug 12 2022
+What was done:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Fixed the SPE calculations in pls_pred and pca_pred</p></li>
+<li><p>Changed to a more efficient inversion in pca_pred (=pls_pred)</p></li>
+<li><p>Added a pseudo-inverse option in pmp for pca_pred</p></li>
+</ul>
+</div></blockquote>
+<p>Relase as of now Aug 2 2022
+What was done:</p>
+<blockquote>
+<div><p><a href="#id3"><span class="problematic" id="id4">*</span></a>Added replicate_data</p>
+</div></blockquote>
+<p>Release Unknown
+What was done:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Fixed a bug in kernel PCA calculations</p></li>
+<li><p>Changed the syntax of MBPLS arguments</p></li>
+<li><p>Corrected a pretty severe error in pls_pred</p></li>
+<li><p>Fixed a really bizzare one in mbpls</p></li>
+</ul>
+</div></blockquote>
+<p>Release Dec 5, 2021
+What was done:</p>
+<blockquote>
+<div><p><a href="#id5"><span class="problematic" id="id6">*</span></a>Added some small documentation to utilities routines</p>
+</div></blockquote>
+<p>Release Jan 15, 2021
+What was done:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Added routine cat_2_matrix to conver categorical classifiers to matrices</p></li>
+<li><p>Added Multi-block PLS model</p></li>
+</ul>
+</div></blockquote>
+<p>Release Date: NOv 16, 2020
+What was done:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Fixed small bug un clean_low_variances routine</p></li>
+</ul>
+</div></blockquote>
+<p>Release Date: Sep 26 2020
+What was done:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Added rotation of loadings so that var(t) for ti&gt;=0 is always larger
+than var(t) for ti&lt;0</p></li>
+</ul>
+</div></blockquote>
+<p>Release Date: May 27 2020
+What was done:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Added the estimation of PLS models with missind data using</p></li>
+</ul>
+<p>non-linear programming per  Journal of Chemometrics, 28(7), pp.575-584.</p>
+</div></blockquote>
+<p>Release Date: March 30 2020
+What was done:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Added the estimation of PCA models with missing data using
+non-linear programming per Lopez-Negrete et al. J. Chemometrics 2010; 24: 301–311</p></li>
+</ul>
+</div></blockquote>
+<p>Release Date: Aug 22 2019</p>
+<p>What was done:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>This header is now included to track high level changes</p></li>
+<li><p>fixed LWPLS it works now for scalar and multivariable  Y’s</p></li>
+<li><p>fixed minor bug in phi.pca and phi.pls when mcsX/Y = False</p></li>
+</ul>
+</div></blockquote>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.adapt_pls_4_pyomo">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">adapt_pls_4_pyomo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plsobj</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_var_ids</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#adapt_pls_4_pyomo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.adapt_pls_4_pyomo" title="Link to this definition"></a></dt>
+<dd><p>Routine to create all the parameters in a PLS object
+to the structure needed by Pyomo
+by Salvador Garcia (<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a>) / (<a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>)</p>
+<p>All parameters are added to the original plsobj with the prefix <a href="#id7"><span class="problematic" id="id8">pyo_</span></a></p>
+<p>plsobj_pyomo = pyphi.adapt_pls_4_pyomo(plsobj, &lt;use_var_ids=False&gt;)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>plsobj</strong> – A PLS object created with pyphi.pls</p></li>
+<li><p><strong>use_var_ids</strong> – If True then al Variable IDs from plsobj are used as
+indexes for the dictionaries requried by Pyomo</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary augmented with all parameters in dictionary format</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>plsobj_pyomo</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.bootstrap_pls">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">bootstrap_pls</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latents</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#bootstrap_pls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.bootstrap_pls" title="Link to this definition"></a></dt>
+<dd><p>Generates a list of PLS objects to be used in prediction</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.bootstrap_pls_pred">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">bootstrap_pls_pred</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X_new</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bootstrap_pls_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantiles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.025,</span> <span class="pre">0.975]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#bootstrap_pls_pred"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.bootstrap_pls_pred" title="Link to this definition"></a></dt>
+<dd><p>Finds the quantiles predicion using bootstrapped PLS with gaussian errors.
+Only works with 1d outputs</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.build_polynomial">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">build_polynomial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias_term</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#build_polynomial"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.build_polynomial" title="Link to this definition"></a></dt>
+<dd><p>Function to create linear regression models with variable selection assited by PLS</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – DataFrame
+Pandas data frame, first column is the observation id column</p></li>
+<li><p><strong>factors</strong> – <p>List
+list of factors to be included in expression. Powers, Mutliplications
+and divisions are allowed. Eg:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>structure=[</dt><dd><p>‘Variable 1’
+‘Variable 1^2’
+‘Variable 2’
+‘Variable 3 * Variable 1’
+‘Variable 1^2 / Variable 4’
+]</p>
+</dd>
+</dl>
+</div></blockquote>
+</p></li>
+<li><p><strong>response</strong> – string
+Response variable in the dataset (must be a column of ‘data’)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Coefficients for factors`
+factors_out  : Factors
+Xaug,Y       : Numpy Arrays with X and Y data
+eqstr        : Full equation</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>betasOLSlssq</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.cat_2_matrix">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">cat_2_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#cat_2_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.cat_2_matrix" title="Link to this definition"></a></dt>
+<dd><p>Function to convert categorical data into binary matrices for regression
+by Salvador Garcia (<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a>) / (<a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>)</p>
+<p>Xmat,XmatMB = cat_2_matrix(X)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>observation</strong> (<em>X is a Pandas Data Frame with categorical descriptors for each</em>)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>matrix of binary coded data,
+XmatMB :  binary coded data orgainzed as a list of matrices for Multi-block modeling</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Xmat</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.cca">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">cca</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#cca"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.cca" title="Link to this definition"></a></dt>
+<dd><p>Perform Canonical Correlation Analysis (CCA) on two datasets, X and Y.
+by <a class="reference external" href="mailto:sgarcia&#37;&#52;&#48;imperial&#46;ac&#46;uk">sgarcia<span>&#64;</span>imperial<span>&#46;</span>ac<span>&#46;</span>uk</a>
+:param X: An (n x p) matrix where n is the number of samples and p is the number of features in X.
+:type X: numpy.ndarray
+:param Y: An (n x q) matrix where n is the number of samples and q is the number of features in Y.
+:type Y: numpy.ndarray
+:param tol: Tolerance for convergence. Default is 1e-6.
+:type tol: float
+:param max_iter: Maximum number of iterations. Default is 1000.
+:type max_iter: int</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Contains canonical correlation (float), and the canonical directions (w_x, w_y).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>(tuple)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.cca_multi">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">cca_multi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_components</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#cca_multi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.cca_multi" title="Link to this definition"></a></dt>
+<dd><p>Perform Canonical Correlation Analysis (CCA) on two datasets, X and Y, to compute multiple canonical variates.
+by <a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;imperial&#46;ac&#46;uk">sgarciam<span>&#64;</span>imperial<span>&#46;</span>ac<span>&#46;</span>uk</a></p>
+<dl class="simple">
+<dt>Args::</dt><dd><p>X (numpy.ndarray): An (n x p) matrix where n is the number of samples and p is the number of features in X.
+Y (numpy.ndarray): An (n x q) matrix where n is the number of samples and q is the number of features in Y.
+num_components (int): Number of canonical variates (components) to compute. Default is 1.
+tol (float): Tolerance for convergence. Default is 1e-6.
+max_iter (int): Maximum number of iterations. Default is 1000.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Contains canonical correlations, and the canonical direction vectors for X and Y.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>(dict)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.clean_empty_rows">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">clean_empty_rows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">shush</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#clean_empty_rows"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.clean_empty_rows" title="Link to this definition"></a></dt>
+<dd><p>Routine to clean a matrix from rows containing all missing data
+by Salvador Garcia (<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a>) / (<a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>)</p>
+<p>X,rows_removed = pyphi.clean_empty_rows(X)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>X</strong> – Matrix to be cleaned of empty rows (all np.nan)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Matrix without observations removed
+rows_removed: List of rows removed from X</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>X</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.clean_htmls">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">clean_htmls</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#clean_htmls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.clean_htmls" title="Link to this definition"></a></dt>
+<dd><p>Routine to clean html files</p>
+<p>pyphi.clean_htmls()</p>
+<p>Deletes all .html files in the current directory</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>none</strong></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>none</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.clean_low_variances">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">clean_low_variances</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">shush</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#clean_low_variances"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.clean_low_variances" title="Link to this definition"></a></dt>
+<dd><p>Routine to remove columns of neglegible variance
+by Salvador Garcia (<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a>) / (<a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>)</p>
+<p>X,columns_removed = pyphi.clean_low_variances(X,&lt;min_var=1E-10,shush=False&gt;)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> – Matrix to be cleaned for columns of low variance</p></li>
+<li><p><strong>min_var</strong> – minimum required variance to keep a colum (default = 1E-10)</p></li>
+<li><p><strong>shush</strong> – ‘True’ disables output to console</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Matrix without low variance columns
+cols_removed:  Columns removed</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>X_clean</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.contributions">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">contributions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvmobj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cont_type</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lv_space</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#contributions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.contributions" title="Link to this definition"></a></dt>
+<dd><p>Function to calculate contributions to diagnostics
+by Salvador Garcia-Munoz
+(<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> ,salvadorgarciamunoz&#64;gmail.com)</p>
+<p>contrib =  pyphi.contributions(mvmobj,X,cont_type,&lt;Y=False,from_obs=False,to_obs=False,lv_space=False&gt;)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mvmobj</strong> – A dictionary created by phi.pls or phi.pca</p></li>
+<li><p><strong>X/Y</strong> – Data [numpy arrays or pandas dataframes] - Y space is optional</p></li>
+<li><p><strong>cont_type</strong> – ‘ht2’ - Contributions to Hotelling’s T2
+‘spe’ - Contributions to SPE space
+‘scores’ - Contribution to scores</p></li>
+<li><p><strong>to_obs</strong> – Scalar or list of scalars with observation(s) number(s) to calculate contributions (TO)
+<em>Note: from_obs is ignored when cont_type=’spe’</em></p></li>
+<li><p><strong>from_obs</strong> – Scalar or list of scalars with observation(s) number(s) to offset (FROM) if not sent,
+contribution are calculated with respect to the mean.</p></li>
+<li><p><strong>lv_space</strong> – Latent spaces over which to do the calculations [applicable to ‘ht2’ and ‘scores’] if not sent
+all dimensions are considered.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A vector of scalars with the corresponding contributions</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>contrib</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.conv_pls_2_eiot">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">conv_pls_2_eiot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plsobj</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#conv_pls_2_eiot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.conv_pls_2_eiot" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.evalvar">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">evalvar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#evalvar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.evalvar" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.export_2_gproms">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">export_2_gproms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvmobj</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">fname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'phi_export.txt'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#export_2_gproms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.export_2_gproms" title="Link to this definition"></a></dt>
+<dd><p>Function to export PLS model to be build a hybrid model in gPROMS</p>
+<blockquote>
+<div><p>by Salvador Garcia-Munoz
+(<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> ,salvadorgarciamunoz&#64;gmail.com)</p>
+</div></blockquote>
+<p>pyphi.export_2_gproms(mvmobj,fname=’phi_export.txt’)</p>
+<p>Exports the multivariate object coded in gPROMS syntax</p>
+<p>typically one would use the variables X_NEW and Y_PRED as the Input/Output variables
+:param mvmobj: A PLS model createdy with pyphi.pls
+:param fname: Name of the text file to be created</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.f95">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">f95</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#f95"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.f95" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.f99">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">f99</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#f99"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.f99" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.find">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#find"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.find" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.findstr">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">findstr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#findstr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.findstr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.hott2">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">hott2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvmobj</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Tnew</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#hott2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.hott2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.isin_ordered_col0">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">isin_ordered_col0</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alist</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#isin_ordered_col0"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.isin_ordered_col0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.jrpls">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">jrpls</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ri</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">shush</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#jrpls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.jrpls" title="Link to this definition"></a></dt>
+<dd><p>JRPLS Algorithm per Garcia-Munoz Chemom.Intel.Lab.Syst., 133, pp.49-62.</p>
+<p>by Salvador Garcia-Munoz
+(<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> ,salvadorgarciamunoz&#64;gmail.com)</p>
+<p>jrpls_obj = pyphi.jrpls(Xi,Ri,Y,A)
+:param X =  Phys. Prop. dictionary of Dataframes of materials_i x mat. properties:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>X = {‘MatA’:df_with_props_for_mat_A (one row per lot of MatA, one col per property),</dt><dd><p>‘MatB’:df_with_props_for_mat_B (one row per lot of MatB, one col per property)}</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>materials_i</strong> (<em>R = Blending ratios dictionary</em><em> of </em><em>Dataframes</em><em> of  </em><em>blends x</em>) – <dl class="simple">
+<dt>R = {‘MatA’: df_with_ratios_of_lots_of_A_used_per_blend,</dt><dd><p>’MatB’: df_with_ratios_of_lots_of_B_used_per_blend,
+}</p>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>R</strong><strong>[</strong><strong>i</strong><strong>]</strong> (<em>Rows</em><em> of </em><em>X</em><em>[</em><em>i</em><em>] </em><em>must correspond to Columns of</em>)</p></li>
+<li><p><strong>properties</strong> (<em>Y =</em><em> [ </em><em>b x n</em><em> ]   </em><em>Product characteristics dataframe</em><em> of </em><em>blends x prod.</em>)</p></li>
+<li><p><strong>identifier</strong> (<em>first column</em><em> of </em><em>all dataframes is the observation</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary with all the parameters for the JRPLS model</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>jrpls_obj</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.jrpls_pred">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">jrpls_pred</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jrplsobj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#jrpls_pred"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.jrpls_pred" title="Link to this definition"></a></dt>
+<dd><p>Routine to produce the prediction for a new observation of Ri in a JRPLS model
+by Salvador Garcia-Munoz
+(<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> ,salvadorgarciamunoz&#64;gmail.com)</p>
+<p>preds = pyphi.jrpls_pred(rnew,jrplsobj)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rnew</strong> – <p>A dictionary with the format:
+rnew={</p>
+<blockquote>
+<div><p>’matid’:[(lotid,rvalue )],</p>
+<p>}</p>
+</div></blockquote>
+<p>for example, a prediction for the scenario:</p>
+</p></li>
+<li><p><strong>rvalue</strong> (<em>material    lot to use</em>)</p></li>
+<li><p><strong>0.5</strong> (<em>API             A0129</em>)</p></li>
+<li><p><strong>0.1</strong> (<em>Lactose     Lac0003</em>)</p></li>
+<li><p><strong>0.2</strong> (<em>Lactose     Lac1010</em>)</p></li>
+<li><p><strong>0.02</strong> (<em>MgSt            M0012</em>)</p></li>
+<li><p><strong>0.18</strong> (<em>MCC             MCC0017</em>)</p></li>
+<li><p><strong>like</strong> (<em>would be encoded</em>)</p></li>
+<li><p><strong>rnew={</strong> – ‘API’:[(‘A0129’,0.5)],
+‘Lactose’:[(‘Lac0003’,0.1 ),(‘Lac1010’,0.2 )],
+‘MgSt’:[(‘M0012’,0.02)],
+‘MCC’:[(‘MCC0017’,0.18)],
+}</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>preds ={‘Tnew’:tnew,’Yhat’:yhat,’speR’:sper}</p>
+<p>where speR has the speR per each material</p>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>preds a dictionary of the form</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.lpls">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">lpls</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">shush</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#lpls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.lpls" title="Link to this definition"></a></dt>
+<dd><p>LPLS Algorithm per Muteki et. al Chemom.Intell.Lab.Syst.85(2007) 186 – 194
+by Salvador Garcia-Munoz
+(<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> ,salvadorgarciamunoz&#64;gmail.com)</p>
+<p>lpls_obj = pyphi.lpls(X,R,Y,A)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>properties</strong> (<em>Y =</em><em> [ </em><em>b x n</em><em> ] </em><em>Product characteristics DataFrame</em><em> of </em><em>blends    x prod.</em>)</p></li>
+<li><p><strong>materials</strong> (<em>R =</em><em> [ </em><em>b x m</em><em> ] </em><em>Blending ratios DataFrame</em><em> of         </em><em>blends    x</em>)</p></li>
+<li><p><strong>properties</strong> – <dl class="simple">
+<dt>first column of all dataframes is the observation identifier</dt><dd><p>A = Number of components</p>
+</dd>
+</dl>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary with all the LPLS parameters</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>lspls_obj</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.lpls_pred">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">lpls_pred</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lpls_obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#lpls_pred"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.lpls_pred" title="Link to this definition"></a></dt>
+<dd><p>Function to evaluate a new observation for LPLS
+by Salvador Garcia-Munoz
+(<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> ,salvadorgarciamunoz&#64;gmail.com)</p>
+<p>Do a prediction with an LPLS model
+pred = pyphi.lpls_pred(rnew,lpls_obj)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rnew</strong> – np.array, list or dataframe with elements of rnew
+if multiple rows are passed, then multiple predictions are done</p></li>
+<li><p><strong>lpls_obj</strong> – LPLS object built with pyphi.lpls routine</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary {‘Tnew’:tnew,’Yhat’:yhat,’speR’:sper}</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pred</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.lwpls">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">lwpls</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc_par</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mvmobj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">shush</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#lwpls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.lwpls" title="Link to this definition"></a></dt>
+<dd><p>LWPLS algorithm as in: International Journal of Pharmaceutics 421 (2011) 269– 274</p>
+<p>Implemented by Salvador Garcia-Munoz
+(<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> ,salvadorgarciamunoz&#64;gmail.com)</p>
+<p>yhat = pyphi.lwpls(xnew,loc_par,mvmobj,X,Y,&lt;shush=False&gt;)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>xnew</strong> (<em>Numpy vector</em>) – Regressor vector to make prediction</p></li>
+<li><p><strong>loc_par</strong> (<em>scalar</em>) – Localization parameter</p></li>
+<li><p><strong>mvmobj</strong> – PLS model between X and Y built with PLS routine</p></li>
+<li><p><strong>X</strong> (<em>DataFrame</em><em> or </em><em>Numpy</em>) – Training set for mvmobj (PLS model)</p></li>
+<li><p><strong>Y</strong> (<em>DataFrame</em><em> or </em><em>Numpy</em>) – Training set for mvmobj (PLS model)</p></li>
+<li><p><strong>shush</strong> – =’True’  will silent outpuit
+‘False’ will display outpuit  <em>default if not sent</em></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>y prediction from xnew</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.ma57_dummy_check">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">ma57_dummy_check</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#ma57_dummy_check"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.ma57_dummy_check" title="Link to this definition"></a></dt>
+<dd><p>Instantiates a trivial NLP to solve with IPOPT and MA57.
+:returns: boolean, True if IPOPT solved with SolverStaus.ok
+:rtype: ma57_ok</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.mbpls">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">mbpls</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">XMB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">YMB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mcsX</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mcsY</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">md_algorithm_</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'nipals'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_nipals_</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shush_</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_val_</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_val_X_</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#mbpls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.mbpls" title="Link to this definition"></a></dt>
+<dd><p>Function to calculate a Multi-Block PLS model
+by Salvador Garcia-Munoz
+(<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> ,salvadorgarciamunoz&#64;gmail.com)</p>
+<p>Multi-block PLS model using the approach by Westerhuis, J. Chemometrics, 12, 301–321 (1998)</p>
+<dl class="simple">
+<dt>mbpls_obj = pyphi.mbpls(XMB,YMB,A,&lt;mcsX=True,mcsY=True,md_algorithm_=’nipals’,force_nipals_=False,</dt><dd><p>shush_=False,cross_val_=0,cross_val_X_=False&gt;)</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>XMB</strong> – <p>Dictionary or PandasDataFrames one key per block of data
+Dictionary structure:
+{‘BlockName1’:block_1_data_pd,</p>
+<blockquote>
+<div><p>’BlockName2’:block_2_data_pd}</p>
+</div></blockquote>
+</p></li>
+<li><p><strong>YMB</strong> – <p>Dictionary or PandasDataFrame
+Dictionary structure:
+{‘BlockName1’:block_1_data_pd,</p>
+<blockquote>
+<div><p>’BlockName2’:block_2_data_pd}</p>
+</div></blockquote>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with all the parameters of a Multi-block PLS model</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>mbpls_obj</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.mean">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.mean" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.meancenterscale">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">meancenterscale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mcs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#meancenterscale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.meancenterscale" title="Link to this definition"></a></dt>
+<dd><p>Function to mean center and scale a matrix
+by Salvador Garcia (<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a>) / (<a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>)</p>
+<p>X,xmean,xstd= pyphi.meancenterscale(X,&lt;mcs=Flag&gt;)
+:param X: Matrix to be meancenterd this call ONLY works with Numpy matrices
+:param mcs = True | ‘center’ | ‘autoscale’:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Post-processed X matrix
+xmean: Mean values per column
+xstd: Standard Deviation values per column</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>X</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.n2z">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">n2z</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#n2z"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.n2z" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.np1D2pyomo">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">np1D2pyomo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arr</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">indexes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#np1D2pyomo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.np1D2pyomo" title="Link to this definition"></a></dt>
+<dd><p>Routine to convert a vector in to a 1D dictionary for Pyomo
+by Salvador Garcia (<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a>) / (<a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>)</p>
+<p>Xdic=pyphi.np1D2pyomo(X,&lt;varids=varId_list&gt;)
+:param X: Vector to be converted
+:type X: Numpy
+:param varids: False | table of ids to be assigned as indexes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Vector in dictionary format (as Pyomo likes it)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Xdic</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.np2D2pyomo">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">np2D2pyomo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arr</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">varids</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#np2D2pyomo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.np2D2pyomo" title="Link to this definition"></a></dt>
+<dd><p>Routine to convert a Numpy matrix in to a 2D dictionary for Pyomo
+by Salvador Garcia (<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a>) / (<a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>)</p>
+<p>Xdic=pyphi.np2D2pyomo(X,&lt;varids=varId_list&gt;)
+:param X: Matrix to be converted
+:type X: Numpy
+:param varids: False | table of ids to be assigned as indexes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Matrix in dictionary format (as Pyomo likes it)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Xdic</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.parse_materials">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">parse_materials</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sheetname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#parse_materials"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.parse_materials" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Function to build R matrices for JRPLS model from linear table</dt><dd><p>by Salvador Garcia-Munoz
+(<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> ,salvadorgarciamunoz&#64;gmail.com)</p>
+<p>Routine to parse out compositions from linear table
+This reads an excel file with four columns:</p>
+<blockquote>
+<div><p>‘Finished Product Lot’  ‘Material Lot’  ‘Ratio or Quantity’     ‘Material’</p>
+</div></blockquote>
+<p>where the usage per batch of finished product is recorded. e.g.</p>
+</dd>
+<dt>‘Finished Product Lot’  ‘Material Lot’  ‘Ratio or Quantity’     ‘Material’</dt><dd><blockquote>
+<div><p>A001                 A                0.75             Drug
+A001                 B                0.25             Drug
+A001                 Z                1.0              Excipient
+.                    .                 .                 .
+.                    .                 .                 .
+.                    .                 .                 .</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Args:</dt><dd><p>filename: Name of excel workbook containing the data
+sheetname: Name of the sheet in the workbook with the data</p>
+</dd>
+<dt>Returns:</dt><dd><p>JR = Joint R matrix of material consumption, list of dataframes
+materials_used = Names of materials</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.pca">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">pca</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mcs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">md_algorithm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'nipals'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_nipals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shush</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_val</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#pca"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.pca" title="Link to this definition"></a></dt>
+<dd><p>Function to creat a  Principal Components Analysis model</p>
+<p>by Salvador Garcia-Munoz
+(<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> ,salvadorgarciamunoz&#64;gmail.com)</p>
+<p>pca_object = pyphi.pca (X,A,&lt;mcs=True,md_algorithm=’nipals’,force_nipals=False,shush=False,cross_val=0&gt;)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>Dataframe</em><em> or </em><em>Numpy</em>) – Data to train the model</p></li>
+<li><p><strong>A</strong> (<em>int</em>) – Number of Principal Components to calculate</p></li>
+<li><p><strong>mcs</strong> – ‘True’      : Meancenter + autoscale <em>default if not sent</em>
+‘False’     : No pre-processing
+‘center’    : Only center
+‘autoscale’ : Only autoscale</p></li>
+<li><p><strong>md_algorithm</strong> – Missing Data algorithm to use
+‘nipals’ <em>default if not sent</em>
+‘nlp’    Uses non-linear programming approach by Lopez-Negrete et al. J. Chemometrics 2010; 24: 301–311</p></li>
+<li><p><strong>force_nipals</strong> – If = True  will use NIPALS.
+= False if X is complete will use SVD. <em>default if not sent</em></p></li>
+<li><p><strong>shush</strong> – If = True supressess all printed output
+=  False <em>default if not sent</em></p></li>
+<li><p><strong>cross_val</strong> – <p>If sent a scalar between 0 and 100, will cross validate
+element wise removing cross_val% of the data every round</p>
+<p>if ==   0:  Bypass cross-validation  <em>default if not sent</em></p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary with all PCA loadings, scores and other diagnostics.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.pca_">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">pca_</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mcs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">md_algorithm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'nipals'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_nipals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shush</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#pca_"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.pca_" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.pca_pred">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">pca_pred</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pcaobj</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'p2mp'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#pca_pred"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.pca_pred" title="Link to this definition"></a></dt>
+<dd><p>Function to evaluate new data using an already built PCA model</p>
+<p>pred = pyphi.pca_pred(Xnew,pcaobj)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>DataFrame</em>) – Data to be evaluated with the given PCA model</p></li>
+<li><p><strong>pcaobj</strong> – PCA object created by pyphi.pca routine</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with reconstructed values for X, Scores, Hotellings T2 and SPE for Xnew</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pred</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.pls">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">pls</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mcsX</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mcsY</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">md_algorithm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'nipals'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_nipals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shush</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_val</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_val_X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cca</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#pls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.pls" title="Link to this definition"></a></dt>
+<dd><p>Function to create a Projection to  Latent Structures model</p>
+<p>by Salvador Garcia-Munoz
+(<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> ,salvadorgarciamunoz&#64;gmail.com)</p>
+<dl class="simple">
+<dt>pls_object = pyphi.pls(X,Y,A,&lt;mcsX=True,mcsY=True,md_algorithm=’nipals’,force_nipals=True,shush=False,</dt><dd><p>cross_val=0,cross_val_X=False,cca=False&gt;)</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>DataFrame</em><em> or </em><em>Numpy</em>) – Training Data</p></li>
+<li><p><strong>Y</strong> (<em>DataFrame</em><em> or </em><em>Numpy</em>) – Training Data</p></li>
+<li><p><strong>A</strong> (<em>int</em>) – Number of Latent Variables to calculate</p></li>
+<li><p><strong>mcsX/mcsY</strong> – ‘True’      : Will meancenter and autoscale the data <em>default if not sent</em>
+‘False’     : No pre-processing
+‘center’    : Will only center
+‘autoscale’ : Will only autoscale</p></li>
+<li><p><strong>md_algorithm</strong> – ‘nipals’ <em>default</em>
+‘nlp’    Uses  algorithm described in Journal of Chemometrics, 28(7), pp.575-584.</p></li>
+<li><p><strong>force_nipals</strong> – If set to True and if X is complete, will use NIPALS.
+Otherwise, if X is complete will use SVD.</p></li>
+<li><p><strong>shush</strong> – If set to True supressess all printed output.</p></li>
+<li><p><strong>cross_val</strong> – <p>If sent a scalar between 0 and 100, will cross validate
+element wise removing cross_val% of the data every round</p>
+<p>if ==   0:  Bypass cross-validation  <em>default if not sent</em></p>
+</p></li>
+<li><p><strong>cross_val_X</strong> – True : Calculates Q2 values for the X and Y matrices
+False: Cross-validation strictly on Y matrix <em>default if not sent</em></p></li>
+<li><p><strong>cca</strong> – True : Calculates covariable space of X with Y (analog to the predictive space in OPLS)
+“Tcv” and “Pcv” and the covariant scores and loadings if more than one Y, then
+there will be as many Tcv and Pcv vectors as columns in Y</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary with all PLS loadings, scores and other diagnostics.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.pls_">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">pls_</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mcsX</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mcsY</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">md_algorithm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'nipals'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_nipals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shush</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cca</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#pls_"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.pls_" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.pls_cca">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">pls_cca</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pls_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xmcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ymcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">not_Xmiss</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#pls_cca"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.pls_cca" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.pls_pred">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">pls_pred</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plsobj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#pls_pred"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.pls_pred" title="Link to this definition"></a></dt>
+<dd><p>Function to evaluate new data using an already built PLS model
+by Salvador Garcia (<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a>) / (<a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>)
+pred = pyphi.pls_pred(Xnew,plsobj)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> – Dataframe with new data to be project onto the PCA model</p></li>
+<li><p><strong>plsobj</strong> – PLS object created by pyphi.pls routine</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with predicted values for X and Y, Scores  Hotellings T2 and SPE for Xnew
+if CCA = True in plsobj, then Tcv is also calculated</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pred</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.prep_pca_4_MDbyNLP">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">prep_pca_4_MDbyNLP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pcaobj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#prep_pca_4_MDbyNLP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.prep_pca_4_MDbyNLP" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.prep_pls_4_MDbyNLP">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">prep_pls_4_MDbyNLP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plsobj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#prep_pls_4_MDbyNLP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.prep_pls_4_MDbyNLP" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.reconcile_rows">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">reconcile_rows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#reconcile_rows"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.reconcile_rows" title="Link to this definition"></a></dt>
+<dd><p>Function to reconcile observations across multiple dataframes</p>
+<blockquote>
+<div><p>by Salvador Garcia-Munoz
+(<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> ,salvadorgarciamunoz&#64;gmail.com)</p>
+<p>df_list_reconciled = pyphi.reconcile_rows(df_list)</p>
+</div></blockquote>
+<p>Routine to reconcile the observation names in a list of dataframes
+The returned list of df’s has exacly the same observation names in the same order
+handy when analyzing  data for TPLS, LPLS and JRPLS</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.reconcile_rows_to_columns">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">reconcile_rows_to_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df_list_r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_list_c</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#reconcile_rows_to_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.reconcile_rows_to_columns" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Function to reconcile the rows of the dataframes in df_list_r with the</dt><dd><p>columns in the list of dataframes df_list_r</p>
+<p>by Salvador Garcia-Munoz
+(<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> ,salvadorgarciamunoz&#64;gmail.com)</p>
+<p>df_list_reconciled_r,df_list_reconciled_c = pyphi.reconcile_rows_to_columns(df_list_r,df_list_c)</p>
+</dd>
+</dl>
+<p>handy to align X - R datasets for TPLS, LPLS and JRPLS</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.replicate_data">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">replicate_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvm_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_replicates</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#replicate_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.replicate_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.scores_conf_int_calc">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">scores_conf_int_calc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">st</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#scores_conf_int_calc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.scores_conf_int_calc" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.single_score_conf_int">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">single_score_conf_int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#single_score_conf_int"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.single_score_conf_int" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.spe">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">spe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvmobj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ynew</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#spe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.spe" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.spe_ci">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">spe_ci</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spe</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#spe_ci"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.spe_ci" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.spectra_autoscale">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">spectra_autoscale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Dm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#spectra_autoscale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.spectra_autoscale" title="Link to this definition"></a></dt>
+<dd><p>Autoscaling all spectra to have variance one.
+Dm: Spectra</p>
+<p>Outputs:
+Processed spectra</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.spectra_baseline_correction">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">spectra_baseline_correction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Dm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#spectra_baseline_correction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.spectra_baseline_correction" title="Link to this definition"></a></dt>
+<dd><p>Shifiting all spectra to have minimum zero.
+Only works with pandas dataframe.
+Dm: Spectra</p>
+<p>Outputs:
+Processed spectra</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.spectra_mean_center">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">spectra_mean_center</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Dm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#spectra_mean_center"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.spectra_mean_center" title="Link to this definition"></a></dt>
+<dd><p>Mean centering all spectra to have mean zero.
+Dm: Spectra</p>
+<p>Outputs:
+Processed spectra</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.spectra_msc">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">spectra_msc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Dm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_spectra</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#spectra_msc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.spectra_msc" title="Link to this definition"></a></dt>
+<dd><p>Perform Multivariate Scatter Correction transform</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.spectra_savgol">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">spectra_savgol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ws</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">od</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">op</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Dm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#spectra_savgol"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.spectra_savgol" title="Link to this definition"></a></dt>
+<dd><p>Function to do row wise Savitzky-Golay filter for spectra
+by Salvador Garcia (<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a>) / (<a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>)</p>
+<p>Dm_sg, M = pyphi.spectra_savgol(ws,od,op,Dm)
+:param ws: Window Size
+:param od: Order of the derivative
+:param op: Order of the polynomial
+:param Dm: Spectra</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Processed Spectra
+M:     Transformation Matrix for new vector samples</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dm_sg</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.spectra_snv">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">spectra_snv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#spectra_snv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.spectra_snv" title="Link to this definition"></a></dt>
+<dd><p>Function to do row wise SNV transform for spectroscopic data
+by Salvador Garcia (<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a>) / (<a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>)</p>
+<p>X=pyphi.spectra_snv(X)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – Spectra dataframe</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Post-processed Spectra dataframe</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>x</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.std">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">std</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#std"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.std" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.tpls">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">tpls</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ri</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">shush</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#tpls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.tpls" title="Link to this definition"></a></dt>
+<dd><p>TPLS Algorithm per Garcia-Munoz Chemom.Intel.Lab.Syst., 133, pp.49-62.</p>
+<p>by Salvador Garcia-Munoz
+(<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> ,salvadorgarciamunoz&#64;gmail.com)</p>
+<blockquote>
+<div><p>tpls_obj = pyphi.tpls(Xi,Ri,Z,Y,A)</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>properties</strong> (<em>Y =</em><em> [ </em><em>b x n</em><em> ]   </em><em>Product characteristics dataframe</em><em> of </em><em>blends x prod.</em>) – <dl class="simple">
+<dt>X = {‘MatA’:df_with_props_for_mat_A (one row per lot of MatA, one col per property),</dt><dd><p>’MatB’:df_with_props_for_mat_B (one row per lot of MatB, one col per property)}</p>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>materials_i</strong> (<em>R =  Blending ratios dictionary</em><em> of </em><em>Dataframes</em><em> of  </em><em>blends x</em>) – <dl class="simple">
+<dt>R = {‘MatA’: df_with_ratios_of_lots_of_A_used_per_blend,</dt><dd><p>’MatB’: df_with_ratios_of_lots_of_B_used_per_blend,
+}</p>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>R</strong><strong>[</strong><strong>i</strong><strong>]</strong> (<em>Rows</em><em> of </em><em>X</em><em>[</em><em>i</em><em>] </em><em>must correspond to Columns of</em>)</p></li>
+<li><p><strong>properties</strong></p></li>
+<li><p><strong>variables</strong> (<em>Z =</em><em> [</em><em>b x p</em><em>]  </em><em>Process conditions dataframe</em><em> of  </em><em>blends x process</em>)</p></li>
+<li><p><strong>identifier</strong> (<em>first column</em><em> of </em><em>all dataframes is the observation</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary with all the parameters for the TPLS model</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tpls_obj</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.tpls_pred">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">tpls_pred</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">znew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tplsobj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#tpls_pred"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.tpls_pred" title="Link to this definition"></a></dt>
+<dd><p>Routine to produce the prediction for a new observation of Ri using a TPLS model
+by Salvador Garcia-Munoz
+(<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> ,salvadorgarciamunoz&#64;gmail.com)</p>
+<p>preds = pyphi.tpls_pred(rnew,znew,tplsobj)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rnew</strong> – <p>A dictionary with the format:
+rnew={</p>
+<blockquote>
+<div><p>’matid’:[(lotid,rvalue )],</p>
+<p>}</p>
+</div></blockquote>
+<p>for example, a prediction for the scenario:</p>
+</p></li>
+<li><p><strong>rvalue</strong> (<em>material    lot to use</em>)</p></li>
+<li><p><strong>0.5</strong> (<em>API             A0129</em>)</p></li>
+<li><p><strong>0.1</strong> (<em>Lactose     Lac0003</em>)</p></li>
+<li><p><strong>0.2</strong> (<em>Lactose     Lac1010</em>)</p></li>
+<li><p><strong>0.02</strong> (<em>MgSt            M0012</em>)</p></li>
+<li><p><strong>0.18</strong> (<em>MCC             MCC0017</em>)</p></li>
+<li><p><strong>use</strong></p></li>
+<li><p><strong>rnew={</strong> – ‘API’:[(‘A0129’,0.5)],
+‘Lactose’:[(‘Lac0003’,0.1 ),(‘Lac1010’,0.2 )],
+‘MgSt’:[(‘M0012’,0.02)],
+‘MCC’:[(‘MCC0017’,0.18)],
+}</p></li>
+<li><p><strong>znew</strong> – Dataframe or numpy with new observation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>preds ={‘Tnew’:tnew,’Yhat’:yhat,’speR’:sper,’speZ’:spez}</p>
+<p>where speR has the speR per each material</p>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>preds a dictionary of the form</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.unique">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">unique</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colid</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#unique"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.unique" title="Link to this definition"></a></dt>
+<dd><p>returns unique values in the column of a DataFrame in order of occurence
+by Salvador Garcia-Munoz
+(<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> ,salvadorgarciamunoz&#64;gmail.com)</p>
+<p>replacement of the np.unique routine, specifically for dataframes
+returns unique values in the order found in the dataframe
+unique_values = pyphi.unique(df,columnid)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – A pandas dataframe</p></li>
+<li><p><strong>columnid</strong> – Column identifier</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of unique values in the order they appear</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>unique_values</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.varimax_">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">varimax_</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#varimax_"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.varimax_" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.varimax_rotation">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">varimax_rotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvm_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#varimax_rotation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.varimax_rotation" title="Link to this definition"></a></dt>
+<dd><p>Function to do a Varimax Rotation on a PCA or PLS model
+by Salvador Garcia-Munoz
+(<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> ,salvadorgarciamunoz&#64;gmail.com)</p>
+<p>Routine to perform a VariMax rotation on a PCA or PLS model
+(I have also tested it with MBPLS models)</p>
+<p>rotated_model=varimax_rotation(model_object,X,&lt;Y=Ydata&gt;)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model_object</strong> – A PCA or PLS or MBPLS model object</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The same model after VariMax rotation, scores and loadings are all rotated</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>rotated_model</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.writeeq">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">writeeq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beta_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features_</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#writeeq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.writeeq" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.z2n">
+<span class="sig-prename descclassname"><span class="pre">pyphi.</span></span><span class="sig-name descname"><span class="pre">z2n</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_nan_map</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi.html#z2n"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.z2n" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-left" title="pyphi-master" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pyphi_batch.html" class="btn btn-neutral float-right" title="pyphi_batch package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Salvador Garcia Munoz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
