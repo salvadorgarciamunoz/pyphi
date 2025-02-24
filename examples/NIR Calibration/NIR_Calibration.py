@@ -10,7 +10,11 @@ import numpy as np
 import pyphi as phi
 import pyphi_plots as pp
 
-
+# Data taken from:
+# Dyrby, M., Engelsen, S.B., Nørgaard, L., Bruhn, M. and Lundsberg-Nielsen, L., 2002. 
+# Chemometric quantitation of the active substance (containing C≡ N) in a pharmaceutical 
+# tablet using near-infrared (NIR) transmittance and NIR FT-Raman spectra. 
+# Applied spectroscopy, 56(5), pp.579-585.
 
 # Load the data from Excel
 NIR_Spectra     = pd.read_excel('NIR.xlsx', 'NIR', index_col=None, na_values=np.nan)
