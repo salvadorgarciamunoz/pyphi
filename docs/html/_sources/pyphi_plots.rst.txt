@@ -1,0 +1,21 @@
+pyphi\_plots package
+====================
+
+Submodules
+----------
+
+pyphi\_plots.pyphi\_plots module
+--------------------------------
+
+.. automodule:: pyphi_plots.pyphi_plots
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: pyphi_plots
+   :members:
+   :show-inheritance:
+   :undoc-members:
