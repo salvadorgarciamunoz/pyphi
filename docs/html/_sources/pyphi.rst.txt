@@ -1,7 +1,0 @@
-pyphi module
-============
-
-.. automodule:: pyphi
-   :members:
-   :show-inheritance:
-   :undoc-members:

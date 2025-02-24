@@ -1,9 +1,0 @@
-pyphi-master
-============
-
-.. toctree::
-   :maxdepth: 4
-
-   pyphi
-   pyphi_batch
-   pyphi_plots
