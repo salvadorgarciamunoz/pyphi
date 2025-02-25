@@ -1257,15 +1257,15 @@ def mpca(xbatch,a,*,unfolding='batch wise',phase_samples=False,cross_val=0):
             mpca_obj['P']     = p_.T 
             r2xpv_            = aux_new[a:,:]
             mpca_obj['r2xpv'] = r2xpv_.T
-            mpca_obj['varidX']= colnames
-            mpca_obj['bid']   = bid_o
-            mpca_obj['uf']    ='batch wise'
-            mpca_obj['phase_samples'] = phase_samples
-            mpca_obj['nvars']    = int(nvars)
-            mpca_obj['nbatches'] = int(nbatches)
-            mpca_obj['nsamples'] = int(nsamples)
-            mpca_obj['ninit']    = 0
-            mpca_obj['A']        = a
+        mpca_obj['varidX']= colnames
+        mpca_obj['bid']   = bid_o
+        mpca_obj['uf']    ='batch wise'
+        mpca_obj['phase_samples'] = phase_samples
+        mpca_obj['nvars']    = int(nvars)
+        mpca_obj['nbatches'] = int(nbatches)
+        mpca_obj['nsamples'] = int(nsamples)
+        mpca_obj['ninit']    = 0
+        mpca_obj['A']        = a
             
     elif unfolding=='variable wise':
        
