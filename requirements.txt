@@ -3,11 +3,9 @@ datetime
 matplotlib
 numpy
 openpyxl
-os
 pandas
 pyomo
 scipy
-shutil
 statsmodels
 spyder
 xlrd
