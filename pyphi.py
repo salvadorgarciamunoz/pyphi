@@ -2751,8 +2751,8 @@ def contributions(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_sp
         elif isinstance(Y,pd.DataFrame):
             Y_=np.array(Y.values[:,1:]).astype(float)
     if cont_type=='ht2' or cont_type=='scores':
-        X_,dummy=n2z(X_)
         X_=((X_-np.tile(mvmobj['mx'],(X_.shape[0],1)))/(np.tile(mvmobj['sx'],(X_.shape[0],1))))
+        X_,dummy=n2z(X_)   
         t_stdevs=np.std(mvmobj['T'],axis=0,ddof=1)     
         if 'Q' in mvmobj:
             loadings=mvmobj['Ws']
