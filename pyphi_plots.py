@@ -4,6 +4,10 @@
 Plots for pyPhi
 
 @author: Sal Garcia <sgarciam@ic.ac.uk> <salvadorgarciamunoz@gmail.com>
+Addition Apr 1st         Improved generic scatter plot and added generic line plot
+Addition Mar 27 2025     Contribution plots adjusted to work with Multi_block models
+Addition Mar 26 2025     Changed the rotation in Xlabels from 45deg to vertical
+Addition Feb 24 2025     Added a generic scatter plot
 Addition on Jan 20 2025  Added barplot and lineplot
 Addition on Apr 29 2024  Made it compatible with Bokeh 3.4.1 replacing "circle" with "scatter"
 Addition on Feb 24 2024  Replaced the randon number in the file names with a time string.
@@ -51,6 +55,7 @@ from bokeh.models import ColumnDataSource,LabelSet,Span,Legend
 import pyphi as phi
 import pandas as pd
 from datetime import datetime
+import math
 
 #import matplotlib.cm as cm
 import matplotlib
@@ -137,8 +142,6 @@ def r2pv(mvm_obj,*,plotwidth=600,plotheight=400,addtitle='',material=False,zspac
         different_colors=A
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
         bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]  
-        
-        
             
         px = figure(x_range=XVar, title="R2"+ yaxlbl+" Per Variable "+addtitle,
              tools="save,box_zoom,xpan,hover,reset", tooltips="$name @XVar: @$name",width=plotwidth,height=plotheight)
@@ -150,7 +153,9 @@ def r2pv(mvm_obj,*,plotwidth=600,plotheight=400,addtitle='',material=False,zspac
         px.axis.minor_tick_line_color = None
         px.outline_line_color = None
         px.yaxis.axis_label = 'R2'+ yaxlbl
-        px.xaxis.major_label_orientation = 45
+        px.xaxis.major_label_orientation = math.pi/2
+
+        
         legend = Legend(items=[(x, [v[i]]) for i, x in enumerate(lv_labels)], location=(0, 0))
         px.add_layout(legend, 'right')
         py = figure(x_range=YVar, height=plotheight, title="R2Y Per Variable "+addtitle,
@@ -163,7 +168,7 @@ def r2pv(mvm_obj,*,plotwidth=600,plotheight=400,addtitle='',material=False,zspac
         py.xgrid.grid_line_color = None
         py.outline_line_color = None
         py.yaxis.axis_label = 'R2Y'
-        py.xaxis.major_label_orientation = 45
+        py.xaxis.major_label_orientation = math.pi/2
         legend = Legend(items=[(x, [v[i]]) for i, x in enumerate(lv_labels)], location=(0, 0))
         py.add_layout(legend, 'right')
         show(column(px,py))
@@ -189,7 +194,7 @@ def r2pv(mvm_obj,*,plotwidth=600,plotheight=400,addtitle='',material=False,zspac
         p.axis.minor_tick_line_color = None
         p.outline_line_color = None
         p.yaxis.axis_label = 'R2X'
-        p.xaxis.major_label_orientation = 45
+        p.xaxis.major_label_orientation = math.pi/2
         p.add_layout(legend, 'right')
         show(p)
     return
@@ -293,7 +298,7 @@ def loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=False,zspa
             p.yaxis.axis_label = loading_lbl+' ['+str(i+1)+']'
             hline = Span(location=0, dimension='width', line_color='black', line_width=2)
             p.renderers.extend([hline])
-            p.xaxis.major_label_orientation = 45
+            p.xaxis.major_label_orientation = math.pi/2
             if i==0:
                 p_list=[p]
             else:
@@ -317,7 +322,7 @@ def loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=False,zspa
             p.yaxis.axis_label = 'Q ['+str(i+1)+']'
             hline = Span(location=0, dimension='width', line_color='black', line_width=2)
             p.renderers.extend([hline])
-            p.xaxis.major_label_orientation = 45
+            p.xaxis.major_label_orientation = math.pi/2
             if i==0:
                 p_list=[p]
             else:
@@ -343,7 +348,7 @@ def loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=False,zspa
             p.yaxis.axis_label = 'P ['+str(i+1)+']'
             hline = Span(location=0, dimension='width', line_color='black', line_width=2)
             p.renderers.extend([hline])
-            p.xaxis.major_label_orientation = 45
+            p.xaxis.major_label_orientation = math.pi/2
             if i==0:
                 p_list=[p]
             else:
@@ -593,7 +598,7 @@ def weighted_loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=F
             p.yaxis.axis_label = loading_lbl+' x R2'+space_lbl+' ['+str(i+1)+']'
             hline = Span(location=0, dimension='width', line_color='black', line_width=2)
             p.renderers.extend([hline])
-            p.xaxis.major_label_orientation = 45
+            p.xaxis.major_label_orientation = math.pi/2
             if i==0:
                 p_list=[p]
             else:
@@ -617,7 +622,7 @@ def weighted_loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=F
             p.yaxis.axis_label = 'Q x R2Y ['+str(i+1)+']'
             hline = Span(location=0, dimension='width', line_color='black', line_width=2)
             p.renderers.extend([hline])
-            p.xaxis.major_label_orientation = 45
+            p.xaxis.major_label_orientation = math.pi/2
             if i==0:
                 p_list=[p]
             else:
@@ -643,7 +648,7 @@ def weighted_loadings(mvm_obj,*,plotwidth=600,xgrid=False,addtitle='',material=F
             p.yaxis.axis_label = 'P x R2X['+str(i+1)+']'
             hline = Span(location=0, dimension='width', line_color='black', line_width=2)
             p.renderers.extend([hline])
-            p.xaxis.major_label_orientation = 45
+            p.xaxis.major_label_orientation = math.pi/2
             if i==0:
                 p_list=[p]
             else:
@@ -714,7 +719,7 @@ def vip(mvm_obj,*,plotwidth=600,material=False,zspace=False,addtitle=''):
         p.vbar(x='x_', top='y_', source=source1,width=0.5)
         p.xgrid.grid_line_color = None
         p.yaxis.axis_label = 'Very Important to the Projection'
-        p.xaxis.major_label_orientation = 45
+        p.xaxis.major_label_orientation = math.pi/2
         show(p)
     return    
 
@@ -1124,15 +1129,12 @@ def score_line(mvmobj,dim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False,
         p.yaxis.axis_label = 't ['+str(dim[0])+']'
         show(p)      
     else: # YES CLASSIDS
-        #Classes_=np.unique(CLASSID[colorby]).tolist()
+        
         Classes_=phi.unique(CLASSID,colorby)
-        A=len(Classes_)
-        #colormap =cm.get_cmap("rainbow")
         colormap = matplotlib.colormaps['rainbow']
-        different_colors=A
+        different_colors=len(Classes_)
         color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
         bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]  
-        #rnd_num=str(int(np.round(1000*np.random.random_sample())))   
         rnd_num=timestr()            
         output_file("Score_Line_"+rnd_num+".html",title='Score Line t['+str(dim[0])+ ']',mode='inline') 
 
@@ -1167,7 +1169,7 @@ def score_line(mvmobj,dim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False,
             source = ColumnDataSource(data=dict(x=x_aux, y=y_aux,ObsID=obsid_aux,ObsNum=obsnum_aux,Class=classid_aux))        
             color_=bokeh_palette[Classes_.index(classid_in_turn)]
             #c=p.circle('x','y',source=source,color=color_)
-            c=p.scatter('x','y',source=source,color=color_)
+            c=p.scatter('x','y',source=source,color=color_,size=10)
             
             if plotline:
                 c1=p.line('x','y',source=source,color=color_)    
@@ -1186,6 +1188,7 @@ def score_line(mvmobj,dim,*,CLASSID=False,colorby=False,Xnew=False,add_ci=False,
             if add_labels:
                 labelsX = LabelSet(x='x', y='y', text='ObsID', level='glyph',x_offset=5, y_offset=5, source=source)
                 p.add_layout(labelsX)
+                
         if add_ci:
             lim95,lim99=phi.single_score_conf_int(mvmobj['T'][:,[dim[0]-1]])
             p.line(x_, lim95,line_color="gold",line_dash='dashed')
@@ -1657,6 +1660,28 @@ contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_s
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     """
     good_to_go=True
+    
+    #Convert dictionaries into a data frame for MB models
+    if isinstance(X,dict):
+        firstone=True
+        for k in X.keys():
+            if firstone:
+                X_=[X[k].copy()]
+                firstone=False
+            else:
+                X_.append(X[k].iloc[:,1:])
+        X=pd.concat(X_,axis=1)
+        
+    if isinstance(Y,dict):
+        firstone=True
+        for k in Y.keys():
+            if firstone:
+                Y_=[Y[k].copy()]
+                firstone=False
+            else:
+                Y_.append(Y[k].iloc[:,1:])
+        Y=pd.concat(Y_,axis=1)
+        
     if isinstance(X,pd.DataFrame):
         ObsID=X.values[:,0].tolist()
         if isinstance(to_obs,str):
@@ -1698,6 +1723,7 @@ contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_s
         Xconts=phi.contributions(mvmobj,X,cont_type,Y=False,from_obs=from_obs_,to_obs=to_obs_,lv_space=lv_space)
         Yconts=False
     elif not(isinstance(Y,bool)) and good_to_go and ('Q' in mvmobj) and cont_type=='spe':
+        
         Xconts,Yconts=phi.contributions(mvmobj,X,cont_type,Y=Y,from_obs=from_obs_,to_obs=to_obs_,lv_space=lv_space)
     
     if 'varidX' in mvmobj:
@@ -1748,7 +1774,7 @@ contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_s
     p.yaxis.axis_label = 'Contributions to '+cont_type
     hline = Span(location=0, dimension='width', line_color='black', line_width=2)
     p.renderers.extend([hline])
-    p.xaxis.major_label_orientation = 45
+    p.xaxis.major_label_orientation = math.pi/2
     p_list=[p]
     
     if not(isinstance(Yconts,bool)):
@@ -1773,7 +1799,7 @@ contributions_plot(mvmobj,X,cont_type,*,Y=False,from_obs=False,to_obs=False,lv_s
         p.yaxis.axis_label = 'Contributions to '+cont_type
         hline = Span(location=0, dimension='width', line_color='black', line_width=2)
         p.renderers.extend([hline])
-        p.xaxis.major_label_orientation = 45
+        p.xaxis.major_label_orientation = math.pi/2
         p_list.append(p)
         
     show(column(p_list))  
@@ -1810,7 +1836,7 @@ def mb_weights(mvmobj,*,plotwidth=600,plotheight=400):
         px.axis.minor_tick_line_color = None
         px.outline_line_color = None
         px.yaxis.axis_label = 'Wt'+str(i+1)+']'
-        px.xaxis.major_label_orientation = 45  
+        px.xaxis.major_label_orientation = math.pi/2 
         hline = Span(location=0, dimension='width', line_color='black', line_width=2)
         px.renderers.extend([hline])
         if i==0:
@@ -1857,7 +1883,7 @@ def mb_r2pb(mvmobj,*,plotwidth=600,plotheight=400):
         px.axis.minor_tick_line_color = None
         px.outline_line_color = None
         px.yaxis.axis_label = 'R2 per Block per LV'
-        px.xaxis.major_label_orientation = 45      
+        px.xaxis.major_label_orientation = math.pi/2  
     show(px)
     return
 
@@ -1904,7 +1930,7 @@ def mb_vip(mvmobj,*,plotwidth=600,plotheight=400):
     px.axis.minor_tick_line_color = None
     px.outline_line_color = None
     px.yaxis.axis_label = 'Block VIP'
-    px.xaxis.major_label_orientation = 45  
+    px.xaxis.major_label_orientation = math.pi/2 
     hline = Span(location=0, dimension='width', line_color='black', line_width=2)
     px.renderers.extend([hline])
     show(px)  
@@ -1941,80 +1967,333 @@ def barplot(yheights,*,plotwidth=600,plotheight=600,
     p.xgrid.grid_line_color = None
     p.yaxis.axis_label = ylabel
     p.xaxis.axis_label = xlabel
-    p.xaxis.major_label_orientation = 45
+    p.xaxis.major_label_orientation = math.pi/2
     show(p)
     return 
 
-def lineplot(X,col_name,*,plot_title='Main Title',tab_title='Tab Title',
-             xaxis_label='X- axis',plotheight=400,plotwidth=600,
-             linecolor='blue',linewidth=2,marker=False): 
-    """  Simple way to plot a column of a Pandas DataFrame with Bokeh.
+def lineplot(X,*,ids_2_include=False,x_axis=False,plot_title='Main Title',tab_title='Tab Title',
+             xaxis_label='X- axis',yaxis_label='',plotheight=400,plotwidth=600,legend_cols=1,
+             linecolor='blue',linewidth=2,add_marker=False,individual_plots=False,add_legend=True,
+             markercolor='darkblue',markersize=10,
+             fill_alpha =0.2,line_alpha=0.4,
+             ncx_x_col=False,ncx_y_col=False,ncx_id_col=False,
+             CLASSID=False,colorby=False): 
+    """  Simple way to plot a column(s) of a Pandas DataFrame with Bokeh.
     
-    lineplot(X,col_name,*,plot_title='Main Title',tab_title='Tab Title',
-                 xaxis_label='X- axis',plotheight=400,plotwidth=600,
-                 linecolor='blue',linewidth=2,marker=False)
+    lineplot(X,*,ids_2_include=False,x_axis=False,plot_title='Main Title',tab_title='Tab Title',
+                 xaxis_label='X- axis',yaxis_label='',plotheight=400,plotwidth=600,legend_cols=1,
+                 linecolor='blue',linewidth=2,add_marker=False,individual_plots=False,add_legend=True,
+                 markercolor='darkblue',markersize=10,
+                 fill_alpha =0.2,line_alpha=0.4,
+                 ncx_x_col=False,ncx_y_col=False,ncx_id_col=False): 
     
     Args:
         
-        X:      A a pandas object with Data to be plotted,first column is obs id
-        col_name: The list with names of the column to plot
+        X:          if DataFrame:  Data to be plotted against a common x-axis
+                    if list of DataFrames: Data to be ploted non-common x-axis (see 
+                     ncx_x_col,ncx_y_col and ncx_id_col arguments)
+         
+   Optional Parameters:    
+             
+        ids_2_include:   [list] of ID's to be included in the plot.If X is a DataFrame 
+                         these are the column names of data to be plotted. If X is
+                         a list of df's then this is the list of IDs (column of df with ids is
+                         identified via the ncx_id_col argument)
 
-    Optional Parameters:
-    plot_title
-    tab_title
-    xaxis_label
-    yaxis_label
-    plotheight
-    plotwidth
+   
+        x_axis:     List or numpy vector with the numeric common x-axis values to be used
+                    (Only used when X is a dataframe since x-axis is common)
+                    
+        plot_title  Title of the plot
+        tab_title   Title of the html tab
+        xaxis_label self explanatory 
+        yaxis_label self explanatory 
+        plotheight  self explanatory 
+        plotwidth   self explanatory 
+        linecolor   self explanatory [ignored when plotting multiple lines]
+        linewidth   self explanatory 
+        add_marker  self explanatory [ True or False (default)]
+        individual_plots self explanatory [True or False(default)]
+        add_legend  self explanatory True (default) or False]
+        markercolor self explanatory 
+        markersize  self explanatory 
+        fill_alpha  transparency of the marker
+        line_alpha  transparency of the line
+        
+        Use when plotting each line against an individual x-axis and X is 
+        a list of DataFrames with the data to be plotted
+    
+        ncx_x_col   [string] indicates the column in the df that has the x values
+        ncx_y_col   [string] indicates the column in the df that has the y values
+        ncx_id_col  [string] indicates the column in the df that has the identifier
+        
     
     Programmed by Salvador Garcia-Munoz
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
     
     
     """
+    if isinstance(X,pd.DataFrame): #Common x-axis
     
-    if isinstance(col_name,str):
-        col_name=[col_name]
-    first_plot=True
-    
-    TOOLS = "save,wheel_zoom,box_zoom,pan,reset,box_select,lasso_select"
-    TOOLTIPS = [
-                ("Obs #", "@ObsNum"),
-                ("(x,y)", "($x, $y)"),
-                ("Obs: ","@ObsID")
-                ] 
-    #rnd_num=str(int(np.round(1000*np.random.random_sample())))
-    rnd_num=timestr()          
-    output_file("LinePlot"+rnd_num+".html",title=tab_title,mode='inline')
-    if isinstance(X,pd.DataFrame):
-        for this_col_name in col_name:
-            ObsID_=X.values[:,0]
-            ObsID_=ObsID_.tolist()
-            aux=X.loc[:,this_col_name]
-            y_=aux.values  
-            x_=list(range(1,len(ObsID_)+1))
-            ObsNum_=[]    
-            for n in list(range(1,len(ObsID_)+1)):
-                ObsNum_.append('Obs #'+str(n))     
-            if not(first_plot):                   
-                plot_title=''    
-            p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)        
-            source = ColumnDataSource(data=dict(x=x_, y=y_,ObsID=ObsID_,ObsNum=ObsNum_))
+        if isinstance(ids_2_include,str):
+            ids_2_include=[ids_2_include]
+        elif isinstance(ids_2_include,bool):
+            ids_2_include=X.columns.tolist()
+            
+        first_plot=True
+        TOOLS = "save,wheel_zoom,box_zoom,pan,reset,box_select,lasso_select"
+        TOOLTIPS = [
+                    ("Obs #", "@ObsNum"),
+                    ("(x,y)", "($x, $y)"),
+                    ("ID: ","@ColID")
+                    ] 
+        rnd_num=timestr()          
+        output_file("LinePlot"+rnd_num+".html",title=tab_title,mode='inline')
+        if individual_plots:
+            for i,this_col_name in enumerate(ids_2_include):
+                aux=X.loc[:,this_col_name]
+                y_=aux.values  
+                if isinstance(x_axis,bool):
+                    x_=list(range(1,X.shape[0]+1))
+                else:
+                    if isinstance(x_axis,list):
+                        x_=x_axis
+                    elif isinstance(x_axis,np.ndarray):
+                        x_=x_axis.tolist()
+                    else:
+                        print('x_axis must be a list or a numpy vector')
+                        x_=list(range(1,X.shape[0]+1))
+                ObsNum_=x_    
+                if not(first_plot):                   
+                    plot_title=''    
+                p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)        
+                source = ColumnDataSource(data=dict(x=x_, y=y_,ColID=[this_col_name]*X.shape[0],ObsNum=ObsNum_))
+                p.xaxis.axis_label = xaxis_label
+                p.yaxis.axis_label = yaxis_label
+                if add_legend:
+                    p.line('x', 'y', source=source,line_color=linecolor,color=markercolor,line_width=linewidth,line_alpha=line_alpha,legend_label= this_col_name)
+                else:
+                    p.line('x', 'y', source=source,line_color=linecolor,color=markercolor,line_width=linewidth,line_alpha=line_alpha)
+                #p.circle('x', 'y', source=source)
+                hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+                p.renderers.extend([hline])
+                if add_marker:
+                    p.scatter('x', 'y', source=source, color=markercolor,size=markersize,fill_alpha =fill_alpha)
+                if first_plot:
+                    p_list=[p]
+                    first_plot=False
+                else:
+                    p_list.append(p)
+            show(column(p_list))  
+        else: # All in one plot
+            if isinstance(CLASSID,bool): #No CLASSIDs
+                p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)   
+                colormap = matplotlib.colormaps['rainbow']
+                different_colors=len(ids_2_include)
+                color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
+                bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]      
+                legend_it=[]
+                for this_col_name in ids_2_include:
+                    color_=bokeh_palette[ids_2_include.index(this_col_name)]
+                    y_=X[this_col_name].values  
+                    if isinstance(x_axis,bool):
+                        x_=list(range(1,X.shape[0]+1))
+                    else:
+                        if isinstance(x_axis,list):
+                            x_=x_axis
+                        elif isinstance(x_axis,np.ndarray):
+                            x_=x_axis.tolist()
+                        else:
+                            print('x_axis must be a list or a numpy vector')
+                            x_=list(range(1,X.shape[0]+1))
+                    ObsNum_=x_
+                    source = ColumnDataSource(data=dict(x=x_, y=y_,ColID=[this_col_name]*X.shape[0],ObsNum=ObsNum_))
+                    glyph=p.line('x', 'y', source=source,line_color=color_,line_width=linewidth,#legend_label= this_col_name,
+                           color=color_,line_alpha=line_alpha)
+                    
+                    hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+                    p.renderers.extend([hline])
+                    if add_marker:
+                        glyphm=p.scatter('x', 'y', source=source,color=color_,size=markersize,fill_alpha =fill_alpha)
+                        legend_it.append((this_col_name, [glyph,glyphm]))
+                    else:
+                        legend_it.append((this_col_name, [glyph]))
+                p.xaxis.axis_label = xaxis_label
+                p.yaxis.axis_label = yaxis_label
+                    
+                if add_legend:
+                    #legend_cols=3
+                    ipc=[np.round(len(legend_it)/legend_cols)]*legend_cols              
+                    ipc[-1]=len(legend_it)-sum(ipc[:-1])
+                    pastit=0
+                    for it in ipc:
+                        leg_ = Legend(
+                            items=legend_it[int(0+pastit):int(pastit+it)])
+                            #location=(0,15+pastit*5))
+                        pastit+=it
+                        p.add_layout(leg_, 'right')
+                        leg_.click_policy="hide"  
+                show(p)  
+            elif (isinstance(CLASSID,pd.DataFrame) and isinstance(colorby,str)):
+                
+                p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)   
+                colormap = matplotlib.colormaps['rainbow']   
+                individual_classes=phi.unique(CLASSID,colorby)
+                different_colors=len(individual_classes)
+                color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
+                bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]    
+                legend_it=[]
+                for c in individual_classes:
+                    ids_2_include=CLASSID[CLASSID.columns[0]][CLASSID[colorby]==c].values.tolist()
+                    color_=bokeh_palette[individual_classes.index(c)]
+                    leg_it=[]
+                    for this_col_name in ids_2_include:
+                        
+                        y_=X[this_col_name].values  
+                        if isinstance(x_axis,bool):
+                            x_=list(range(1,X.shape[0]+1))
+                        else:
+                            if isinstance(x_axis,list):
+                                x_=x_axis
+                            elif isinstance(x_axis,np.ndarray):
+                                x_=x_axis.tolist()
+                            else:
+                                print('x_axis must be a list or a numpy vector')
+                                x_=list(range(1,X.shape[0]+1))
+                        ObsNum_=x_
+                        source = ColumnDataSource(data=dict(x=x_, y=y_,ColID=[this_col_name]*X.shape[0],ObsNum=ObsNum_))
+                        glyph=p.line('x', 'y', source=source,line_color=color_,line_width=linewidth,#legend_label= this_col_name,
+                               color=color_,line_alpha=line_alpha)
+                        if add_marker:
+                            glyphm=p.scatter('x', 'y', source=source,color=color_,size=markersize,fill_alpha =fill_alpha)
+                            leg_it.extend([glyph,glyphm])
+                        else:
+                            leg_it.append(glyph)
+                            
+                    legend_it.append((c,leg_it ))        
+                hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+                p.renderers.extend([hline])
+                p.xaxis.axis_label = xaxis_label
+                p.yaxis.axis_label = yaxis_label
+                        
+                if add_legend:
+                    #legend_cols=3
+                    ipc=[np.round(len(legend_it)/legend_cols)]*legend_cols              
+                    ipc[-1]=len(legend_it)-sum(ipc[:-1])
+                    pastit=0
+                    for it in ipc:
+                        leg_ = Legend(
+                            items=legend_it[int(0+pastit):int(pastit+it)])
+                            #location=(0,15+pastit*5))
+                        pastit+=it
+                        p.add_layout(leg_, 'right')
+                        leg_.click_policy="hide"  
+                show(p) 
+                
+    elif (isinstance(X,list) and ~isinstance(ncx_y_col,bool) and ~isinstance(ncx_x_col,bool) 
+          and ~isinstance(ncx_id_col,bool) ): #each plot as a fifferent x-axis X is a list of dataframes
+        # X is a list of dataframes
+        # ncx_x_col
+        # ncx_y_col -> Could this be a list ?? (plot more than one var in plot)
+        # ncx_id_col
+        
+        if isinstance(ids_2_include,str):
+            ids_2_include=[ids_2_include]
+        elif isinstance(ids_2_include,bool):
+            ids_2_include=[]
+            #look into df list to collect list of identifiers
+            for x_df in X:
+                ids_2_include.append(x_df[ncx_id_col].values[0] ) 
+        
+        first_plot=True
+        TOOLS = "save,wheel_zoom,box_zoom,pan,reset,box_select,lasso_select"
+        TOOLTIPS = [
+                    ("Obs #", "@ObsNum"),
+                    ("(x,y)", "($x, $y)"),
+                    ("ID: ","@ColID")
+                    ] 
+        rnd_num=timestr()          
+        output_file("LinePlot"+rnd_num+".html",title=tab_title,mode='inline')
+        if individual_plots:
+            for i,this_col_name in enumerate(ids_2_include):
+
+                x_df =X[ids_2_include.index(this_col_name)]
+                
+                y_=X[ids_2_include.index(this_col_name) ][ncx_y_col ].values
+                x_=X[ids_2_include.index(this_col_name) ][ncx_x_col ].values
+
+                ObsNum_=x_    
+                if not(first_plot):                   
+                    plot_title=''    
+                p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)        
+                source = ColumnDataSource(data=dict(x=x_, y=y_,ColID=[this_col_name]*x_df.shape[0],ObsNum=ObsNum_))
+                p.xaxis.axis_label = ncx_x_col
+                p.yaxis.axis_label = ncx_y_col
+                if add_legend:
+                    p.line('x', 'y', source=source,line_color=linecolor,color=markercolor,line_width=linewidth,line_alpha=line_alpha,legend_label= this_col_name)
+                else:
+                    p.line('x', 'y', source=source,line_color=linecolor,color=markercolor,line_width=linewidth,line_alpha=line_alpha)
+                #p.circle('x', 'y', source=source)
+                hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+                p.renderers.extend([hline])
+                if add_marker:
+                    p.scatter('x', 'y', source=source, color=markercolor,size=markersize,fill_alpha =fill_alpha)
+                if first_plot:
+                    p_list=[p]
+                    first_plot=False
+                else:
+                    p_list.append(p)
+            show(column(p_list))  
+        else:
+            
+            p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)   
+            colormap = matplotlib.colormaps['rainbow']
+            different_colors=len(ids_2_include)
+            color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
+            bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]      
+            legend_it=[]
+            for this_col_name in ids_2_include:
+                x_df =X[ids_2_include.index(this_col_name)]
+                color_=bokeh_palette[ids_2_include.index(this_col_name)]
+                
+                y_=X[ids_2_include.index(this_col_name) ][ncx_y_col ].values
+                x_=X[ids_2_include.index(this_col_name) ][ncx_x_col ].values
+
+                ObsNum_=x_
+                source = ColumnDataSource(data=dict(x=x_, y=y_,ColID=[this_col_name]*x_df.shape[0],ObsNum=ObsNum_))
+                glyph=p.line('x', 'y', source=source,line_color=color_,line_width=linewidth,#legend_label= this_col_name,
+                       color=color_,line_alpha=line_alpha)
+                
+                hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+                p.renderers.extend([hline])
+                if add_marker:
+                    glyphm=p.scatter('x', 'y', source=source,color=color_,size=markersize,fill_alpha =fill_alpha)
+                    legend_it.append((this_col_name, [glyph,glyphm]))
+                else:
+                    legend_it.append((this_col_name, [glyph]))
             p.xaxis.axis_label = xaxis_label
-            p.yaxis.axis_label = this_col_name
-            p.line('x', 'y', source=source,line_color=linecolor,line_width=linewidth)
-            #p.circle('x', 'y', source=source)
-            hline = Span(location=0, dimension='width', line_color='black', line_width=2)
-            p.renderers.extend([hline])
-            if marker:
-                p.scatter('x', 'y', source=source)
-            if first_plot:
-                p_list=[p]
-                first_plot=False
-            else:
-                p_list.append(p)
-        show(column(p_list))         
+            p.yaxis.axis_label = yaxis_label
+            # if add_legend:
+            #     legend = Legend(items=legend_it, location='top_right')
+            #     legend.click_policy="hide"
+            #     p.add_layout(legend, 'right')
+                
+            if add_legend:
+                #legend_cols=3
+                ipc=[np.round(len(legend_it)/legend_cols)]*legend_cols              
+                ipc[-1]=len(legend_it)-sum(ipc[:-1])
+                pastit=0
+                for it in ipc:
+                    leg_ = Legend(
+                        items=legend_it[int(0+pastit):int(pastit+it)])
+                        #location=(0,15+pastit*5))
+                    pastit+=it
+                    p.add_layout(leg_, 'right')
+                    leg_.click_policy="hide"    
+            show(p)  
     return
+
+
 
 def plot_spectra(X,*,xaxis=False,plot_title='Main Title',tab_title='Tab Title',
                  xaxis_label='X- axis',yaxis_label='Y- axis',
@@ -2067,3 +2346,89 @@ def plot_spectra(X,*,xaxis=False,plot_title='Main Title',tab_title='Tab Title',
     p.multi_line(x.tolist()*y.shape[0],y.tolist(),line_color=linecolor,line_width=linewidth)
     show(p)
     return
+
+def scatter_with_labels(x,y,*,xlabel='X var',ylabel='YVar',labels=False,
+                        tabtitle='Scatter Plot',plottitle='Scatter',legend_cols=1,
+                        CLASSID=False,colorby=False,
+                        plotwidth=600,plotheight=600,
+                        markercolor='darkblue',markersize=10,
+                        fill_alpha =0.2,line_alpha=0.4):
+    rnd_num=timestr()
+    output_file("Scatter Plot"+rnd_num+".html",title=tabtitle,mode='inline')    
+    x_p = x
+    y_p = y                        
+    TOOLS = "save,wheel_zoom,box_zoom,pan,reset,box_select,lasso_select"
+    TOOLTIPS = [
+            ("index", "$index"),
+            ("(x,y)", "($x, $y)"),
+            ("Property","@names")
+            ]
+    if isinstance(labels,bool):
+        labels=[]
+        for i in np.arange(len(x)):
+            labels.append('Obs '+str(i))
+    
+    p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight, title=plottitle)
+    
+    if (isinstance(CLASSID,bool)) and (isinstance(colorby,bool)): # NO CLASSES
+    
+        source1 = ColumnDataSource(data=dict(x=x_p, y=y_p,names=labels))  
+        p.scatter(x='x',y='y', source=source1,size=markersize,color=markercolor,
+                  fill_alpha =fill_alpha,line_alpha=line_alpha)
+        
+    else: #isinstance(x, pd.DataFrame) and isinstance(y, pd.DataFrame): 
+        
+        #IF CLASSES THEN x and y and labels must be also dataframes
+        legend_it = []
+        if colorby in CLASSID.columns:   
+            x_df=CLASSID.copy()
+            x_df.insert(x_df.shape[1],'values',x)
+            y_df=CLASSID.copy()
+            y_df.insert(y_df.shape[1],'values',y)
+            CLASSID_=CLASSID.copy()
+            CLASSID_.insert(CLASSID_.shape[1],'labels',labels)
+            Classes_=phi.unique(CLASSID,colorby)
+            A=len(Classes_)
+            colormap = matplotlib.colormaps['rainbow']
+            different_colors=A
+            color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
+            bokeh_palette=["#%02x%02x%02x" % (r, g, b) for r, g, b in color_mapping[:,0:3]]  
+            
+            for c in Classes_:
+                x_aux = x_df['values'][CLASSID[colorby]==c]
+                y_aux = y_df['values'][CLASSID[colorby]==c]
+                labels_aux=CLASSID_['labels'][CLASSID[colorby]==c]
+                source = ColumnDataSource(data=dict(x=x_aux, y=y_aux,names=labels_aux))        
+                color_=bokeh_palette[Classes_.index(c)]
+                glyph = p.scatter('x','y',source=source,color=color_,size=markersize,fill_alpha =fill_alpha,line_alpha=line_alpha)
+                aux_=c
+                if isinstance(aux_,(float,int)):
+                    aux_=str(aux_)
+                legend_it.append((aux_, [glyph]))
+            #legend = Legend(items=legend_it, location='top_right')
+            #legend.click_policy="hide"
+            #p.add_layout(legend, 'right')
+            
+
+            ipc=[np.round(len(legend_it)/legend_cols)]*legend_cols              
+            ipc[-1]=len(legend_it)-sum(ipc[:-1])
+            pastit=0
+            for it in ipc:
+                leg_ = Legend(
+                    items=legend_it[int(0+pastit):int(pastit+it)])
+                    #location=(0,15+pastit*5))
+                pastit+=it
+                p.add_layout(leg_, 'right')
+                leg_.click_policy="hide" 
+                    
+
+    
+    p.xaxis.axis_label = xlabel
+    p.yaxis.axis_label = ylabel
+    
+    vline = Span(location=0, dimension='height', line_color='black', line_width=2)
+    # Horizontal line
+    hline = Span(location=0, dimension='width', line_color='black', line_width=2)
+    p.renderers.extend([vline, hline])
+    show(p)   
+    
