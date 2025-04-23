@@ -4,6 +4,7 @@
 Plots for pyPhi
 
 @author: Sal Garcia <sgarciam@ic.ac.uk> <salvadorgarciamunoz@gmail.com>
+Addition Apr 15th        lineplot can make yaxis in log scale
 Addition Apr 1st         Improved generic scatter plot and added generic line plot
 Addition Mar 27 2025     Contribution plots adjusted to work with Multi_block models
 Addition Mar 26 2025     Changed the rotation in Xlabels from 45deg to vertical
@@ -1936,16 +1937,16 @@ def mb_vip(mvmobj,*,plotwidth=600,plotheight=400):
     show(px)  
     return
 
-def barplot(yheights,*,plotwidth=600,plotheight=600,
-            addtitle='',xlabel='',ylabel='',xtick_labels=False,tabtitle='Bar Plot'):
+def barplot(yheights,xtick_labels,*,plotwidth=600,plotheight=600,
+            addtitle='',xlabel='',ylabel='',tabtitle='Bar Plot'):
     """ Generic Bar plot with Bokeh
 
-    barplot(yheights,*,plotwidth=600,plotheight=600,
-                addtitle='',xlabel='',ylabel='',xtick_labels=False,tabtitle='Bar Plot'):
+    barplot(yheights,xtick_labels,*,plotwidth=600,plotheight=600,
+                addtitle='',xlabel='',ylabel='',tabtitle='Bar Plot'):
 
     Args:
         yheights: Values of bars
-        xtick_labels: Variable identifiers for x axis
+        xtick_labels: [list] Variable identifiers for x axis 
         
     by Salvador Garcia-Munoz 
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
@@ -1977,7 +1978,7 @@ def lineplot(X,*,ids_2_include=False,x_axis=False,plot_title='Main Title',tab_ti
              markercolor='darkblue',markersize=10,
              fill_alpha =0.2,line_alpha=0.4,
              ncx_x_col=False,ncx_y_col=False,ncx_id_col=False,
-             CLASSID=False,colorby=False): 
+             CLASSID=False,colorby=False,yaxis_log=False): 
     """  Simple way to plot a column(s) of a Pandas DataFrame with Bokeh.
     
     lineplot(X,*,ids_2_include=False,x_axis=False,plot_title='Main Title',tab_title='Tab Title',
@@ -1985,7 +1986,8 @@ def lineplot(X,*,ids_2_include=False,x_axis=False,plot_title='Main Title',tab_ti
                  linecolor='blue',linewidth=2,add_marker=False,individual_plots=False,add_legend=True,
                  markercolor='darkblue',markersize=10,
                  fill_alpha =0.2,line_alpha=0.4,
-                 ncx_x_col=False,ncx_y_col=False,ncx_id_col=False): 
+                 ncx_x_col=False,ncx_y_col=False,ncx_id_col=False
+                 CLASSID=False,colorby=False,yaxis_log=False):  
     
     Args:
         
@@ -2027,6 +2029,10 @@ def lineplot(X,*,ids_2_include=False,x_axis=False,plot_title='Main Title',tab_ti
         ncx_y_col   [string] indicates the column in the df that has the y values
         ncx_id_col  [string] indicates the column in the df that has the identifier
         
+        CLASSID     [Dataframe]  categorical dataframe to colr code
+        colorby     column of the categorical dataframe to color code by
+        
+        yaxis_log   [boolean] default is False if True, Y axis is scale with log
     
     Programmed by Salvador Garcia-Munoz
     (sgarciam@ic.ac.uk ,salvadorgarciamunoz@gmail.com)
@@ -2066,7 +2072,11 @@ def lineplot(X,*,ids_2_include=False,x_axis=False,plot_title='Main Title',tab_ti
                 ObsNum_=x_    
                 if not(first_plot):                   
                     plot_title=''    
-                p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)        
+                if yaxis_log:
+                    p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title,y_axis_type="log")  
+                else:    
+                    p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)  
+                
                 source = ColumnDataSource(data=dict(x=x_, y=y_,ColID=[this_col_name]*X.shape[0],ObsNum=ObsNum_))
                 p.xaxis.axis_label = xaxis_label
                 p.yaxis.axis_label = yaxis_label
@@ -2087,7 +2097,13 @@ def lineplot(X,*,ids_2_include=False,x_axis=False,plot_title='Main Title',tab_ti
             show(column(p_list))  
         else: # All in one plot
             if isinstance(CLASSID,bool): #No CLASSIDs
-                p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)   
+              
+                if yaxis_log:
+                    p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title,y_axis_type="log")  
+                else:    
+                    p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)  
+                   
+                
                 colormap = matplotlib.colormaps['rainbow']
                 different_colors=len(ids_2_include)
                 color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
@@ -2136,7 +2152,11 @@ def lineplot(X,*,ids_2_include=False,x_axis=False,plot_title='Main Title',tab_ti
                 show(p)  
             elif (isinstance(CLASSID,pd.DataFrame) and isinstance(colorby,str)):
                 
-                p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)   
+                if yaxis_log:
+                    p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title,y_axis_type="log")  
+                else:    
+                    p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)  
+                   
                 colormap = matplotlib.colormaps['rainbow']   
                 individual_classes=phi.unique(CLASSID,colorby)
                 different_colors=len(individual_classes)
@@ -2224,8 +2244,13 @@ def lineplot(X,*,ids_2_include=False,x_axis=False,plot_title='Main Title',tab_ti
 
                 ObsNum_=x_    
                 if not(first_plot):                   
-                    plot_title=''    
-                p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)        
+                    plot_title=''       
+                if yaxis_log:
+                    p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title,y_axis_type="log")  
+                else:    
+                    p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)  
+                   
+                    
                 source = ColumnDataSource(data=dict(x=x_, y=y_,ColID=[this_col_name]*x_df.shape[0],ObsNum=ObsNum_))
                 p.xaxis.axis_label = ncx_x_col
                 p.yaxis.axis_label = ncx_y_col
@@ -2245,8 +2270,12 @@ def lineplot(X,*,ids_2_include=False,x_axis=False,plot_title='Main Title',tab_ti
                     p_list.append(p)
             show(column(p_list))  
         else:
-            
-            p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)   
+             
+            if yaxis_log:
+                p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title,y_axis_type="log")  
+            else:    
+                p = figure(tools=TOOLS, tooltips=TOOLTIPS,width=plotwidth,height=plotheight,title=plot_title)  
+               
             colormap = matplotlib.colormaps['rainbow']
             different_colors=len(ids_2_include)
             color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
