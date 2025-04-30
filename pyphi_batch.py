@@ -2208,6 +2208,7 @@ def build_rel_time(bdata,*,time_unit='min'):
     for b in unique_batches:
         this_batch=bdata[bdata[bdata.columns[0]]==b]
         ts=this_batch['Timestamp'].values
+        ts=pd.to_datetime(ts)
         deltat=ts-ts[0]
         tim=[np.timedelta64(deltat[i],'s').astype(float) for i in np.arange(len(deltat))]
         tim=np.array(tim)
