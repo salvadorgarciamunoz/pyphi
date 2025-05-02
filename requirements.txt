@@ -1,5 +1,4 @@
 bokeh
-datetime
 matplotlib
 numpy
 openpyxl
