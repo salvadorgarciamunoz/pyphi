@@ -729,6 +729,7 @@ def _create_classid_(df,column,*,nbins=5):
     Internal routine to create a CLASSID dataframe from values in a column
     '''
     
+    nan_map=np.isnan(df[column].values )
     hist,bin_edges=np.histogram(df[column].values[np.logical_not(np.isnan(df[column].values))],bins=nbins )
     range_list=[]
     for i,e in enumerate(bin_edges[:-1]):
@@ -736,10 +737,18 @@ def _create_classid_(df,column,*,nbins=5):
     #range_list.append('NaN')
     bin_edges_=bin_edges.copy()
     bin_edges_[-1]=bin_edges_[-1]+0.1
-    membership_=np.digitize(df[column].values,bin_edges_)
+    membership_=np.digitize(df[column].values[np.logical_not(np.isnan(df[column].values))],bin_edges_)
     membership=[]
-    for m in membership_:
-        membership.append(range_list[m-1])
+    #for m in membership_:
+    non_nan_counter=0
+    for isnan in nan_map:
+        if not(isnan):
+            m=membership_[non_nan_counter]
+            membership.append(range_list[m-1])
+            non_nan_counter=non_nan_counter+1
+        else:
+            membership.append('Missing Value')
+            
     classid_df=df[df.columns[0]].to_frame()
     classid_df.insert(1,column,membership)
     return classid_df
@@ -931,9 +940,15 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
                  #Classes_=phi.unique(CLASSID,colorby)
                  Classes_=np.unique(CLASSID[colorby]).tolist()
                  item_o=[]
+                 missing_value_class_exists=False
                  for item in Classes_:
-                     item_o.append(float(item[:item.find(' ')]))
-                 idx=idx=np.argsort(item_o)
+                     if item!='Missing Value':
+                         item_o.append(float(item[:item.find(' ')]))
+                     else:
+                         missing_value_class_exists=True
+                 idx=np.argsort(item_o)
+                 if missing_value_class_exists:
+                     idx=np.append(Classes_.index('Missing Value'),idx)
                  Classes_o=[]
                  for i in idx:
                      Classes_o.append(Classes_[i])
@@ -944,7 +959,7 @@ def score_scatter(mvm_obj,xydim,*,CLASSID=False,colorby=False,Xnew=False,
                  colormap = matplotlib.colormaps['viridis']
                  different_colors=A
                  color_mapping=colormap(np.linspace(0,1,different_colors),1,True)
-                 if Classes_[0]=='Model':
+                 if (Classes_[0]=='Model') or (Classes_[0]=='Missing Value'):
                      color_mapping=colormap(np.linspace(0,1,different_colors-1),1,True)
                      color_mapping=np.vstack((np.array([225,225,225,255]),color_mapping))
 
