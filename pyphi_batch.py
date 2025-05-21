@@ -1277,7 +1277,7 @@ def mpca(xbatch,a,*,unfolding='batch wise',phase_samples=False,cross_val=0):
         else:
              xbatch_=xbatch.copy()
         xbatch_,colsrem = phi.clean_low_variances(xbatch_) # colsrem are columns removed
-        xbatch_ = phi.clean_empty_rows(xbatch_)
+        xbatch_,rowsrem = phi.clean_empty_rows(xbatch_)
         mpca_obj=phi.pca(xbatch_,a)        
         mpca_obj['uf']            ='variable wise'
         mpca_obj['phase_samples'] = phase_samples
