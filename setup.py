@@ -20,7 +20,7 @@ setuptools.setup(
     ],
     install_requires=[
         "bokeh",
-        "datetime"
+        "datetime",
         "matplotlib",
         "numpy",
         "openpyxl",
@@ -29,6 +29,6 @@ setuptools.setup(
         "scipy",
         "statsmodels",
         "spyder",
-        "xlrd""
+        "xlrd"
     ],
 ) 
