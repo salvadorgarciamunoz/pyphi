@@ -5,6 +5,5 @@ openpyxl
 pandas
 pyomo
 scipy
-statsmodels
 spyder
 xlrd
