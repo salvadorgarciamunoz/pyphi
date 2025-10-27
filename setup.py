@@ -27,7 +27,6 @@ setuptools.setup(
         "pandas",
         "pyomo",
         "scipy",
-        "statsmodels",
         "spyder",
         "xlrd"
     ],
