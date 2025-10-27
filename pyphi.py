@@ -2,6 +2,8 @@
 Phi for Python (pyPhi)
 
 By Sal Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
+Edited Oct 27 2024
+        * Removed routine to create replicates since statsmodels was problematic to install
 Added Jan 30 2025
         * Added a pinv alternative protection in spectra_savgol for the case where
           inv fails
