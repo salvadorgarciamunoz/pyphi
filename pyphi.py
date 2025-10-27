@@ -131,7 +131,7 @@ from scipy.stats import norm
 from scipy.optimize import fsolve
 from scipy import interpolate
 from scipy.interpolate import  RectBivariateSpline
-from statsmodels.distributions.empirical_distribution import ECDF
+#from statsmodels.distributions.empirical_distribution import ECDF
 from shutil import which
 import os
 from numpy import eye, asarray, dot, sum, diag
@@ -3445,63 +3445,63 @@ def mbpls(XMB,YMB,A,*,mcsX=True,mcsY=True,md_algorithm_='nipals',force_nipals_=F
         pls_obj_['Yblocknames']=YMB['blknames']
     return pls_obj_
 
-def replicate_data(mvm_obj,X,num_replicates,*,as_set=False):
-    
-    if 'Q' in mvm_obj:
-        pls_preds=pls_pred(X,mvm_obj)
-        xhat=pls_preds['Xhat']
-        tnew=pls_preds['Tnew']
-    else:
-        pca_preds=pca_pred(X,mvm_obj)
-        xhat=pca_preds['Xhat']
-        tnew=pca_preds['Tnew']
-    xhat = (xhat - np.tile(mvm_obj['mx'],(xhat.shape[0],1)))/np.tile(mvm_obj['sx'],(xhat.shape[0],1))
-    xhat = tnew @ mvm_obj['P'].T
-    xmcs = (X.values[:,1:] - np.tile(mvm_obj['mx'],(xhat.shape[0],1)))/np.tile(mvm_obj['sx'],(xhat.shape[0],1))
-    data_residuals=xmcs-xhat
-
-    if not(as_set):
-        if np.mod(num_replicates,X.shape[0])==0:
-            reps=num_replicates/X.shape[0]            
-            new_set=np.tile(xhat,(int(reps),1))
-        else:
-            reps=np.floor(num_replicates/X.shape[0])
-            new_set=np.tile(xhat,(int(reps),1))
-            reps=np.mod(num_replicates,X.shape[0])
-            new_set=np.vstack((new_set,xhat[:reps,:]))                
-        obsids=[]
-        for i in np.arange(new_set.shape[0])+1:
-            obsids.append('clone'+str(i))
-            
-    else:            
-        new_set=np.tile(xhat,(num_replicates,1))
-        obsids=[]
-        obsid_o=X[X.columns[0]].values.astype(str).tolist()
-        for i in np.arange(num_replicates)+1:
-            post_fix=['_clone'+str(i)]*X.shape[0]
-            obsids_=[m+n for m,n in zip(obsid_o,post_fix)]
-            obsids.extend(obsids_)
-            
-    for i in list(range(0,data_residuals.shape[1])):
+#def replicate_data(mvm_obj,X,num_replicates,*,as_set=False):
+#    
+#    if 'Q' in mvm_obj:
+#        pls_preds=pls_pred(X,mvm_obj)
+#        xhat=pls_preds['Xhat']
+#        tnew=pls_preds['Tnew']
+#    else:
+#        pca_preds=pca_pred(X,mvm_obj)
+#        xhat=pca_preds['Xhat']
+#        tnew=pca_preds['Tnew']
+#    xhat = (xhat - np.tile(mvm_obj['mx'],(xhat.shape[0],1)))/np.tile(mvm_obj['sx'],(xhat.shape[0],1))
+#    xhat = tnew @ mvm_obj['P'].T
+#    xmcs = (X.values[:,1:] - np.tile(mvm_obj['mx'],(xhat.shape[0],1)))/np.tile(mvm_obj['sx'],(xhat.shape[0],1))
+#    data_residuals=xmcs-xhat
+#
+#    if not(as_set):
+#        if np.mod(num_replicates,X.shape[0])==0:
+#            reps=num_replicates/X.shape[0]            
+#            new_set=np.tile(xhat,(int(reps),1))
+#        else:
+#            reps=np.floor(num_replicates/X.shape[0])
+#            new_set=np.tile(xhat,(int(reps),1))
+#            reps=np.mod(num_replicates,X.shape[0])
+#            new_set=np.vstack((new_set,xhat[:reps,:]))                
+#        obsids=[]
+#        for i in np.arange(new_set.shape[0])+1:
+#            obsids.append('clone'+str(i))
+#            
+#    else:            
+#        new_set=np.tile(xhat,(num_replicates,1))
+#        obsids=[]
+#        obsid_o=X[X.columns[0]].values.astype(str).tolist()
+#        for i in np.arange(num_replicates)+1:
+#            post_fix=['_clone'+str(i)]*X.shape[0]
+#            obsids_=[m+n for m,n in zip(obsid_o,post_fix)]
+#            obsids.extend(obsids_)
+#            
+#    for i in list(range(0,data_residuals.shape[1])):
 #        plt.figure()
 #        plt.hist(data_residuals[:,i])
 #        plt.title('Original Residual Distribution')
-        ecdf = ECDF(data_residuals[:,i])
-        new_residual= np.random.uniform(0,1,new_set.shape[0])
-        y=np.array(ecdf.y.tolist())
-        x=np.array(ecdf.x.tolist())
-        new_residual=np.interp(new_residual,y[1:],x[1:])
-        
-        if i==0:
-            uncertainty_matrix=np.reshape(new_residual,(-1,1))
-        else:
-            uncertainty_matrix=np.hstack((uncertainty_matrix,np.reshape(new_residual,(-1,1))))
-    new_set=new_set+uncertainty_matrix
-    new_set=(new_set * np.tile(mvm_obj['sx'],(new_set.shape[0],1)))+np.tile(mvm_obj['mx'],(new_set.shape[0],1))
-    new_set_pd=pd.DataFrame(new_set,columns=X.columns[1:].tolist())
-    new_set_pd.insert(0,X.columns[0],obsids)
-    
-    return new_set_pd
+#        ecdf = ECDF(data_residuals[:,i])
+#        new_residual= np.random.uniform(0,1,new_set.shape[0])
+#        y=np.array(ecdf.y.tolist())
+#        x=np.array(ecdf.x.tolist())
+#        new_residual=np.interp(new_residual,y[1:],x[1:])
+#        
+#        if i==0:
+#            uncertainty_matrix=np.reshape(new_residual,(-1,1))
+#        else:
+#            uncertainty_matrix=np.hstack((uncertainty_matrix,np.reshape(new_residual,(-1,1))))
+#    new_set=new_set+uncertainty_matrix
+#    new_set=(new_set * np.tile(mvm_obj['sx'],(new_set.shape[0],1)))+np.tile(mvm_obj['mx'],(new_set.shape[0],1))
+#    new_set_pd=pd.DataFrame(new_set,columns=X.columns[1:].tolist())
+#    new_set_pd.insert(0,X.columns[0],obsids)
+#    
+#    return new_set_pd
 
 def export_2_gproms(mvmobj,*,fname='phi_export.txt'):
     '''Function to export PLS model to be build a hybrid model in gPROMS
