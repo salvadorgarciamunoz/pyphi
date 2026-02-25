@@ -28,6 +28,5 @@ setuptools.setup(
         "pyomo",
         "scipy",
         "spyder",
-        "xlrd"
     ],
 ) 
