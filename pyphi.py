@@ -1,5 +1,5 @@
 """
-Phi for Python (pyPhi)  —  Version 2.0
+Phi for Python (pyPhi)  —  Optimized code
 
 By Sal Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
 
