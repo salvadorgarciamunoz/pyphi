@@ -6,4 +6,4 @@ pandas
 pyomo
 scipy
 spyder
-xlrd
+
