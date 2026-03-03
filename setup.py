@@ -7,6 +7,7 @@ setuptools.setup(
     name="pyphi-mvda",
     version="6.0",
     license="MIT",
+    url="https://salvadorgarciamunoz.github.io/pyphi/",
     author="Sal Garcia",
     author_email="sgarciam@ic.ac.uk",
     description="A Python toolbox for multivariate analysis using PCA and PLS methods",
