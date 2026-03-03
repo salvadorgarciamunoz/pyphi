@@ -1,17 +1,18 @@
-# Modules
-## pyphi Release 6.0
-Phi toolbox for multivariate analysis by Sal Garcia (salvadorgarciamunoz@gmail.com, sgarciam@ic.ac.uk)
+# pyphi Release 6.0
+## Modules
+Phi toolbox for multivariate analysis by Sal Garcia (salvadorgarciamunoz@gmail.com, sgarciam@ic.ac.uk).
 
-Documentation: https://salvadorgarciamunoz.github.io/pyphi/index.html
+* pyphi.calc: Routines to build PCA/PLS/LPLS/JYPLS/JRPLS/TPLS/PLS-CCA(OPLS) models.
+* pyphi.plots: A variety of plotting tools for models created with pyphi.
+* pyphi.batch: Batch analysis toolbox to perform batch alightment and Multi-way models for batch data
 
-## pyphi_plots
-A variety of plotting tools for models created with pyphi.
+## Documentation
 
-## pyphi_batch
-Batch analysis toolbox to perform batch alightment and Multi-way models for batch data
+https://salvadorgarciamunoz.github.io/pyphi/index.html
+
 
 # Getting Started
-Pyphi requires the  python packages listed in the  ```requirements.txt``` file.
+pip install pyphi-mvda
 
 ## Installation
 
