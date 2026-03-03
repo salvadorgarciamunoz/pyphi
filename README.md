@@ -14,6 +14,9 @@ Batch analysis toolbox to perform batch alightment and Multi-way models for batc
 Pyphi requires the  python packages listed in the  ```requirements.txt``` file.
 
 ## Installation
+
+NEW NEW NEW pip install pyphi-mvda
+
 1) Ensure you have Python 3 installed and accessible via your terminal ("python" command).
 2) Download this repository via ```git clone``` or manually using the download zip button at the top of the page.
 3) Install the pyphi, pyphi_plots and pyphi_batch modules by opening a terminal window, navigating to the root of this repository, and typing 
