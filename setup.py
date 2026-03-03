@@ -13,7 +13,6 @@ setuptools.setup(
     description="A Python toolbox for multivariate analysis using PCA and PLS methods",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/salvadorgarciamunoz/pyphi",
     packages=setuptools.find_packages(),   # replaces py_modules
     include_package_data=True,
     classifiers=[
