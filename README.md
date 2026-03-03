@@ -1,5 +1,5 @@
 # Modules
-## pyphi Release 4.0
+## pyphi Release 6.0
 Phi toolbox for multivariate analysis by Sal Garcia (salvadorgarciamunoz@gmail.com, sgarciam@ic.ac.uk)
 
 Documentation: https://salvadorgarciamunoz.github.io/pyphi/index.html
@@ -18,8 +18,6 @@ Pyphi requires the  python packages listed in the  ```requirements.txt``` file.
 2) Download this repository via ```git clone``` or manually using the download zip button at the top of the page.
 3) Install the pyphi, pyphi_plots and pyphi_batch modules by opening a terminal window, navigating to the root of this repository, and typing 
 ```pip install -r requirements.txt```.
-
-I find the use of Anaconda the easiest using Spyder, just download the code and add the path to Spyder
 
 To confirm you have a working installation, navigate to the ```Examples``` folder and copy the ```Example_Script.py``` to the directory of your choice. Run ```python Example_Script.py```, verifying there are no errors logged to the console.
 
