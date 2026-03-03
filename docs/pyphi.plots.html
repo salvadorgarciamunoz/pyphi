@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>pyphi.plots module &#8212; pyphi 6.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=7cffc26f"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pyphi.batch module" href="pyphi.batch.html" />
+    <link rel="prev" title="pyphi.calc module" href="pyphi.calc.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-pyphi.plots">
+<span id="pyphi-plots-module"></span><h1>pyphi.plots module<a class="headerlink" href="#module-pyphi.plots" title="Link to this heading">¶</a></h1>
+<p>Plots for pyPhi</p>
+<p>&#64;author: Sal Garcia &lt;<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a>&gt; &lt;<a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p>
+<dl class="simple">
+<dt>Changes on Feb 25th 2026:</dt><dd><ul class="simple">
+<li><p>Bokeh 3.x: tooltips removed from figure(); now added via explicit HoverTool</p></li>
+<li><p>Extracted shared helpers: _get_lv_labels, _get_xvar_labels, _get_yvar_labels,
+_new_output_file, _make_bokeh_palette, _resolve_lpls_space, _mask_by_class,
+_add_hover</p></li>
+<li><p>Fixed loop-variable collision in predvsobs (i → j)</p></li>
+<li><p>Fixed output_file inside loop in mb_r2pb</p></li>
+<li><p>Fixed 2-D <a href="#id1"><span class="problematic" id="id2">y_</span></a> array in score_line (.flatten())</p></li>
+<li><p>Fixed nan_policy on vbar (not supported); use per-series ColumnDataSource</p></li>
+<li><p>Fixed bitwise ~ on bool in lineplot</p></li>
+<li><p>Added unbound-variable guard in contributions_plot</p></li>
+<li><p>Replaced False sentinels with None throughout</p></li>
+<li><p>Replaced list(np.arange(…)+1) with range(1, n+1)</p></li>
+<li><p>Replaced string concatenation with f-strings</p></li>
+<li><p>Standardised colormap keyword args (alpha=1, bytes=True)</p></li>
+<li><p>Replaced math.pi with np.pi</p></li>
+<li><p>loadings / weighted_loadings: PLS now produces single HTML with X (blue)
+and Y (red) bars on a shared axis per LV</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.plots.r2pv">
+<span class="sig-prename descclassname"><span class="pre">pyphi.plots.</span></span><span class="sig-name descname"><span class="pre">r2pv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvm_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotwidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotheight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">400</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addtitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zspace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pyphi/plots.html#r2pv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.plots.r2pv" title="Link to this definition">¶</a></dt>
+<dd><p>Plot R² per variable per latent variable / principal component.</p>
+<p>Produces a stacked bar chart where each bar represents a variable and
+each colour band represents the contribution of one LV/PC to that
+variable’s explained variance. For PLS models, X and Y plots are
+shown stacked vertically in a single HTML file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mvm_obj</strong> (<em>dict</em>) – Fitted model from <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pca()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pls()</span></code>,
+<code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.lpls()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.jrpls()</span></code>, or <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.tpls()</span></code>.</p></li>
+<li><p><strong>plotwidth</strong> (<em>int</em>) – Width of each plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">600</span></code>.</p></li>
+<li><p><strong>plotheight</strong> (<em>int</em>) – Height of each plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">400</span></code>.</p></li>
+<li><p><strong>addtitle</strong> (<em>str</em>) – Optional string appended to the plot title.
+Default <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p></li>
+<li><p><strong>material</strong> (<em>str</em>) – For JRPLS / TPLS models, the name of the material
+block to display. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, the R-space (blend) loadings are
+used. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>zspace</strong> (<em>bool</em>) – For TPLS models, if <code class="docutils literal notranslate"><span class="pre">True</span></code> plots the Z-space
+(trajectory) R² instead of the X-space R². Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saves and opens an HTML file via Bokeh’s <code class="docutils literal notranslate"><span class="pre">show()</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.plots.loadings">
+<span class="sig-prename descclassname"><span class="pre">pyphi.plots.</span></span><span class="sig-name descname"><span class="pre">loadings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvm_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotwidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">750</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xgrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addtitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zspace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ScaleToPlot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pyphi/plots.html#loadings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.plots.loadings" title="Link to this definition">¶</a></dt>
+<dd><p>Plot model loadings as vertical bar charts, one chart per LV/PC.</p>
+<p>For <strong>PCA models</strong>: each chart shows X-space loadings (P or W*) in blue.</p>
+<p>For <strong>PLS models</strong>: each chart shows X-space loadings (W*) in blue and
+Y-space loadings (Q) in red on a shared categorical axis, separated by a
+vertical dashed divider. Without <code class="docutils literal notranslate"><span class="pre">ScaleToPlot</span></code>, a dual y-axis is used
+so both X and Y loadings are readable regardless of scale differences.
+With <code class="docutils literal notranslate"><span class="pre">ScaleToPlot</span></code>, both are normalised to [-1, 1] and share a single
+y-axis.</p>
+<p>All charts are written to a single HTML file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mvm_obj</strong> (<em>dict</em>) – Fitted model from <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pca()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pls()</span></code>,
+<code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.lpls()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.jrpls()</span></code>, or <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.tpls()</span></code>.</p></li>
+<li><p><strong>plotwidth</strong> (<em>int</em>) – Width of each chart in pixels. Default <code class="docutils literal notranslate"><span class="pre">750</span></code>.</p></li>
+<li><p><strong>xgrid</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, show vertical grid lines. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>addtitle</strong> (<em>str</em>) – Optional string appended to each chart title.
+Default <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p></li>
+<li><p><strong>material</strong> (<em>str</em>) – For JRPLS / TPLS models, the material block to plot.
+Default <code class="docutils literal notranslate"><span class="pre">None</span></code> (uses R-space / blend loadings).</p></li>
+<li><p><strong>zspace</strong> (<em>bool</em>) – For TPLS models, if <code class="docutils literal notranslate"><span class="pre">True</span></code> plots Z-space (trajectory)
+loadings. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>ScaleToPlot</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, normalises each loading vector to
+[-1, 1] before plotting, so all LVs are visually comparable.
+Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saves and opens an HTML file via Bokeh’s <code class="docutils literal notranslate"><span class="pre">show()</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.plots.loadings_map">
+<span class="sig-prename descclassname"><span class="pre">pyphi.plots.</span></span><span class="sig-name descname"><span class="pre">loadings_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvm_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dims</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotwidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addtitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zspace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">textalpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.75</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pyphi/plots.html#loadings_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.plots.loadings_map" title="Link to this definition">¶</a></dt>
+<dd><p>Scatter plot of loadings on two selected components (loadings map / biplot).</p>
+<p>For PLS models, X-space loadings (W*, blue) and Y-space loadings (Q, red)
+are overlaid on a normalised [-1, 1] axis, making it easy to identify
+which X variables co-vary with which Y variables. For PCA models, only
+P loadings are shown.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mvm_obj</strong> (<em>dict</em>) – Fitted model from <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pca()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pls()</span></code>,
+<code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.lpls()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.jrpls()</span></code>, or <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.tpls()</span></code>.</p></li>
+<li><p><strong>dims</strong> (<em>list</em><em>[</em><em>int</em><em>]</em>) – Two component indices to plot, e.g. <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">2]</span></code> for
+the first two LVs/PCs (1-indexed).</p></li>
+<li><p><strong>plotwidth</strong> (<em>int</em>) – Width of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">600</span></code>.</p></li>
+<li><p><strong>addtitle</strong> (<em>str</em>) – Optional string appended to the plot title.
+Default <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p></li>
+<li><p><strong>material</strong> (<em>str</em>) – For JRPLS / TPLS, the material block to use.
+Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>zspace</strong> (<em>bool</em>) – For TPLS, if <code class="docutils literal notranslate"><span class="pre">True</span></code> uses Z-space loadings.
+Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>textalpha</strong> (<em>float</em>) – Transparency of variable name labels (0–1).
+Default <code class="docutils literal notranslate"><span class="pre">0.75</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saves and opens an HTML file via Bokeh’s <code class="docutils literal notranslate"><span class="pre">show()</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.plots.weighted_loadings">
+<span class="sig-prename descclassname"><span class="pre">pyphi.plots.</span></span><span class="sig-name descname"><span class="pre">weighted_loadings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvm_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotwidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">750</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xgrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addtitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zspace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ScaleToPlot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pyphi/plots.html#weighted_loadings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.plots.weighted_loadings" title="Link to this definition">¶</a></dt>
+<dd><p>Plot loadings weighted by their R² contribution, one chart per LV/PC.</p>
+<p>Each loading coefficient is multiplied by the corresponding per-variable
+R² value, so variables that explain more variance appear larger. This
+helps identify truly important variables vs. those that load highly but
+explain little variance.</p>
+<p>For <strong>PCA models</strong>: shows <code class="docutils literal notranslate"><span class="pre">P</span> <span class="pre">×</span> <span class="pre">R²X</span></code> (blue).</p>
+<p>For <strong>PLS models</strong>: shows <code class="docutils literal notranslate"><span class="pre">W*</span> <span class="pre">×</span> <span class="pre">R²X</span></code> (blue, left axis) and
+<code class="docutils literal notranslate"><span class="pre">Q</span> <span class="pre">×</span> <span class="pre">R²Y</span></code> (red, right axis) on a shared categorical axis with a
+dual y-axis layout (or single normalised axis with <code class="docutils literal notranslate"><span class="pre">ScaleToPlot</span></code>).</p>
+<p>All charts are written to a single HTML file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mvm_obj</strong> (<em>dict</em>) – Fitted model from <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pca()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pls()</span></code>,
+<code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.lpls()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.jrpls()</span></code>, or <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.tpls()</span></code>.</p></li>
+<li><p><strong>plotwidth</strong> (<em>int</em>) – Width of each chart in pixels. Default <code class="docutils literal notranslate"><span class="pre">750</span></code>.</p></li>
+<li><p><strong>xgrid</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, show vertical grid lines. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>addtitle</strong> (<em>str</em>) – Optional string appended to each chart title.
+Default <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p></li>
+<li><p><strong>material</strong> (<em>str</em>) – For JRPLS / TPLS, the material block to plot.
+Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>zspace</strong> (<em>bool</em>) – For TPLS, if <code class="docutils literal notranslate"><span class="pre">True</span></code> plots Z-space weighted loadings.
+Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>ScaleToPlot</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, normalises loadings to [-1, 1]
+before weighting, placing X and Y on a single shared axis.
+Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saves and opens an HTML file via Bokeh’s <code class="docutils literal notranslate"><span class="pre">show()</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.plots.vip">
+<span class="sig-prename descclassname"><span class="pre">pyphi.plots.</span></span><span class="sig-name descname"><span class="pre">vip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvm_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotwidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zspace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addtitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pyphi/plots.html#vip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.plots.vip" title="Link to this definition">¶</a></dt>
+<dd><p>Plot Variable Importance in Projection (VIP) scores.</p>
+<p>VIP summarises the contribution of each X variable across all LVs,
+weighted by the R²Y explained by each LV. Variables are sorted from
+highest to lowest VIP. Only applicable to PLS models (silently returns
+for PCA models).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mvm_obj</strong> (<em>dict</em>) – Fitted PLS model from <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pls()</span></code>,
+<code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.lpls()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.jrpls()</span></code>, or <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.tpls()</span></code>.</p></li>
+<li><p><strong>plotwidth</strong> (<em>int</em>) – Width of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">600</span></code>.</p></li>
+<li><p><strong>material</strong> (<em>str</em>) – For JRPLS / TPLS, the material block to use.
+Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>zspace</strong> (<em>bool</em>) – For TPLS, if <code class="docutils literal notranslate"><span class="pre">True</span></code> computes VIP in Z-space.
+Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>addtitle</strong> (<em>str</em>) – Optional string appended to the plot title.
+Default <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saves and opens an HTML file via Bokeh’s <code class="docutils literal notranslate"><span class="pre">show()</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.plots.score_scatter">
+<span class="sig-prename descclassname"><span class="pre">pyphi.plots.</span></span><span class="sig-name descname"><span class="pre">score_scatter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvm_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xydim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">CLASSID</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorby</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_ci</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_legend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addtitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotwidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotheight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rscores</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marker_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pyphi/plots.html#score_scatter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.plots.score_scatter" title="Link to this definition">¶</a></dt>
+<dd><p>Score scatter plot for two selected latent variables or principal components.</p>
+<p>Plots training scores (or scores for new observations) on two chosen
+components. Supports class-based colouring, confidence ellipses,
+observation labels, and overlaying new observations on top of training
+data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mvm_obj</strong> (<em>dict</em>) – Fitted model from <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pca()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pls()</span></code>,
+<code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.lpls()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.jrpls()</span></code>, or <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.tpls()</span></code>.</p></li>
+<li><p><strong>xydim</strong> (<em>list</em><em>[</em><em>int</em><em>]</em>) – Two component indices to plot, e.g. <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">2]</span></code>
+(1-indexed).</p></li>
+<li><p><strong>CLASSID</strong> (<em>pd.DataFrame</em>) – Optional class-membership DataFrame. First
+column should be observation IDs; <code class="docutils literal notranslate"><span class="pre">colorby</span></code> specifies the
+column to colour by. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>colorby</strong> (<em>str</em>) – Column name in <code class="docutils literal notranslate"><span class="pre">CLASSID</span></code> to use for colouring.
+Required if <code class="docutils literal notranslate"><span class="pre">CLASSID</span></code> is provided. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>Xnew</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – New observations to project and
+plot. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, training scores are used. Not supported for
+LPLS / JRPLS models. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>add_ci</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, overlays 95% (gold) and 99% (red)
+confidence ellipses. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>add_labels</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, annotates each point with its
+observation ID. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>add_legend</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code> and <code class="docutils literal notranslate"><span class="pre">CLASSID</span></code> is provided, adds a
+click-to-hide legend. Default <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>legend_cols</strong> (<em>int</em>) – Number of legend columns when using <code class="docutils literal notranslate"><span class="pre">CLASSID</span></code>.
+Default <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
+<li><p><strong>addtitle</strong> (<em>str</em>) – Optional string appended to the plot title.
+Default <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p></li>
+<li><p><strong>plotwidth</strong> (<em>int</em>) – Width of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">600</span></code>.</p></li>
+<li><p><strong>plotheight</strong> (<em>int</em>) – Height of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">600</span></code>.</p></li>
+<li><p><strong>rscores</strong> (<em>bool</em>) – For LPLS / JRPLS / TPLS models, if <code class="docutils literal notranslate"><span class="pre">True</span></code> plots
+R-space scores instead of X-space scores. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>material</strong> (<em>str</em>) – For JRPLS / TPLS, the material block to plot when
+<code class="docutils literal notranslate"><span class="pre">rscores=True</span></code>. Default <code class="docutils literal notranslate"><span class="pre">None</span></code> (plots all materials, coloured
+by material name).</p></li>
+<li><p><strong>marker_size</strong> (<em>int</em>) – Marker size in pixels. Default <code class="docutils literal notranslate"><span class="pre">7</span></code>.</p></li>
+<li><p><strong>nbins</strong> (<em>int</em>) – If provided, bins a continuous <code class="docutils literal notranslate"><span class="pre">colorby</span></code> variable into
+<code class="docutils literal notranslate"><span class="pre">nbins</span></code> groups before colouring. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>include_model</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code> and <code class="docutils literal notranslate"><span class="pre">Xnew</span></code> is provided, overlays
+training set scores (grey, labelled “Model”) alongside the new
+observations. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saves and opens an HTML file via Bokeh’s <code class="docutils literal notranslate"><span class="pre">show()</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.plots.score_line">
+<span class="sig-prename descclassname"><span class="pre">pyphi.plots.</span></span><span class="sig-name descname"><span class="pre">score_line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvmobj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">CLASSID</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorby</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_ci</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_legend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotline</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotwidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotheight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pyphi/plots.html#score_line"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.plots.score_line" title="Link to this definition">¶</a></dt>
+<dd><p>Score line plot: one component plotted against observation sequence.</p>
+<p>Useful for monitoring or batch data where the observation order is
+meaningful. When <code class="docutils literal notranslate"><span class="pre">CLASSID</span></code> is provided, markers are coloured by class
+with a single grey connecting line underneath.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mvmobj</strong> (<em>dict</em>) – Fitted model from <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pca()</span></code> or <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pls()</span></code>.</p></li>
+<li><p><strong>dim</strong> (<em>int</em><em> or </em><em>list</em><em>[</em><em>int</em><em>]</em>) – Component index to plot (1-indexed). Pass a
+single integer or a one-element list, e.g. <code class="docutils literal notranslate"><span class="pre">1</span></code> or <code class="docutils literal notranslate"><span class="pre">[1]</span></code>.</p></li>
+<li><p><strong>CLASSID</strong> (<em>pd.DataFrame</em>) – Optional class-membership DataFrame. First
+column is observation IDs; <code class="docutils literal notranslate"><span class="pre">colorby</span></code> specifies the column used
+for colouring. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>colorby</strong> (<em>str</em>) – Column name in <code class="docutils literal notranslate"><span class="pre">CLASSID</span></code> to colour by. Required if
+<code class="docutils literal notranslate"><span class="pre">CLASSID</span></code> is provided. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>Xnew</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – New observations to project and
+plot. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, training scores are used. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>add_ci</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, overlays 95% (gold) and 99% (red)
+univariate confidence limits as dashed horizontal lines.
+Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>add_labels</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, annotates each point with its
+observation ID. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>add_legend</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code> and <code class="docutils literal notranslate"><span class="pre">CLASSID</span></code> is provided, adds a
+click-to-hide legend. Default <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>plotline</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, draws a line connecting the observations
+in sequence. Default <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>plotwidth</strong> (<em>int</em>) – Width of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">600</span></code>.</p></li>
+<li><p><strong>plotheight</strong> (<em>int</em>) – Height of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">600</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saves and opens an HTML file via Bokeh’s <code class="docutils literal notranslate"><span class="pre">show()</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.plots.diagnostics">
+<span class="sig-prename descclassname"><span class="pre">pyphi.plots.</span></span><span class="sig-name descname"><span class="pre">diagnostics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvmobj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ynew</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score_plot_xydim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotwidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ht2_logscale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spe_logscale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pyphi/plots.html#diagnostics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.plots.diagnostics" title="Link to this definition">¶</a></dt>
+<dd><p>Hotelling’s T² and SPE diagnostic dashboard.</p>
+<p>Produces a column of linked plots:</p>
+<ol class="arabic simple">
+<li><p><strong>Hotelling’s T²</strong> vs. observation sequence, with 95% (gold) and
+99% (red) control limits.</p></li>
+<li><p><strong>SPE X-space</strong> vs. observation sequence, with control limits.</p></li>
+<li><p><strong>Outlier map</strong>: T² vs. SPE X, with 99% limits as crosshairs.</p></li>
+<li><p><strong>SPE Y-space</strong> (PLS models only, when <code class="docutils literal notranslate"><span class="pre">Ynew</span></code> is supplied or using
+training data).</p></li>
+<li><p><strong>Score scatter</strong> (optional, if <code class="docutils literal notranslate"><span class="pre">score_plot_xydim</span></code> is provided).</p></li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mvmobj</strong> (<em>dict</em>) – Fitted model from <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pca()</span></code> or <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pls()</span></code>.</p></li>
+<li><p><strong>Xnew</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – New X observations to diagnose.
+If <code class="docutils literal notranslate"><span class="pre">None</span></code>, training set diagnostics are plotted. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>Ynew</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – New Y observations (optional).
+Used only for PLS models to compute Y-space SPE. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>score_plot_xydim</strong> (<em>list</em><em>[</em><em>int</em><em>]</em>) – If provided (e.g. <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">2]</span></code>), appends a
+score scatter plot for the specified components, with confidence
+ellipses overlaid. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>plotwidth</strong> (<em>int</em>) – Width of each plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">600</span></code>.</p></li>
+<li><p><strong>ht2_logscale</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, plots Hotelling’s T² on a log₁₀
+scale. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>spe_logscale</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, plots SPE X on a log₁₀ scale.
+Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saves and opens an HTML file via Bokeh’s <code class="docutils literal notranslate"><span class="pre">show()</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.plots.predvsobs">
+<span class="sig-prename descclassname"><span class="pre">pyphi.plots.</span></span><span class="sig-name descname"><span class="pre">predvsobs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvmobj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">CLASSID</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorby</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_space</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pyphi/plots.html#predvsobs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.plots.predvsobs" title="Link to this definition">¶</a></dt>
+<dd><p>Observed vs. predicted scatter plots for all Y (and optionally X) variables.</p>
+<p>One square scatter plot is produced per variable, with a 45° reference
+line (cyan, dashed). All plots are stacked vertically in a single HTML
+file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mvmobj</strong> (<em>dict</em>) – Fitted model from <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pca()</span></code> or <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pls()</span></code>.</p></li>
+<li><p><strong>X</strong> (<em>pd.DataFrame</em><em>, </em><em>np.ndarray</em><em>, or </em><em>dict</em>) – Predictor data. For multi-block
+models pass a dict of DataFrames keyed by block name.</p></li>
+<li><p><strong>Y</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – Observed response values. Must have
+the same number of rows as <code class="docutils literal notranslate"><span class="pre">X</span></code>.</p></li>
+<li><p><strong>CLASSID</strong> (<em>pd.DataFrame</em>) – Optional class-membership DataFrame for
+colouring points. First column is observation IDs. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>colorby</strong> (<em>str</em>) – Column in <code class="docutils literal notranslate"><span class="pre">CLASSID</span></code> to use for colouring. Required
+if <code class="docutils literal notranslate"><span class="pre">CLASSID</span></code> is provided. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>x_space</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, also plots observed vs. predicted for
+each X variable (X-space reconstruction). For PCA models this is
+always <code class="docutils literal notranslate"><span class="pre">True</span></code>. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saves and opens an HTML file via Bokeh’s <code class="docutils literal notranslate"><span class="pre">show()</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.plots.contributions_plot">
+<span class="sig-prename descclassname"><span class="pre">pyphi.plots.</span></span><span class="sig-name descname"><span class="pre">contributions_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvmobj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cont_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lv_space</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotwidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">800</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotheight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xgrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pyphi/plots.html#contributions_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.plots.contributions_plot" title="Link to this definition">¶</a></dt>
+<dd><p>Bar chart of variable contributions to a monitoring statistic.</p>
+<p>Shows how much each variable contributes to the T², SPE, or score of
+a specific observation (or the difference between two observations).
+For SPE with PLS models, separate X and Y contribution bars are shown.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mvmobj</strong> (<em>dict</em>) – Fitted model from <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pca()</span></code> or <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.pls()</span></code>.</p></li>
+<li><p><strong>X</strong> (<em>pd.DataFrame</em><em>, </em><em>np.ndarray</em><em>, or </em><em>dict</em>) – Data containing the observation(s)
+to diagnose. For multi-block models, pass a dict of DataFrames.</p></li>
+<li><p><strong>cont_type</strong> (<em>str</em>) – Type of contribution to compute and plot.
+<code class="docutils literal notranslate"><span class="pre">'scores'</span></code>: contribution to each latent variable score.
+<code class="docutils literal notranslate"><span class="pre">'spe'</span></code>: contribution to SPE (X and, for PLS, Y).
+<code class="docutils literal notranslate"><span class="pre">'t2'</span></code>: contribution to Hotelling’s T².</p></li>
+<li><p><strong>Y</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – Y data. Required for
+<code class="docutils literal notranslate"><span class="pre">cont_type='spe'</span></code> with a PLS model. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>
+(not provided).</p></li>
+<li><p><strong>from_obs</strong> (<em>int</em><em>, </em><em>str</em><em>, or </em><em>list</em>) – Reference observation for difference-based
+contributions. Can be an integer index, an observation ID string,
+or a list thereof. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, contributions are computed
+absolutely for <code class="docutils literal notranslate"><span class="pre">to_obs</span></code>. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>to_obs</strong> (<em>int</em><em>, </em><em>str</em><em>, or </em><em>list</em>) – The observation(s) to diagnose. Can be an
+integer index, observation ID string, or list thereof. This
+argument is required. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>lv_space</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, computes contributions in latent
+variable space. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>plotwidth</strong> (<em>int</em>) – Width of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">800</span></code>.</p></li>
+<li><p><strong>plotheight</strong> (<em>int</em>) – Height of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">600</span></code>.</p></li>
+<li><p><strong>xgrid</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, shows vertical grid lines. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saves and opens an HTML file via Bokeh’s <code class="docutils literal notranslate"><span class="pre">show()</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.plots.mb_weights">
+<span class="sig-prename descclassname"><span class="pre">pyphi.plots.</span></span><span class="sig-name descname"><span class="pre">mb_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvmobj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotwidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotheight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">400</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pyphi/plots.html#mb_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.plots.mb_weights" title="Link to this definition">¶</a></dt>
+<dd><p>Bar chart of super-weights (block weights) for a Multi-Block PLS model.</p>
+<p>Shows the weight of each X block on each latent variable, indicating
+which blocks drive the model. One bar chart is produced per LV, stacked
+vertically in a single HTML file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mvmobj</strong> (<em>dict</em>) – Fitted MBPLS model from <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.mbpls()</span></code>.
+Must contain the <code class="docutils literal notranslate"><span class="pre">'Wt'</span></code> (super-weights) and <code class="docutils literal notranslate"><span class="pre">'Xblocknames'</span></code> keys.</p></li>
+<li><p><strong>plotwidth</strong> (<em>int</em>) – Width of each plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">600</span></code>.</p></li>
+<li><p><strong>plotheight</strong> (<em>int</em>) – Height of each plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">400</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saves and opens an HTML file via Bokeh’s <code class="docutils literal notranslate"><span class="pre">show()</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.plots.mb_r2pb">
+<span class="sig-prename descclassname"><span class="pre">pyphi.plots.</span></span><span class="sig-name descname"><span class="pre">mb_r2pb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvmobj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotwidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotheight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">400</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pyphi/plots.html#mb_r2pb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.plots.mb_r2pb" title="Link to this definition">¶</a></dt>
+<dd><p>Stacked bar chart of R² per block per LV for a Multi-Block PLS model.</p>
+<p>Each bar represents an X block; colour bands show the contribution of
+each LV to that block’s explained variance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mvmobj</strong> (<em>dict</em>) – Fitted MBPLS model from <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.mbpls()</span></code>.
+Must contain the <code class="docutils literal notranslate"><span class="pre">'r2pbX'</span></code> and <code class="docutils literal notranslate"><span class="pre">'Xblocknames'</span></code> keys.</p></li>
+<li><p><strong>plotwidth</strong> (<em>int</em>) – Width of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">600</span></code>.</p></li>
+<li><p><strong>plotheight</strong> (<em>int</em>) – Height of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">400</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saves and opens an HTML file via Bokeh’s <code class="docutils literal notranslate"><span class="pre">show()</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.plots.mb_vip">
+<span class="sig-prename descclassname"><span class="pre">pyphi.plots.</span></span><span class="sig-name descname"><span class="pre">mb_vip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvmobj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotwidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotheight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">400</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pyphi/plots.html#mb_vip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.plots.mb_vip" title="Link to this definition">¶</a></dt>
+<dd><p>Bar chart of block-level VIP scores for a Multi-Block PLS model.</p>
+<p>Computes a VIP score for each X block (using block super-weights and
+R²Y per LV) and displays them sorted from highest to lowest.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mvmobj</strong> (<em>dict</em>) – Fitted MBPLS model from <code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.mbpls()</span></code>.
+Must contain the <code class="docutils literal notranslate"><span class="pre">'Wt'</span></code>, <code class="docutils literal notranslate"><span class="pre">'r2y'</span></code>, and <code class="docutils literal notranslate"><span class="pre">'Xblocknames'</span></code> keys.</p></li>
+<li><p><strong>plotwidth</strong> (<em>int</em>) – Width of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">600</span></code>.</p></li>
+<li><p><strong>plotheight</strong> (<em>int</em>) – Height of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">400</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saves and opens an HTML file via Bokeh’s <code class="docutils literal notranslate"><span class="pre">show()</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.plots.barplot">
+<span class="sig-prename descclassname"><span class="pre">pyphi.plots.</span></span><span class="sig-name descname"><span class="pre">barplot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yheights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xtick_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotwidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotheight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addtitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tabtitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Bar</span> <span class="pre">Plot'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pyphi/plots.html#barplot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.plots.barplot" title="Link to this definition">¶</a></dt>
+<dd><p>Generic vertical bar plot.</p>
+<p>A simple utility for plotting any set of values as a bar chart with
+custom tick labels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>yheights</strong> (<em>list</em><em> or </em><em>np.ndarray</em>) – Bar heights (one value per bar).</p></li>
+<li><p><strong>xtick_labels</strong> (<em>list</em><em>[</em><em>str</em><em>]</em>) – Category labels for the x-axis. Length
+must match <code class="docutils literal notranslate"><span class="pre">yheights</span></code>.</p></li>
+<li><p><strong>plotwidth</strong> (<em>int</em>) – Width of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">600</span></code>.</p></li>
+<li><p><strong>plotheight</strong> (<em>int</em>) – Height of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">600</span></code>.</p></li>
+<li><p><strong>addtitle</strong> (<em>str</em>) – Plot title. Default <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em>) – X-axis label. Default <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em>) – Y-axis label. Default <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p></li>
+<li><p><strong>tabtitle</strong> (<em>str</em>) – Browser tab / HTML file title. Default <code class="docutils literal notranslate"><span class="pre">&quot;Bar</span> <span class="pre">Plot&quot;</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saves and opens an HTML file via Bokeh’s <code class="docutils literal notranslate"><span class="pre">show()</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.plots.lineplot">
+<span class="sig-prename descclassname"><span class="pre">pyphi.plots.</span></span><span class="sig-name descname"><span class="pre">lineplot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">ids_2_include</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Main</span> <span class="pre">Title'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tab_title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Tab</span> <span class="pre">Title'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xaxis_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'X-axis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yaxis_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotheight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">400</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotwidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linecolor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'blue'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linewidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_marker</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_plots</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_legend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">markercolor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'darkblue'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">markersize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ncx_x_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ncx_y_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ncx_id_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">CLASSID</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorby</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yaxis_log</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pyphi/plots.html#lineplot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.plots.lineplot" title="Link to this definition">¶</a></dt>
+<dd><p>Multi-series line plot from a DataFrame or a list of DataFrames.</p>
+<p>Supports two input modes:</p>
+<p><strong>Common x-axis</strong> (<code class="docutils literal notranslate"><span class="pre">X</span></code> is a <code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code>): Each selected column
+is plotted as a separate line against a shared x-axis (either the row
+index or a custom <code class="docutils literal notranslate"><span class="pre">x_axis</span></code> array).</p>
+<p><strong>Non-common x-axis</strong> (<code class="docutils literal notranslate"><span class="pre">X</span></code> is a list of DataFrames): Each DataFrame
+represents one series with its own x-values. Use <code class="docutils literal notranslate"><span class="pre">ncx_x_col</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ncx_y_col</span></code>, and <code class="docutils literal notranslate"><span class="pre">ncx_id_col</span></code> to specify the column names for
+x-values, y-values, and series IDs respectively.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>pd.DataFrame</em><em> or </em><em>list</em><em>[</em><em>pd.DataFrame</em><em>]</em>) – Data to plot.</p></li>
+<li><p><strong>ids_2_include</strong> (<em>list</em><em>[</em><em>str</em><em>] or </em><em>str</em>) – Column names (common x-axis mode)
+or series ID values (non-common x-axis mode) to include. If
+<code class="docutils literal notranslate"><span class="pre">None</span></code>, all columns / series are included. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>x_axis</strong> (<em>list</em><em> or </em><em>np.ndarray</em>) – Custom x-axis values for common x-axis
+mode. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, observation sequence numbers are used.
+Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>plot_title</strong> (<em>str</em>) – Main plot title. Default <code class="docutils literal notranslate"><span class="pre">&quot;Main</span> <span class="pre">Title&quot;</span></code>.</p></li>
+<li><p><strong>tab_title</strong> (<em>str</em>) – Browser tab / HTML file title. Default <code class="docutils literal notranslate"><span class="pre">&quot;Tab</span> <span class="pre">Title&quot;</span></code>.</p></li>
+<li><p><strong>xaxis_label</strong> (<em>str</em>) – X-axis label. Default <code class="docutils literal notranslate"><span class="pre">&quot;X-axis&quot;</span></code>.</p></li>
+<li><p><strong>yaxis_label</strong> (<em>str</em>) – Y-axis label. Default <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p></li>
+<li><p><strong>plotheight</strong> (<em>int</em>) – Height of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">400</span></code>.</p></li>
+<li><p><strong>plotwidth</strong> (<em>int</em>) – Width of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">600</span></code>.</p></li>
+<li><p><strong>legend_cols</strong> (<em>int</em>) – Number of side-by-side legend columns. Default <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
+<li><p><strong>linecolor</strong> (<em>str</em>) – Line colour when a single <code class="docutils literal notranslate"><span class="pre">individual_plots</span></code> line
+is drawn. Default <code class="docutils literal notranslate"><span class="pre">&quot;blue&quot;</span></code>.</p></li>
+<li><p><strong>linewidth</strong> (<em>int</em>) – Line width in pixels. Default <code class="docutils literal notranslate"><span class="pre">2</span></code>.</p></li>
+<li><p><strong>add_marker</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, overlays scatter markers on each line.
+Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>individual_plots</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, produces one separate plot per
+series stacked vertically. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, all series are overlaid
+on a single plot. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>add_legend</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, adds a click-to-hide legend.
+Default <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>markercolor</strong> (<em>str</em>) – Marker fill colour when <code class="docutils literal notranslate"><span class="pre">add_marker=True</span></code>.
+Default <code class="docutils literal notranslate"><span class="pre">&quot;darkblue&quot;</span></code>.</p></li>
+<li><p><strong>markersize</strong> (<em>int</em>) – Marker size in pixels. Default <code class="docutils literal notranslate"><span class="pre">10</span></code>.</p></li>
+<li><p><strong>fill_alpha</strong> (<em>float</em>) – Marker fill transparency (0–1). Default <code class="docutils literal notranslate"><span class="pre">0.2</span></code>.</p></li>
+<li><p><strong>line_alpha</strong> (<em>float</em>) – Line transparency (0–1). Default <code class="docutils literal notranslate"><span class="pre">0.4</span></code>.</p></li>
+<li><p><strong>ncx_x_col</strong> (<em>str</em>) – Column name for x-values in non-common x-axis mode.
+Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>ncx_y_col</strong> (<em>str</em>) – Column name for y-values in non-common x-axis mode.
+Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>ncx_id_col</strong> (<em>str</em>) – Column name used to identify each series in
+non-common x-axis mode. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>CLASSID</strong> (<em>pd.DataFrame</em>) – Optional class-membership DataFrame. First
+column is series IDs; <code class="docutils literal notranslate"><span class="pre">colorby</span></code> specifies the column to colour
+by. Only used in common x-axis mode. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>colorby</strong> (<em>str</em>) – Column in <code class="docutils literal notranslate"><span class="pre">CLASSID</span></code> to use for colouring. Required
+if <code class="docutils literal notranslate"><span class="pre">CLASSID</span></code> is provided. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>yaxis_log</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, uses a logarithmic y-axis scale.
+Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saves and opens an HTML file via Bokeh’s <code class="docutils literal notranslate"><span class="pre">show()</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.plots.plot_spectra">
+<span class="sig-prename descclassname"><span class="pre">pyphi.plots.</span></span><span class="sig-name descname"><span class="pre">plot_spectra</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">xaxis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Main</span> <span class="pre">Title'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tab_title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Tab</span> <span class="pre">Title'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xaxis_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'X-axis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yaxis_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Y-axis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linecolor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'blue'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linewidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pyphi/plots.html#plot_spectra"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.plots.plot_spectra" title="Link to this definition">¶</a></dt>
+<dd><p>Plot spectral data: one line per sample (row).</p>
+<p>Draws all spectra as a multi-line plot where each row of <code class="docutils literal notranslate"><span class="pre">X</span></code> is a
+separate spectrum. The x-axis values are taken from the DataFrame column
+headers (if a DataFrame) or from <code class="docutils literal notranslate"><span class="pre">xaxis</span></code> (if an ndarray).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – Spectral matrix (n_samples × n_wavelengths).
+If a DataFrame, the first column must contain sample IDs and the
+remaining column headers are used as x-axis tick values.</p></li>
+<li><p><strong>xaxis</strong> (<em>list</em><em> or </em><em>np.ndarray</em>) – Custom x-axis values (e.g. wavelengths).
+Only used when <code class="docutils literal notranslate"><span class="pre">X</span></code> is an ndarray. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, sequential
+integers are used. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>plot_title</strong> (<em>str</em>) – Main plot title. Default <code class="docutils literal notranslate"><span class="pre">&quot;Main</span> <span class="pre">Title&quot;</span></code>.</p></li>
+<li><p><strong>tab_title</strong> (<em>str</em>) – Browser tab / HTML file title. Default <code class="docutils literal notranslate"><span class="pre">&quot;Tab</span> <span class="pre">Title&quot;</span></code>.</p></li>
+<li><p><strong>xaxis_label</strong> (<em>str</em>) – X-axis label (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;Wavelength</span> <span class="pre">(nm)&quot;</span></code>).
+Default <code class="docutils literal notranslate"><span class="pre">&quot;X-axis&quot;</span></code>.</p></li>
+<li><p><strong>yaxis_label</strong> (<em>str</em>) – Y-axis label (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;Absorbance&quot;</span></code>).
+Default <code class="docutils literal notranslate"><span class="pre">&quot;Y-axis&quot;</span></code>.</p></li>
+<li><p><strong>linecolor</strong> (<em>str</em>) – Colour applied to all spectral lines. Default <code class="docutils literal notranslate"><span class="pre">&quot;blue&quot;</span></code>.</p></li>
+<li><p><strong>linewidth</strong> (<em>int</em>) – Line width in pixels. Default <code class="docutils literal notranslate"><span class="pre">2</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saves and opens an HTML file via Bokeh’s <code class="docutils literal notranslate"><span class="pre">show()</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.plots.scatter_with_labels">
+<span class="sig-prename descclassname"><span class="pre">pyphi.plots.</span></span><span class="sig-name descname"><span class="pre">scatter_with_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'X</span> <span class="pre">var'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Y</span> <span class="pre">var'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tabtitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Scatter</span> <span class="pre">Plot'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plottitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Scatter'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">CLASSID</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorby</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotwidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotheight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">markercolor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'darkblue'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">markersize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.4</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pyphi/plots.html#scatter_with_labels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.plots.scatter_with_labels" title="Link to this definition">¶</a></dt>
+<dd><p>Generic scatter plot with hover labels and optional class colouring.</p>
+<p>A flexible utility for plotting any two arrays against each other, with
+per-point labels shown on hover and optional class-based colouring.
+Origin lines (x=0, y=0) are added automatically.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>list</em><em> or </em><em>np.ndarray</em>) – X coordinates of each point.</p></li>
+<li><p><strong>y</strong> (<em>list</em><em> or </em><em>np.ndarray</em>) – Y coordinates of each point. Must have the
+same length as <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p></li>
+<li><p><strong>xlabel</strong> (<em>str</em>) – X-axis label. Default <code class="docutils literal notranslate"><span class="pre">&quot;X</span> <span class="pre">var&quot;</span></code>.</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em>) – Y-axis label. Default <code class="docutils literal notranslate"><span class="pre">&quot;Y</span> <span class="pre">var&quot;</span></code>.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em>[</em><em>str</em><em>]</em>) – Per-point labels shown in the hover tooltip.
+If <code class="docutils literal notranslate"><span class="pre">None</span></code>, points are labelled <code class="docutils literal notranslate"><span class="pre">&quot;Obs</span> <span class="pre">0&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Obs</span> <span class="pre">1&quot;</span></code>, etc.
+Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>tabtitle</strong> (<em>str</em>) – Browser tab / HTML file title. Default <code class="docutils literal notranslate"><span class="pre">&quot;Scatter</span> <span class="pre">Plot&quot;</span></code>.</p></li>
+<li><p><strong>plottitle</strong> (<em>str</em>) – Main plot title. Default <code class="docutils literal notranslate"><span class="pre">&quot;Scatter&quot;</span></code>.</p></li>
+<li><p><strong>legend_cols</strong> (<em>int</em>) – Number of side-by-side legend columns when
+<code class="docutils literal notranslate"><span class="pre">CLASSID</span></code> is used. Default <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
+<li><p><strong>CLASSID</strong> (<em>pd.DataFrame</em>) – Optional class-membership DataFrame for
+colouring points. First column is point IDs. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>colorby</strong> (<em>str</em>) – Column in <code class="docutils literal notranslate"><span class="pre">CLASSID</span></code> to colour by. Required if
+<code class="docutils literal notranslate"><span class="pre">CLASSID</span></code> is provided. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>plotwidth</strong> (<em>int</em>) – Width of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">600</span></code>.</p></li>
+<li><p><strong>plotheight</strong> (<em>int</em>) – Height of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">600</span></code>.</p></li>
+<li><p><strong>markercolor</strong> (<em>str</em>) – Marker colour when no <code class="docutils literal notranslate"><span class="pre">CLASSID</span></code> is provided.
+Default <code class="docutils literal notranslate"><span class="pre">&quot;darkblue&quot;</span></code>.</p></li>
+<li><p><strong>markersize</strong> (<em>int</em>) – Marker size in pixels. Default <code class="docutils literal notranslate"><span class="pre">10</span></code>.</p></li>
+<li><p><strong>fill_alpha</strong> (<em>float</em>) – Marker fill transparency (0–1). Default <code class="docutils literal notranslate"><span class="pre">0.2</span></code>.</p></li>
+<li><p><strong>line_alpha</strong> (<em>float</em>) – Marker edge transparency (0–1). Default <code class="docutils literal notranslate"><span class="pre">0.4</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saves and opens an HTML file via Bokeh’s <code class="docutils literal notranslate"><span class="pre">show()</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">pyphi</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="pyphi.calc.html">pyphi.calc module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">pyphi.plots module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.plots.r2pv"><code class="docutils literal notranslate"><span class="pre">r2pv()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.plots.loadings"><code class="docutils literal notranslate"><span class="pre">loadings()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.plots.loadings_map"><code class="docutils literal notranslate"><span class="pre">loadings_map()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.plots.weighted_loadings"><code class="docutils literal notranslate"><span class="pre">weighted_loadings()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.plots.vip"><code class="docutils literal notranslate"><span class="pre">vip()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.plots.score_scatter"><code class="docutils literal notranslate"><span class="pre">score_scatter()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.plots.score_line"><code class="docutils literal notranslate"><span class="pre">score_line()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.plots.diagnostics"><code class="docutils literal notranslate"><span class="pre">diagnostics()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.plots.predvsobs"><code class="docutils literal notranslate"><span class="pre">predvsobs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.plots.contributions_plot"><code class="docutils literal notranslate"><span class="pre">contributions_plot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.plots.mb_weights"><code class="docutils literal notranslate"><span class="pre">mb_weights()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.plots.mb_r2pb"><code class="docutils literal notranslate"><span class="pre">mb_r2pb()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.plots.mb_vip"><code class="docutils literal notranslate"><span class="pre">mb_vip()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.plots.barplot"><code class="docutils literal notranslate"><span class="pre">barplot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.plots.lineplot"><code class="docutils literal notranslate"><span class="pre">lineplot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.plots.plot_spectra"><code class="docutils literal notranslate"><span class="pre">plot_spectra()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.plots.scatter_with_labels"><code class="docutils literal notranslate"><span class="pre">scatter_with_labels()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pyphi.batch.html">pyphi.batch module</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="pyphi.calc.html" title="previous chapter">pyphi.calc module</a></li>
+      <li>Next: <a href="pyphi.batch.html" title="next chapter">pyphi.batch module</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Salvador Garcia Munoz.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/pyphi.plots.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

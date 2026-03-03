@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>pyphi.batch module &#8212; pyphi 6.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=7cffc26f"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="pyphi.plots module" href="pyphi.plots.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-pyphi.batch">
+<span id="pyphi-batch-module"></span><h1>pyphi.batch module<a class="headerlink" href="#module-pyphi.batch" title="Link to this heading">¶</a></h1>
+<p>Created on Mon Apr 11 14:58:35 2022</p>
+<p>Batch data is assumed to come in an excel file
+with first column being batch identifier and following columns
+being process variables.
+Optionally the second column labeled ‘PHASE’,’Phase’ or ‘phase’ indicating
+the phase of exceution</p>
+<p>Change log:
+* added Dec 28 2023  Titles can be sent to contribution plots via plot_title flag</p>
+<blockquote>
+<div><p>Monitoring diagnostics are also plotted against sample starting with 1</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>added Dec 27 2023  Corrected plots to use correct xaxis starting with sample =1</dt><dd><p>Ammended indicator variable alignment not to replace the IV with a linear sequence but to keep orginal data</p>
+</dd>
+</dl>
+</li>
+<li><p>added Dec 4  2023  Added a BatchVIP calculation</p></li>
+<li><p>added Apr 23 2023  Corrected a very dumb mistake I made coding when tired</p></li>
+<li><dl class="simple">
+<dt>added Apr 18 2023 Added descriptors routine to obtain landmarks of the batch</dt><dd><p>such as min,max,ave of a variable [during a phase if indicated so]
+Modifed plot_var_all_batches to plot against the values in a Time column
+and also add the legend for the BatchID</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>added Apr 10 2023 Added batch contribution plots</dt><dd><p>Added build_rel_time to create a tag of relative
+run time from a timestamp</p>
+</dd>
+</dl>
+</li>
+<li><p>added Apr 7 2023  Added alignment using indicator variable per phase</p></li>
+<li><dl class="simple">
+<dt>added Apr 5 2023  Added the capability to monitor a variable in “Soft Sensor” mode</dt><dd><p>which implies there are no measurements for it (pure prediction)
+as oppose to a forecast where there are new measurments coming in time.</p>
+</dd>
+</dl>
+</li>
+<li><p>added Jul 20 2022 Distribution of number of samples per phase plot</p></li>
+<li><p>added Aug 10 2022 refold_horizontal | clean_empty_rows | predict</p></li>
+<li><p>added Aug 12 2022 replicate_batch</p></li>
+</ul>
+<p>&#64;author: S. Garcia-Munoz <a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ak&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ak<span>&#46;</span>uk</a> <a class="reference external" href="mailto:salg&#37;&#52;&#48;andrew&#46;cmu&#46;edu">salg<span>&#64;</span>andrew<span>&#46;</span>cmu<span>&#46;</span>edu</a></p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.unique">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">unique</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colid</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#unique"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.unique" title="Link to this definition">¶</a></dt>
+<dd><p>Return unique values from a DataFrame column, preserving order of first occurrence.</p>
+<p>A replacement for <code class="docutils literal notranslate"><span class="pre">np.unique</span></code> that does not sort the result, returning
+values in the order they first appear in the DataFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pd.DataFrame</em>) – Input DataFrame.</p></li>
+<li><p><strong>colid</strong> (<em>str</em>) – Name of the column to extract unique values from.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Unique values in the order they first appear in <code class="docutils literal notranslate"><span class="pre">df[colid]</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.mean">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.mean" title="Link to this definition">¶</a></dt>
+<dd><p>Compute the mean of a 2-D array along an axis, ignoring NaN values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>np.ndarray</em>) – 2-D input array, may contain <code class="docutils literal notranslate"><span class="pre">np.nan</span></code>.</p></li>
+<li><p><strong>axis</strong> (<em>int</em>) – Axis along which to compute the mean.
+<code class="docutils literal notranslate"><span class="pre">0</span></code> = column-wise (mean of each column across rows).
+<code class="docutils literal notranslate"><span class="pre">1</span></code> = row-wise (mean of each row across columns).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>1-D array of mean values, with NaN entries excluded from
+the denominator so results remain unbiased in the presence of missing data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.simple_align">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">simple_align</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsamples</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#simple_align"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.simple_align" title="Link to this definition">¶</a></dt>
+<dd><p>Align batch data to a common length by linear interpolation on row index.</p>
+<p>Resamples every batch to exactly <code class="docutils literal notranslate"><span class="pre">nsamples</span></code> rows by linearly
+interpolating each variable against the original row sequence. No phase
+information is used; all samples are treated as a single continuous
+trajectory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bdata</strong> (<em>pd.DataFrame</em>) – Batch data. First column is batch ID; second
+column may optionally be a phase label (<code class="docutils literal notranslate"><span class="pre">'Phase'</span></code>, <code class="docutils literal notranslate"><span class="pre">'phase'</span></code>,
+or <code class="docutils literal notranslate"><span class="pre">'PHASE'</span></code>); remaining columns are process variables.
+Batches are stacked vertically.</p></li>
+<li><p><strong>nsamples</strong> (<em>int</em>) – Target number of samples per batch after alignment.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Aligned batch data with all batches resampled to
+<code class="docutils literal notranslate"><span class="pre">nsamples</span></code> rows. Phase labels (if present) are mapped to the nearest
+original sample using rounded interpolation indices.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.phase_simple_align">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">phase_simple_align</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsamples</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#phase_simple_align"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.phase_simple_align" title="Link to this definition">¶</a></dt>
+<dd><p>Align batch data to a common length per phase by linear interpolation.</p>
+<p>Resamples each phase of each batch independently to the specified number
+of samples, then concatenates phases back in order. Requires phase
+information in the second column.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bdata</strong> (<em>pd.DataFrame</em>) – Batch data. First column is batch ID; second
+column must be a phase label (<code class="docutils literal notranslate"><span class="pre">'Phase'</span></code>, <code class="docutils literal notranslate"><span class="pre">'phase'</span></code>, or
+<code class="docutils literal notranslate"><span class="pre">'PHASE'</span></code>); remaining columns are process variables. Batches are
+stacked vertically.</p></li>
+<li><p><strong>nsamples</strong> (<em>dict</em>) – Number of samples to generate per phase.
+Keys must match the phase labels in the data. Resampling is linear
+with respect to row number within each phase.
+Example: <code class="docutils literal notranslate"><span class="pre">{'Heating':</span> <span class="pre">100,</span> <span class="pre">'Reaction':</span> <span class="pre">200,</span> <span class="pre">'Cooling':</span> <span class="pre">10}</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Aligned batch data with each phase resampled to the
+specified number of samples, phases concatenated in key order of
+<code class="docutils literal notranslate"><span class="pre">nsamples</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.phase_iv_align">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">phase_iv_align</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsamples</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#phase_iv_align"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.phase_iv_align" title="Link to this definition">¶</a></dt>
+<dd><p>Align batch data using an indicator variable (IV) or row index, per phase.</p>
+<p>Provides the most flexible alignment: each phase can be aligned either
+by linear resampling (default) or by using a monotonically changing
+process variable (indicator variable) as the alignment axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bdata</strong> (<em>pd.DataFrame</em>) – Batch data. First column is batch ID; second
+column must be a phase label (<code class="docutils literal notranslate"><span class="pre">'Phase'</span></code>, <code class="docutils literal notranslate"><span class="pre">'phase'</span></code>, or
+<code class="docutils literal notranslate"><span class="pre">'PHASE'</span></code>); remaining columns are process variables. Batches are
+stacked vertically.</p></li>
+<li><p><strong>nsamples</strong> (<em>dict</em>) – Alignment specification per phase. Each value can be:
+an integer for linear alignment, e.g. <code class="docutils literal notranslate"><span class="pre">{'Heating':</span> <span class="pre">100,</span> <span class="pre">'Reaction':</span> <span class="pre">200}</span></code>;
+a 4-element list for IV alignment with known start and end, e.g.
+<code class="docutils literal notranslate"><span class="pre">['TIC101',</span> <span class="pre">100,</span> <span class="pre">30,</span> <span class="pre">50]</span></code> (IVarID, num_samples, start_value, end_value);
+or a 3-element list for IV alignment with known end only, e.g.
+<code class="docutils literal notranslate"><span class="pre">['TIC101',</span> <span class="pre">100,</span> <span class="pre">50]</span></code> where start_value is taken from the first row
+of that phase. The indicator variable must be monotonically increasing
+or decreasing within the phase; non-monotonic samples are removed with
+a warning before interpolation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Aligned batch data with each phase resampled as
+specified, phases concatenated in key order of <code class="docutils literal notranslate"><span class="pre">nsamples</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.plot_var_all_batches">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">plot_var_all_batches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bdata</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">which_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mkr_style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.-'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha_</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timecolumn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lot_legend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#plot_var_all_batches"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.plot_var_all_batches" title="Link to this definition">¶</a></dt>
+<dd><p>Plot trajectories of one or more variables for all batches.</p>
+<p>Produces one Matplotlib figure per variable, with each batch overlaid as
+a separate line. Optionally adds phase boundary annotations and a batch
+legend.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bdata</strong> (<em>pd.DataFrame</em>) – Batch data. First column is batch ID; second
+column may optionally be a phase label; remaining columns are
+process variables. Batches are stacked vertically.</p></li>
+<li><p><strong>which_var</strong> (<em>list</em><em>[</em><em>str</em><em>]</em><em>, </em><em>str</em><em>, or </em><em>bool</em>) – Variables to plot. If <code class="docutils literal notranslate"><span class="pre">False</span></code>
+(default), all process variables are plotted.</p></li>
+<li><p><strong>plot_title</strong> (<em>str</em>) – Title applied to all figures. Default <code class="docutils literal notranslate"><span class="pre">''</span></code>.</p></li>
+<li><p><strong>mkr_style</strong> (<em>str</em>) – Matplotlib line/marker style string, e.g. <code class="docutils literal notranslate"><span class="pre">'.-'</span></code>
+(default), <code class="docutils literal notranslate"><span class="pre">'o'</span></code>, <code class="docutils literal notranslate"><span class="pre">'-'</span></code>.</p></li>
+<li><p><strong>phase_samples</strong> (<em>dict</em><em> or </em><em>bool</em>) – Phase structure used to annotate phase
+boundaries as vertical magenta lines. Pass the same <code class="docutils literal notranslate"><span class="pre">nsamples</span></code>
+dict used for alignment. Default <code class="docutils literal notranslate"><span class="pre">False</span></code> (no annotations).</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – Transparency of phase boundary lines (0–1).
+Default <code class="docutils literal notranslate"><span class="pre">0.2</span></code>.</p></li>
+<li><p><strong>timecolumn</strong> (<em>str</em><em> or </em><em>bool</em>) – If a column name is given, the x-axis uses
+the values in that column instead of the sample sequence index.
+Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>lot_legend</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, adds a legend showing each batch ID.
+Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Displays one Matplotlib figure per variable.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.plot_batch">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">plot_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">which_batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">which_var</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_mean_exc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">single_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#plot_batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.plot_batch" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the trajectory of one or more batches for selected variables.</p>
+<p>Highlights the specified batch(es) in black against an optional backdrop
+of all other batch trajectories and/or their mean.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bdata</strong> (<em>pd.DataFrame</em>) – Batch data. First column is batch ID; second
+column may optionally be a phase label; remaining columns are
+process variables. Batches are stacked vertically.</p></li>
+<li><p><strong>which_batch</strong> (<em>str</em><em> or </em><em>list</em><em>[</em><em>str</em><em>]</em>) – Batch ID(s) to highlight.</p></li>
+<li><p><strong>which_var</strong> (<em>str</em><em> or </em><em>list</em><em>[</em><em>str</em><em>]</em>) – Variable name(s) to plot.</p></li>
+<li><p><strong>include_mean_exc</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, overlays the mean trajectory of
+all other batches (excluding the highlighted batch) in red.
+Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>include_set</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, overlays all other batch trajectories
+in light magenta for context. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>phase_samples</strong> (<em>dict</em><em> or </em><em>bool</em>) – Phase structure for annotating phase
+boundaries. Pass the same <code class="docutils literal notranslate"><span class="pre">nsamples</span></code> dict used for alignment.
+Default <code class="docutils literal notranslate"><span class="pre">False</span></code> (no annotations).</p></li>
+<li><p><strong>single_plot</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, plots all selected variables on a
+single axis. If <code class="docutils literal notranslate"><span class="pre">False</span></code> (default), each variable gets its own
+figure.</p></li>
+<li><p><strong>plot_title</strong> (<em>str</em>) – Text appended to each figure title after the batch
+ID. Default <code class="docutils literal notranslate"><span class="pre">''</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Displays one or more Matplotlib figures.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.unfold_horizontal">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">unfold_horizontal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bdata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#unfold_horizontal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.unfold_horizontal" title="Link to this definition">¶</a></dt>
+<dd><p>Unfold batch data horizontally (batch-wise unfolding).</p>
+<p>Reshapes aligned batch data from the vertical stacked format
+(samples × variables) into a 2-D matrix where each row is one batch and
+columns represent all variables at all time points:
+<code class="docutils literal notranslate"><span class="pre">[Var1_t1,</span> <span class="pre">Var1_t2,</span> <span class="pre">...,</span> <span class="pre">Var1_tN,</span> <span class="pre">Var2_t1,</span> <span class="pre">...]</span></code>.</p>
+<p>This is the standard preprocessing step before fitting <a class="reference internal" href="#pyphi.batch.mpca" title="pyphi.batch.mpca"><code class="xref py py-func docutils literal notranslate"><span class="pre">mpca()</span></code></a> or
+<a class="reference internal" href="#pyphi.batch.mpls" title="pyphi.batch.mpls"><code class="xref py py-func docutils literal notranslate"><span class="pre">mpls()</span></code></a> with batch-wise unfolding.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>bdata</strong> (<em>pd.DataFrame</em>) – Aligned batch data. First column is batch ID;
+second column may optionally be a phase label; remaining columns
+are process variables. All batches must have the same number of
+rows.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>bdata_hor</strong> (pd.DataFrame): Unfolded matrix, one row per batch.
+First column is batch ID; remaining columns are variable-time
+combinations.</p></li>
+<li><p><strong>colnames</strong> (list[str]): Column names of the unfolded matrix
+(e.g. <code class="docutils literal notranslate"><span class="pre">['Var1_1',</span> <span class="pre">'Var1_2',</span> <span class="pre">...,</span> <span class="pre">'VarN_T']</span></code>).</p></li>
+<li><p><strong>bid</strong> (list[str]): Variable-block identifiers — for each column
+in <code class="docutils literal notranslate"><span class="pre">bdata_hor</span></code>, the name of the original process variable it
+belongs to. Used internally to reconstruct block structure.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.refold_horizontal">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">refold_horizontal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xuf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nvars</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsamples</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#refold_horizontal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.refold_horizontal" title="Link to this definition">¶</a></dt>
+<dd><p>Refold a horizontally unfolded batch matrix back to 3-D array form.</p>
+<p>Inverts the operation of <a class="reference internal" href="#pyphi.batch.unfold_horizontal" title="pyphi.batch.unfold_horizontal"><code class="xref py py-func docutils literal notranslate"><span class="pre">unfold_horizontal()</span></code></a>, converting a 2-D
+unfolded matrix (one row per batch) back to a 3-D arrangement
+(total_samples × nvars), suitable for conversion back to a DataFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>xuf</strong> (<em>np.ndarray</em>) – Horizontally unfolded batch data, shape
+(n_batches × (nvars × nsamples)). Strictly numeric — no ID column.</p></li>
+<li><p><strong>nvars</strong> (<em>int</em>) – Number of process variables per sample.</p></li>
+<li><p><strong>nsamples</strong> (<em>int</em>) – Number of time samples per batch.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Refolded array of shape (n_batches × nsamples, nvars),
+where the rows for each batch are stacked vertically.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.loadings">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">loadings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mmvm_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">r2_weighted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">which_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#loadings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.loadings" title="Link to this definition">¶</a></dt>
+<dd><p>Plot batch model loadings as a function of sample number.</p>
+<p>For each process variable, produces a filled-area plot of the loading
+(W* for PLS, P for PCA) vs. sample index, so the temporal pattern of
+each variable’s influence on the model can be inspected visually.</p>
+<p>For PLS models with initial conditions (<code class="docutils literal notranslate"><span class="pre">ninit</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>), an additional
+bar chart is produced for the initial-condition variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mmvm_obj</strong> (<em>dict</em>) – Multi-way PCA model from <a class="reference internal" href="#pyphi.batch.mpca" title="pyphi.batch.mpca"><code class="xref py py-func docutils literal notranslate"><span class="pre">mpca()</span></code></a> or multi-way
+PLS model from <a class="reference internal" href="#pyphi.batch.mpls" title="pyphi.batch.mpls"><code class="xref py py-func docutils literal notranslate"><span class="pre">mpls()</span></code></a>.</p></li>
+<li><p><strong>dim</strong> (<em>int</em>) – Component index to plot (1-indexed).</p></li>
+<li><p><strong>r2_weighted</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, multiplies each loading by its
+corresponding per-variable R² value before plotting, so variables
+that explain more variance appear larger. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>which_var</strong> (<em>str</em><em>, </em><em>list</em><em>[</em><em>str</em><em>]</em><em>, or </em><em>bool</em>) – Process variable name(s) to
+plot. If <code class="docutils literal notranslate"><span class="pre">False</span></code> (default), all variables are plotted.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Displays one Matplotlib figure per variable (plus one bar chart
+for initial conditions if applicable).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.loadings_abs_integral">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">loadings_abs_integral</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mmvm_obj</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">r2_weighted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addtitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#loadings_abs_integral"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.loadings_abs_integral" title="Link to this definition">¶</a></dt>
+<dd><p>Plot the integral of absolute loadings per variable across all LVs/PCs.</p>
+<p>For each latent variable / principal component, produces a bar chart
+where each bar represents the sum of absolute loading values over all
+time samples for that variable. This gives a scalar importance measure
+for each process variable per component.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mmvm_obj</strong> (<em>dict</em>) – Multi-way PCA model from <a class="reference internal" href="#pyphi.batch.mpca" title="pyphi.batch.mpca"><code class="xref py py-func docutils literal notranslate"><span class="pre">mpca()</span></code></a> or multi-way
+PLS model from <a class="reference internal" href="#pyphi.batch.mpls" title="pyphi.batch.mpls"><code class="xref py py-func docutils literal notranslate"><span class="pre">mpls()</span></code></a>.</p></li>
+<li><p><strong>r2_weighted</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, weights each loading by its
+per-variable R² before summing, emphasising variables that also
+explain more variance. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>addtitle</strong> (<em>str</em><em> or </em><em>bool</em>) – Optional string to use as the figure title.
+If <code class="docutils literal notranslate"><span class="pre">False</span></code> (default), no title is added.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Displays one Matplotlib figure per latent variable / PC.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.batch_vip">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">batch_vip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mmvm_obj</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">addtitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#batch_vip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.batch_vip" title="Link to this definition">¶</a></dt>
+<dd><p>Plot a batch-level VIP score summarising variable importance across all LVs.</p>
+<p>Computes a scalar VIP-like score for each process variable by summing
+the absolute loadings weighted by R²Y across all latent variables, then
+summing over all time samples. The result is shown as a bar chart, sorted
+by variable (not by VIP magnitude).</p>
+<p>This is conceptually analogous to the standard VIP but adapted for the
+temporal, unfolded batch model structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mmvm_obj</strong> (<em>dict</em>) – Multi-way PLS model from <a class="reference internal" href="#pyphi.batch.mpls" title="pyphi.batch.mpls"><code class="xref py py-func docutils literal notranslate"><span class="pre">mpls()</span></code></a>. For PCA
+models the plot uses R²X weighting instead of R²Y.</p></li>
+<li><p><strong>addtitle</strong> (<em>str</em><em> or </em><em>bool</em>) – Optional string to use as the figure title.
+If <code class="docutils literal notranslate"><span class="pre">False</span></code> (default), no title is added.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Displays a single Matplotlib bar chart.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.r2pv">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">r2pv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mmvm_obj</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">which_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#r2pv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.r2pv" title="Link to this definition">¶</a></dt>
+<dd><p>Plot cumulative R² per variable as a function of sample number.</p>
+<p>For each process variable, produces a stacked filled-area plot where
+each band represents the cumulative R² contribution of one LV/PC at each
+time sample. For PLS models, a separate stacked bar chart is also
+produced for the Y-space R²pvY.</p>
+<p>For models with initial conditions (<code class="docutils literal notranslate"><span class="pre">ninit</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>), an additional bar
+chart is produced for the initial-condition variable R² values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mmvm_obj</strong> (<em>dict</em>) – Multi-way PCA model from <a class="reference internal" href="#pyphi.batch.mpca" title="pyphi.batch.mpca"><code class="xref py py-func docutils literal notranslate"><span class="pre">mpca()</span></code></a> or multi-way
+PLS model from <a class="reference internal" href="#pyphi.batch.mpls" title="pyphi.batch.mpls"><code class="xref py py-func docutils literal notranslate"><span class="pre">mpls()</span></code></a>.</p></li>
+<li><p><strong>which_var</strong> (<em>str</em><em>, </em><em>list</em><em>[</em><em>str</em><em>]</em><em>, or </em><em>bool</em>) – Process variable name(s) to
+plot. If <code class="docutils literal notranslate"><span class="pre">False</span></code> (default), all variables are plotted.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Displays one Matplotlib figure per variable, plus additional
+figures for Y-space and initial conditions where applicable.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.mpca">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">mpca</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xbatch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">unfolding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'batch</span> <span class="pre">wise'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_val</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#mpca"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.mpca" title="Link to this definition">¶</a></dt>
+<dd><p>Fit a Multi-way PCA (MPCA) model to aligned batch data.</p>
+<p>Unfolds the batch data into a 2-D matrix (batch-wise or variable-wise)
+and fits a PCA model. Low-variance columns are removed automatically and
+their positions are restored in the model loadings for consistent
+interpretation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>xbatch</strong> (<em>pd.DataFrame</em>) – Aligned batch data, all batches having the
+same number of samples. First column is batch ID; second column
+may optionally be a phase label; remaining columns are process
+variables. Batches are stacked vertically.</p></li>
+<li><p><strong>a</strong> (<em>int</em>) – Number of principal components to fit.</p></li>
+<li><p><strong>unfolding</strong> (<em>str</em>) – Unfolding strategy. <code class="docutils literal notranslate"><span class="pre">'batch</span> <span class="pre">wise'</span></code> (default)
+unfolds to one row per batch; <code class="docutils literal notranslate"><span class="pre">'variable</span> <span class="pre">wise'</span></code> keeps the
+observation-per-sample structure.</p></li>
+<li><p><strong>phase_samples</strong> (<em>dict</em><em> or </em><em>bool</em>) – Phase structure stored in the model for
+use in plotting functions. Pass the same <code class="docutils literal notranslate"><span class="pre">nsamples</span></code> dict used for
+alignment. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>cross_val</strong> (<em>int</em>) – Cross-validation percentage of elements to remove
+per round. <code class="docutils literal notranslate"><span class="pre">0</span></code> (default) = no CV; <code class="docutils literal notranslate"><span class="pre">100</span></code> = leave-one-out.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>Multi-way PCA model object extending the standard PCA dict from
+<a class="reference internal" href="pyphi.calc.html#pyphi.calc.pca" title="pyphi.calc.pca"><code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.calc.pca()</span></code></a> with additional batch-specific keys:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'varidX'</span></code> (list[str]): Variable column names in unfolded order.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'bid'</span></code> (list[str]): Block ID for each column (original variable name).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'uf'</span></code> (str): Unfolding strategy used (<code class="docutils literal notranslate"><span class="pre">'batch</span> <span class="pre">wise'</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'phase_samples'</span></code>: Phase structure passed in (for plotting).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'nvars'</span></code> (int): Number of process variables per sample.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'nbatches'</span></code> (int): Number of batches in the training set.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'nsamples'</span></code> (int): Number of samples per batch.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'ninit'</span></code> (int): Number of initial-condition variables (always
+<code class="docutils literal notranslate"><span class="pre">0</span></code> for MPCA).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'A'</span></code> (int): Number of principal components fitted.</p></li>
+</ul>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.monitor">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">monitor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mmvm_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bdata</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">which_batch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zinit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">build_ci</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shush</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">soft_sensor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#monitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.monitor" title="Link to this definition">¶</a></dt>
+<dd><p>Mimic real-time batch monitoring and produce dynamic diagnostic plots.</p>
+<p>Two-stage workflow:</p>
+<p><strong>Stage 1 — Build confidence intervals</strong> (call once after fitting):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">monitor</span><span class="p">(</span><span class="n">mmvm_obj</span><span class="p">,</span> <span class="n">training_data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Simulates monitoring for every batch in <code class="docutils literal notranslate"><span class="pre">bdata</span></code>, computes per-sample
+confidence intervals for scores, HT², global SPE, and instantaneous SPE,
+and writes them back into <code class="docutils literal notranslate"><span class="pre">mmvm_obj</span></code> in place.</p>
+<p><strong>Stage 2 — Monitor a new batch</strong> (call after Stage 1):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">diags</span> <span class="o">=</span> <span class="n">monitor</span><span class="p">(</span><span class="n">mmvm_obj</span><span class="p">,</span> <span class="n">bdata</span><span class="p">,</span> <span class="n">which_batch</span><span class="o">=</span><span class="s1">&#39;Batch01&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Simulates real-time monitoring for the specified batch, plots dynamic
+score, HT², SPE, and (for PLS models) Y-forecast trajectories with the
+Stage 1 confidence interval overlays.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mmvm_obj</strong> (<em>dict</em>) – Multi-way PCA or PLS model from <a class="reference internal" href="#pyphi.batch.mpca" title="pyphi.batch.mpca"><code class="xref py py-func docutils literal notranslate"><span class="pre">mpca()</span></code></a> or
+<a class="reference internal" href="#pyphi.batch.mpls" title="pyphi.batch.mpls"><code class="xref py py-func docutils literal notranslate"><span class="pre">mpls()</span></code></a>. Confidence interval keys are added in Stage 1.</p></li>
+<li><p><strong>bdata</strong> (<em>pd.DataFrame</em>) – Batch data (aligned, same structure as training
+data). Used to look up batch trajectories.</p></li>
+<li><p><strong>which_batch</strong> (<em>str</em><em>, </em><em>list</em><em>[</em><em>str</em><em>]</em><em>, or </em><em>bool</em>) – Batch ID(s) to monitor. If
+<code class="docutils literal notranslate"><span class="pre">False</span></code> (default), Stage 1 is performed (CI building).</p></li>
+<li><p><strong>zinit</strong> (<em>pd.DataFrame</em><em> or </em><em>bool</em>) – Initial-condition data for the batch(es)
+being monitored. Required if the model was fitted with <code class="docutils literal notranslate"><span class="pre">zinit</span></code>.
+Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>build_ci</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code> (default) and <code class="docutils literal notranslate"><span class="pre">which_batch=False</span></code>,
+builds and stores confidence intervals in <code class="docutils literal notranslate"><span class="pre">mmvm_obj</span></code>.</p></li>
+<li><p><strong>shush</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, suppresses progress messages. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>soft_sensor</strong> (<em>str</em><em>, </em><em>list</em><em>[</em><em>str</em><em>]</em><em>, or </em><em>bool</em>) – Variable name(s) to treat as
+soft-sensor targets — their measurements are set to NaN before
+prediction so that only model-based estimates are produced.
+Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>In Stage 2, returns a <code class="docutils literal notranslate"><span class="pre">diags</span></code> dictionary (or a list of
+dicts if multiple batches are requested) with keys:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'Batch'</span></code> (str): Batch ID.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'t_mon'</span></code> (ndarray): Score trajectories (nsamples × A).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'HT2_mon'</span></code> (ndarray): Hotelling’s T² trajectory.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'spe_mon'</span></code> (ndarray): Global SPE trajectory.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'spei_mon'</span></code> (ndarray): Instantaneous SPE trajectory.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'cont_spe'</span></code> (list[pd.DataFrame]): SPE contributions per sample.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'cont_spei'</span></code> (pd.DataFrame): Instantaneous SPE contributions.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'cont_ht2'</span></code> (list[pd.DataFrame]): HT² contributions per sample.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'forecast'</span></code> (list[pd.DataFrame]): X-space forecast per sample.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'forecast</span> <span class="pre">y'</span></code> (pd.DataFrame): Y forecast trajectory
+(PLS models only).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'spe</span> <span class="pre">z'</span></code>, <code class="docutils literal notranslate"><span class="pre">'cont_spe_z'</span></code>, <code class="docutils literal notranslate"><span class="pre">'cont_ht2_z'</span></code>,
+<code class="docutils literal notranslate"><span class="pre">'reconstructed</span> <span class="pre">z'</span></code>: Initial-condition diagnostics (if
+<code class="docutils literal notranslate"><span class="pre">zinit</span></code> was provided).</p></li>
+</ul>
+</div></blockquote>
+<p>Returns <code class="docutils literal notranslate"><span class="pre">'error</span> <span class="pre">batch</span> <span class="pre">not</span> <span class="pre">found'</span></code> if the requested batch is not in
+<code class="docutils literal notranslate"><span class="pre">bdata</span></code>. In Stage 1, returns <code class="docutils literal notranslate"><span class="pre">None</span></code> (results written to
+<code class="docutils literal notranslate"><span class="pre">mmvm_obj</span></code>).</p>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict or str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.mpls">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">mpls</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xbatch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">zinit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mb_each_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_val</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_val_X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#mpls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.mpls" title="Link to this definition">¶</a></dt>
+<dd><p>Fit a Multi-way PLS (MPLS) model to aligned batch data.</p>
+<p>Unfolds the batch data batch-wise, optionally prepends initial-condition
+variables, and fits a PLS (or Multi-Block PLS) model to predict <code class="docutils literal notranslate"><span class="pre">y</span></code>.
+Low-variance columns are removed and their positions are restored
+for consistent interpretation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>xbatch</strong> (<em>pd.DataFrame</em>) – Aligned batch data, all batches having the
+same number of samples. First column is batch ID; second column
+may optionally be a phase label; remaining columns are process
+variables. Batches are stacked vertically.</p></li>
+<li><p><strong>y</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – Response matrix, one row per batch.
+If a DataFrame, the first column is the batch ID.</p></li>
+<li><p><strong>a</strong> (<em>int</em>) – Number of latent variables.</p></li>
+<li><p><strong>zinit</strong> (<em>pd.DataFrame</em><em> or </em><em>bool</em>) – Initial-condition variables, one row per
+batch. First column must be batch ID. If <code class="docutils literal notranslate"><span class="pre">False</span></code> (default), no
+initial conditions are used.</p></li>
+<li><p><strong>phase_samples</strong> (<em>dict</em><em> or </em><em>bool</em>) – Phase structure stored in the model for
+use in plotting functions. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>mb_each_var</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, treats each process variable as a
+separate block in a Multi-Block PLS model. If <code class="docutils literal notranslate"><span class="pre">False</span></code> (default),
+trajectories form a single block (plus an initial-conditions block
+if <code class="docutils literal notranslate"><span class="pre">zinit</span></code> is provided).</p></li>
+<li><p><strong>cross_val</strong> (<em>int</em>) – Cross-validation level (<code class="docutils literal notranslate"><span class="pre">0</span></code> = none,
+<code class="docutils literal notranslate"><span class="pre">100</span></code> = LOO). Default <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
+<li><p><strong>cross_val_X</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, also cross-validates the X-space.
+Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>Multi-way PLS model object extending the standard PLS dict from
+<a class="reference internal" href="pyphi.calc.html#pyphi.calc.pls" title="pyphi.calc.pls"><code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.calc.pls()</span></code></a> (or <a class="reference internal" href="pyphi.calc.html#pyphi.calc.mbpls" title="pyphi.calc.mbpls"><code class="xref py py-func docutils literal notranslate"><span class="pre">pyphi.calc.mbpls()</span></code></a>) with additional
+batch-specific keys:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'Yhat'</span></code> (np.ndarray): In-sample Y predictions.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'varidX'</span></code> (list[str]): Variable column names in unfolded order.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'bid'</span></code> (list[str]): Block ID for each column.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'uf'</span></code> (str): <code class="docutils literal notranslate"><span class="pre">'batch</span> <span class="pre">wise'</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'nvars'</span></code> (int): Number of process variables per sample.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'nbatches'</span></code> (int): Number of batches in the training set.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'nsamples'</span></code> (int): Number of samples per batch.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'A'</span></code> (int): Number of latent variables fitted.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'phase_samples'</span></code>: Phase structure passed in.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'mb_each_var'</span></code> (bool): Whether MB-PLS was used.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'ninit'</span></code> (int): Number of initial-condition variables
+(<code class="docutils literal notranslate"><span class="pre">0</span></code> if <code class="docutils literal notranslate"><span class="pre">zinit</span></code> was not provided).</p></li>
+</ul>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.find">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#find"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.find" title="Link to this definition">¶</a></dt>
+<dd><p>Return indices of elements in a list that satisfy a predicate function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>a</strong> (<em>list</em>) – Input list to search.</p></li>
+<li><p><strong>func</strong> (<em>callable</em>) – A function that takes a single element and returns
+<code class="docutils literal notranslate"><span class="pre">True</span></code> if the element should be included. Example:
+<code class="docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">x:</span> <span class="pre">x</span> <span class="pre">==</span> <span class="pre">0</span></code> finds all zero-valued elements.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Indices of elements in <code class="docutils literal notranslate"><span class="pre">a</span></code> for which <code class="docutils literal notranslate"><span class="pre">func</span></code> returns <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.clean_empty_rows">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">clean_empty_rows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">shush</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#clean_empty_rows"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.clean_empty_rows" title="Link to this definition">¶</a></dt>
+<dd><p>Remove rows that are entirely NaN from a batch DataFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>pd.DataFrame</em>) – Batch data. First column is batch ID; second column
+may optionally be a phase label (<code class="docutils literal notranslate"><span class="pre">'Phase'</span></code>, <code class="docutils literal notranslate"><span class="pre">'phase'</span></code>, or
+<code class="docutils literal notranslate"><span class="pre">'PHASE'</span></code>); remaining columns are process variables.</p></li>
+<li><p><strong>shush</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, suppresses printed output listing removed
+rows. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Batch data with fully empty rows removed. Returns the
+original DataFrame unchanged if no empty rows are found.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.phase_sampling_dist">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">phase_sampling_dist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addtitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_phases</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#phase_sampling_dist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.phase_sampling_dist" title="Link to this definition">¶</a></dt>
+<dd><p>Plot and return the distribution of samples (or time) consumed per phase.</p>
+<p>Produces a histogram panel — one subplot per phase plus one for the total
+— showing how many samples (or how much time) each batch spends in each
+phase. Useful for diagnosing alignment issues and batch variability before
+fitting a model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bdata</strong> (<em>pd.DataFrame</em>) – Batch data. First column is batch ID; second
+column must be a phase label (<code class="docutils literal notranslate"><span class="pre">'Phase'</span></code>, <code class="docutils literal notranslate"><span class="pre">'phase'</span></code>, or
+<code class="docutils literal notranslate"><span class="pre">'PHASE'</span></code>); remaining columns are process variables. Batches are
+stacked vertically.</p></li>
+<li><p><strong>time_column</strong> (<em>str</em><em> or </em><em>bool</em>) – If a column name is given, the x-axis
+represents elapsed time in that column rather than sample count.
+Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>addtitle</strong> (<em>str</em><em> or </em><em>bool</em>) – Optional string used as the overall figure
+super-title. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>use_phases</strong> (<em>list</em><em>[</em><em>str</em><em>] or </em><em>bool</em>) – Subset of phases to include. If
+<code class="docutils literal notranslate"><span class="pre">False</span></code> (default), all phases present in the data are used.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Nested dictionary <code class="docutils literal notranslate"><span class="pre">{phase:</span> <span class="pre">{batch_id:</span> <span class="pre">value}}</span></code> where <code class="docutils literal notranslate"><span class="pre">value</span></code>
+is the sample count or elapsed time for that batch in that phase.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.predict">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xbatch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mmvm_obj</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">zinit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.predict" title="Link to this definition">¶</a></dt>
+<dd><p>Generate predictions for all batches in a dataset using a fitted MPCA or MPLS model.</p>
+<p>Unfolds <code class="docutils literal notranslate"><span class="pre">xbatch</span></code> batch-wise, projects through the model, and returns
+reconstructed X (and predicted Y for PLS models) refolded back to the
+original batch DataFrame structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>xbatch</strong> (<em>pd.DataFrame</em>) – Aligned batch data, same variable structure and
+number of samples per batch as the training data. First column is
+batch ID; second column may optionally be a phase label.</p></li>
+<li><p><strong>mmvm_obj</strong> (<em>dict</em>) – Multi-way PCA or PLS model from <a class="reference internal" href="#pyphi.batch.mpca" title="pyphi.batch.mpca"><code class="xref py py-func docutils literal notranslate"><span class="pre">mpca()</span></code></a> or
+<a class="reference internal" href="#pyphi.batch.mpls" title="pyphi.batch.mpls"><code class="xref py py-func docutils literal notranslate"><span class="pre">mpls()</span></code></a>.</p></li>
+<li><p><strong>zinit</strong> (<em>pd.DataFrame</em><em> or </em><em>bool</em>) – Initial-condition data, one row per
+batch. First column must be batch ID. Required if the model was
+fitted with initial conditions. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>Prediction results with keys:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'Tnew'</span></code> (ndarray): Batch scores (n_batches × A).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'Xhat'</span></code> (pd.DataFrame): Reconstructed X in original
+batch-stacked format (same structure as <code class="docutils literal notranslate"><span class="pre">xbatch</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'speX'</span></code> (ndarray): X-space SPE per batch.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'T2'</span></code> (ndarray): Hotelling’s T² per batch.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'Yhat'</span></code> (pd.DataFrame): Predicted Y (PLS models only), one
+row per batch with batch IDs as the first column.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'Zhat'</span></code> (pd.DataFrame): Reconstructed initial conditions
+(PLS models only, when <code class="docutils literal notranslate"><span class="pre">zinit</span></code> is provided).</p></li>
+</ul>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.contributions">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">contributions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mmvmobj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cont_type</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lv_space</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dyn_conts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">which_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#contributions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.contributions" title="Link to this definition">¶</a></dt>
+<dd><p>Plot variable contributions to scores, HT², or SPE for a batch model.</p>
+<p>Computes and visualises how much each process variable at each time point
+contributes to the specified monitoring statistic for the given batch(es).
+Both a summary bar chart (absolute contributions summed over time) and an
+optional dynamic time-series plot are produced.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mmvmobj</strong> (<em>dict</em>) – Multi-way PCA or PLS model from <a class="reference internal" href="#pyphi.batch.mpca" title="pyphi.batch.mpca"><code class="xref py py-func docutils literal notranslate"><span class="pre">mpca()</span></code></a> or
+<a class="reference internal" href="#pyphi.batch.mpls" title="pyphi.batch.mpls"><code class="xref py py-func docutils literal notranslate"><span class="pre">mpls()</span></code></a>.</p></li>
+<li><p><strong>X</strong> (<em>pd.DataFrame</em>) – Batch data, same structure as the training data
+(aligned, batch-wise stacked).</p></li>
+<li><p><strong>cont_type</strong> (<em>str</em>) – Type of contribution to compute. Options:
+<code class="docutils literal notranslate"><span class="pre">'scores'</span></code>, <code class="docutils literal notranslate"><span class="pre">'ht2'</span></code>, <code class="docutils literal notranslate"><span class="pre">'spe'</span></code>.</p></li>
+<li><p><strong>to_obs</strong> (<em>list</em><em>[</em><em>str</em><em>] or </em><em>bool</em>) – Batch ID(s) to diagnose. This argument
+is required. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>from_obs</strong> (<em>list</em><em>[</em><em>str</em><em>] or </em><em>bool</em>) – Reference batch ID(s) for
+difference-based contributions (<code class="docutils literal notranslate"><span class="pre">'scores'</span></code> and <code class="docutils literal notranslate"><span class="pre">'ht2'</span></code> only).
+If <code class="docutils literal notranslate"><span class="pre">False</span></code> (default), the model origin is used as the reference.
+Ignored for <code class="docutils literal notranslate"><span class="pre">'spe'</span></code>.</p></li>
+<li><p><strong>lv_space</strong> (<em>int</em><em>, </em><em>list</em><em>[</em><em>int</em><em>]</em><em>, or </em><em>bool</em>) – Component index/indices to
+compute contributions for (<code class="docutils literal notranslate"><span class="pre">'scores'</span></code> only). If <code class="docutils literal notranslate"><span class="pre">False</span></code>
+(default), contributions are summed across all components.</p></li>
+<li><p><strong>phase_samples</strong> (<em>dict</em><em> or </em><em>bool</em>) – Phase structure for annotating phase
+boundaries in dynamic contribution plots. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>dyn_conts</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, also produces dynamic time-series
+contribution plots (one per variable) in addition to the summary
+bar chart. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>which_var</strong> (<em>str</em><em>, </em><em>list</em><em>[</em><em>str</em><em>]</em><em>, or </em><em>bool</em>) – Variables to include in the
+dynamic contribution plots (only used when <code class="docutils literal notranslate"><span class="pre">dyn_conts=True</span></code>).
+If <code class="docutils literal notranslate"><span class="pre">False</span></code> (default), all variables are shown.</p></li>
+<li><p><strong>plot_title</strong> (<em>str</em>) – Title applied to all figures. Default <code class="docutils literal notranslate"><span class="pre">''</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Displays Matplotlib figures (bar chart always; time-series plots
+if <code class="docutils literal notranslate"><span class="pre">dyn_conts=True</span></code>).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.build_rel_time">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">build_rel_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bdata</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'min'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#build_rel_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.build_rel_time" title="Link to this definition">¶</a></dt>
+<dd><p>Convert a <code class="docutils literal notranslate"><span class="pre">'Timestamp'</span></code> column to relative elapsed time from batch start.</p>
+<p>For each batch, computes elapsed time since the first timestamp and adds
+it as a new <code class="docutils literal notranslate"><span class="pre">'Time</span> <span class="pre">(&lt;unit&gt;)'</span></code> column, replacing the original
+<code class="docutils literal notranslate"><span class="pre">'Timestamp'</span></code> column.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bdata</strong> (<em>pd.DataFrame</em>) – Batch data containing a <code class="docutils literal notranslate"><span class="pre">'Timestamp'</span></code> column
+with datetime-compatible values. First column is batch ID.</p></li>
+<li><p><strong>time_unit</strong> (<em>str</em>) – Unit for the output time column. <code class="docutils literal notranslate"><span class="pre">'min'</span></code> (default)
+produces minutes; <code class="docutils literal notranslate"><span class="pre">'hr'</span></code> produces hours; <code class="docutils literal notranslate"><span class="pre">'s'</span></code> keeps seconds.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Batch data with <code class="docutils literal notranslate"><span class="pre">'Timestamp'</span></code> replaced by
+<code class="docutils literal notranslate"><span class="pre">'Time</span> <span class="pre">(&lt;time_unit&gt;)'</span></code>, where values are elapsed time from the
+start of each batch.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.batch.descriptors">
+<span class="sig-prename descclassname"><span class="pre">pyphi.batch.</span></span><span class="sig-name descname"><span class="pre">descriptors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">which_var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desc</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/batch.html#descriptors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.batch.descriptors" title="Link to this definition">¶</a></dt>
+<dd><p>Compute summary descriptors for batch trajectories, optionally per phase.</p>
+<p>Calculates one or more statistical descriptors for each variable in each
+batch, returning a single row per batch suitable for use as input to a
+PLS or PCA model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bdata</strong> (<em>pd.DataFrame</em>) – Batch data. First column is batch ID; second
+column may optionally be a phase label (<code class="docutils literal notranslate"><span class="pre">'Phase'</span></code>, <code class="docutils literal notranslate"><span class="pre">'phase'</span></code>,
+or <code class="docutils literal notranslate"><span class="pre">'PHASE'</span></code>); remaining columns are process variables.</p></li>
+<li><p><strong>which_var</strong> (<em>list</em><em>[</em><em>str</em><em>]</em>) – Variable names to compute descriptors for.</p></li>
+<li><p><strong>desc</strong> (<em>list</em><em>[</em><em>str</em><em>]</em>) – <p>Descriptor types to calculate. Supported values:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">'min'</span></code>: Minimum value.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'max'</span></code>: Maximum value.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'mean'</span></code>: Arithmetic mean.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'median'</span></code>: Median value.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'std'</span></code>: Standard deviation (ddof=1).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'var'</span></code>: Variance (ddof=1).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'range'</span></code>: Max minus min.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'ave_slope'</span></code>: Average linear slope (estimated via least squares).</p></li>
+</ul>
+</p></li>
+<li><p><strong>phase</strong> (<em>list</em><em>[</em><em>str</em><em>] or </em><em>bool</em>) – If a list of phase names is provided,
+descriptors are computed separately within each phase, and column
+names are suffixed with <code class="docutils literal notranslate"><span class="pre">'_&lt;phase&gt;_&lt;descriptor&gt;'</span></code>. If <code class="docutils literal notranslate"><span class="pre">False</span></code>
+(default), descriptors are computed over the full batch trajectory.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>One row per batch, first column is batch ID, remaining
+columns are descriptor values named
+<code class="docutils literal notranslate"><span class="pre">'&lt;variable&gt;_&lt;phase&gt;_&lt;descriptor&gt;'</span></code> (with phase) or
+<code class="docutils literal notranslate"><span class="pre">'&lt;variable&gt;_&lt;descriptor&gt;'</span></code> (without phase).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">pyphi</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="pyphi.calc.html">pyphi.calc module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyphi.plots.html">pyphi.plots module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">pyphi.batch module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.unique"><code class="docutils literal notranslate"><span class="pre">unique()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.mean"><code class="docutils literal notranslate"><span class="pre">mean()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.simple_align"><code class="docutils literal notranslate"><span class="pre">simple_align()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.phase_simple_align"><code class="docutils literal notranslate"><span class="pre">phase_simple_align()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.phase_iv_align"><code class="docutils literal notranslate"><span class="pre">phase_iv_align()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.plot_var_all_batches"><code class="docutils literal notranslate"><span class="pre">plot_var_all_batches()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.plot_batch"><code class="docutils literal notranslate"><span class="pre">plot_batch()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.unfold_horizontal"><code class="docutils literal notranslate"><span class="pre">unfold_horizontal()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.refold_horizontal"><code class="docutils literal notranslate"><span class="pre">refold_horizontal()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.loadings"><code class="docutils literal notranslate"><span class="pre">loadings()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.loadings_abs_integral"><code class="docutils literal notranslate"><span class="pre">loadings_abs_integral()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.batch_vip"><code class="docutils literal notranslate"><span class="pre">batch_vip()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.r2pv"><code class="docutils literal notranslate"><span class="pre">r2pv()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.mpca"><code class="docutils literal notranslate"><span class="pre">mpca()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.monitor"><code class="docutils literal notranslate"><span class="pre">monitor()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.mpls"><code class="docutils literal notranslate"><span class="pre">mpls()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.find"><code class="docutils literal notranslate"><span class="pre">find()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.clean_empty_rows"><code class="docutils literal notranslate"><span class="pre">clean_empty_rows()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.phase_sampling_dist"><code class="docutils literal notranslate"><span class="pre">phase_sampling_dist()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.predict"><code class="docutils literal notranslate"><span class="pre">predict()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.contributions"><code class="docutils literal notranslate"><span class="pre">contributions()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.build_rel_time"><code class="docutils literal notranslate"><span class="pre">build_rel_time()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.batch.descriptors"><code class="docutils literal notranslate"><span class="pre">descriptors()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="pyphi.plots.html" title="previous chapter">pyphi.plots module</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Salvador Garcia Munoz.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/pyphi.batch.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
