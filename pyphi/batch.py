@@ -11,6 +11,7 @@ Optionally the second column labeled 'PHASE','Phase' or 'phase' indicating
 the phase of exceution
 
 Change log:
+
 * added Dec 28 2023  Titles can be sent to contribution plots via plot_title flag    
                      Monitoring diagnostics are also plotted against sample starting with 1
 
@@ -18,6 +19,7 @@ Change log:
                      Ammended indicator variable alignment not to replace the IV with a linear sequence but to keep orginal data
                      
 * added Dec 4  2023  Added a BatchVIP calculation
+
 * added Apr 23 2023  Corrected a very dumb mistake I made coding when tired    
     
 * added Apr 18 2023 Added descriptors routine to obtain landmarks of the batch
@@ -37,7 +39,9 @@ Change log:
                     as oppose to a forecast where there are new measurments coming in time.
                     
 * added Jul 20 2022 Distribution of number of samples per phase plot
+
 * added Aug 10 2022 refold_horizontal | clean_empty_rows | predict 
+
 * added Aug 12 2022 replicate_batch
 
 @author: S. Garcia-Munoz sgarciam@ic.ak.uk salg@andrew.cmu.edu
@@ -76,6 +80,7 @@ def mean(X,axis):
         Args:
             X (np.ndarray): 2-D input array, may contain ``np.nan``.
             axis (int): Axis along which to compute the mean.
+            
                 ``0`` = column-wise (mean of each column across rows).
                 ``1`` = row-wise (mean of each row across columns).
 

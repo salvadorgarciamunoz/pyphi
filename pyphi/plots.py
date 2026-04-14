@@ -6,13 +6,14 @@ Plots for pyPhi
 @author: Sal Garcia <sgarciam@ic.ac.uk> <salvadorgarciamunoz@gmail.com>
 
 Changes on Feb 25th 2026:
+
   - Bokeh 3.x: tooltips removed from figure(); now added via explicit HoverTool
   - Extracted shared helpers: _get_lv_labels, _get_xvar_labels, _get_yvar_labels,
     _new_output_file, _make_bokeh_palette, _resolve_lpls_space, _mask_by_class,
     _add_hover
   - Fixed loop-variable collision in predvsobs (i → j)
   - Fixed output_file inside loop in mb_r2pb
-  - Fixed 2-D y_ array in score_line (.flatten())
+  - Fixed 2-D ``y_`` array in score_line (.flatten())
   - Fixed nan_policy on vbar (not supported); use per-series ColumnDataSource
   - Fixed bitwise ~ on bool in lineplot
   - Added unbound-variable guard in contributions_plot
@@ -23,6 +24,7 @@ Changes on Feb 25th 2026:
   - Replaced math.pi with np.pi
   - loadings / weighted_loadings: PLS now produces single HTML with X (blue)
     and Y (red) bars on a shared axis per LV
+    
 """
 
 from __future__ import annotations

@@ -3,7 +3,12 @@ Phi for Python (pyPhi)  —  Version 2.0
 
 By Sal Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
 
+Added March 13
+
+        * Added routine to fix duplicaed obsID
+        
 Added Feb 23 2026
+
         * Added _validate_inputs function for input validation and observation reconciliation
         * Integrated validation into pca, pls, lpls entry points
         * Replaced np.tile with numpy broadcasting throughout
@@ -14,11 +19,16 @@ Added Feb 23 2026
         * Replaced hardcoded t-distribution with scipy.stats
 
 Added Feb 07 2026
+
         * fixed cat_2_matrix for the output to be consistent with MBPLS
+        
 Added Jan 30 2025
+
         * Added a pinv alternative protection in spectra_savgol for the case where
           inv fails
+          
 Added Jan 20 2025
+
         * Added the 'cca' flag to the pls routine to calculate CCA between
           the Ts and each of the Ys (one by one), calculating loadings and scores 
           equivalent to a perfectly orthogonalized OPLS model. The covariant scores (Tcv)
@@ -30,39 +40,55 @@ Added Jan 20 2025
           as of now cca-multi remains unused.
 
 Added Nov 18th, 2024
+
         * replaced interp2d with RectBivariateSpline 
         * Protected SPE lim calculations for near zero residuals
         * Added build_polynomial function to create linear regression
           models with variable selection assited by PLS
 
 by merge from James
+
         * Added spectra preprocessing methods
         * bootstrap PLS
         
 by Salvador Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
 Added Dec 19th 2023
+
         * phi.clean_htmls  removes all html files in the working directory
         * clean_empty_rows returns also the names of the rows removed
+        
 Added May 1st
+
         * YMB is now added in the same structure as the XMB
         * Corrected the dimensionality of the lwpls prediction, it was a double-nested array.
         
 Added Apr 30
+
         * Modified Multi-block PLS to include the block name in the variable name
+        
 Added Apr 29
+
         * Included the unique routine and adjusted the parse_materials routine so materials 
           and lots are in the same order as in the raw data
           
 Added Apr 27
+
         * Enhanced adapt_pls_4_pyomo to use variable names as indices if flag is sent
+        
 Added Apr 25
+
         * Enhanced the varimax_rotation to adjust the r2 and r2pv to the rotated loadings
+        
 Added Apr 21
+
         * Re added varimax_rotation with complete model rotation for PCA and PLS
         
 Added Apr 17 
+
         * Added tpls and tpls_pred
+        
 Added Apr 15 
+
         * Added jrpls model and jrpls_pred
         * Added routines to reconcile columns to rows identifier so that X and R materices
           correspond correctly
@@ -70,21 +96,26 @@ Added Apr 15
           of dataframes containing only those observations present in all dataframes
           
 Added on Apr 9 2023
+
         * Added lpls and lpls_pred routines
         * Added parse_materials to read linear table and produce R or Ri
         
 Release as of Nov 23 2022
+
         * Added a function to export PLS model to gPROMS code
 
 Release as of Aug 22 2022
+
         * Fixed access to NEOS server and use of GAMS instead of IPOPT
         
-Release as of Aug 12 2022       
+Release as of Aug 12 2022  
+     
         * Fixed the SPE calculations in pls_pred and pca_pred
         * Changed to a more efficient inversion in pca_pred (=pls_pred)
         * Added a pseudo-inverse option in pmp for pca_pred
         
 Release as of Aug 2 2022
+
         * Added replicate_data
 
 """
@@ -152,6 +183,75 @@ if not(pyomo_ok) or (not(ipopt_ok) and not(gams_ok)):
 # =============================================================================
 # Helper functions (new in v1.0)
 # =============================================================================
+
+def add_auto_obs_id(df: pd.DataFrame) -> pd.DataFrame:
+    """Add an ``Auto Obs ID`` column that makes duplicate first-column values unique.
+
+    Scans the first column of *df* for duplicate values. Unique values are
+    copied as-is; duplicated values receive a zero-padded numeric suffix
+    (e.g. ``A.1``, ``A.01``, ``A.001``) whose width is determined by the
+    total occurrence count for that specific ID:
+
+    * fewer than 10 occurrences → no padding (``A.1`` … ``A.9``)
+    * 10–99 occurrences → one leading zero (``A.01`` … ``A.99``)
+    * 100–999 occurrences → two leading zeros (``A.001`` … ``A.999``)
+
+    The new column is inserted at position 0; the original identifier column
+    is preserved unchanged.
+
+    Args:
+        df (pd.DataFrame): Input dataframe whose first column contains
+            observation identifiers. Must have at least one column.
+
+    Returns:
+        df (pd.DataFrame): A copy of *df* with ``Auto Obs ID`` prepended as the
+            first column.
+        
+        df_classid (pd.DataFrame): A dataframe with ``Auto Obs ID`` as
+            first column and the original column ID as second column.
+        
+
+    Raises:
+        ValueError: If *df* is empty (no columns).
+
+    Example:
+        >>> data = {"Batch ID": ["A", "A", "B"], "Temp": [10, 11, 22]}
+        >>> df = pd.DataFrame(data)
+        >>> add_auto_obs_id(df)["Auto Obs ID"].tolist()
+        ['A.1', 'A.2', 'B']
+    """
+    id_col = df.columns[0]
+    counts = df[id_col].value_counts()
+    duplicated_ids = counts[counts > 1].index
+
+    auto_ids = []
+    occurrence_tracker = {}
+
+    for val in df[id_col]:
+        if val in duplicated_ids:
+            n = counts[val]  # total occurrences of this ID
+            occurrence_tracker[val] = occurrence_tracker.get(val, 0) + 1
+            idx = occurrence_tracker[val]
+
+            # Determine zero-padding width based on total duplicate count
+            if n < 10:
+                suffix = f"{idx}"        # e.g. .1
+            elif n < 100:
+                suffix = f"{idx:02d}"    # e.g. .01
+            else:
+                suffix = f"{idx:03d}"    # e.g. .001
+
+            auto_ids.append(f"{val}.{suffix}")
+        else:
+            auto_ids.append(val)
+
+    df = df.copy()
+    df.insert(0, "Auto Obs ID", auto_ids)
+    
+    df_classid=df[df.columns[:2].tolist() ]
+    df.drop(df.columns[1],axis=1,inplace=True)
+    
+    return df,df_classid
 
 def _extract_array(X):
     """Extract numpy array, observation IDs, and variable IDs from DataFrame or ndarray.
@@ -286,7 +386,8 @@ def _validate_inputs(X, Y=None, A=None, mcs=None):
             unique_dupes = dupes.unique().tolist()
             raise ValueError(
                 f"{name} has duplicate observation IDs: {unique_dupes[:10]}"
-                + (f" ... and {len(unique_dupes)-10} more" if len(unique_dupes) > 10 else ""))
+                + (f" ... and {len(unique_dupes)-10} more" if len(unique_dupes) > 10 else "")
+                + ". Use phi.add_auto_obs_id(df) to automatically generate unique IDs.")
     
     # --- DataFrame-specific validation ---
     if isinstance(X, pd.DataFrame):
@@ -2133,10 +2234,12 @@ def contributions(mvmobj, X, cont_type, *, Y=False, from_obs=False, to_obs=False
             mvmobj (dict): Fitted PCA or PLS model.
             Xnew (pd.DataFrame or np.ndarray): Observations to diagnose.
             cont_type (str): Type of contribution to compute.
+            
                 ``'scores'``: contribution to each score.
                 ``'spex'``: contribution to X-space SPE.
                 ``'spey'``: contribution to Y-space SPE (PLS only).
                 ``'t2'``: contribution to Hotelling's T².
+                
             Ynew (pd.DataFrame or np.ndarray): Y observations (optional,
                 required for ``cont_type='spey'``).
 
@@ -2784,6 +2887,7 @@ def mbpls(XMB, YMB, A, *, mcsX=True, mcsY=True, md_algorithm_='nipals',
                 - ``Wb`` (dict): Per-block weights.
                 - ``r2xb`` (dict): Per-block R² contributions.
                 - ``block_importance`` (ndarray): Variance importance per block.
+                
                 Plus all standard PLS keys (``Q``, ``r2y``, ``speX``, etc.).
     """
     x_means=[]; x_stds=[]; y_means=[]; y_stds=[]
@@ -3122,7 +3226,66 @@ def unique(df, colid):
     return df.drop_duplicates(subset=colid, keep='first')[colid].values.tolist()
     
 def parse_materials(filename, sheetname):
-    '''Build R matrices for JRPLS from linear table in Excel.'''
+    """Build JR matrices for JRPLS from a linear materials table in Excel.
+
+    Reads a structured Excel sheet describing the composition of finished
+    product lots in terms of their constituent material lots and quantities
+    (or ratios). Validates that every finished product lot has a material lot
+    assigned for each material, then constructs one JR matrix per material.
+
+    Each JR matrix is a DataFrame with one row per finished product lot and
+    one column per material lot for that material. The cell values are the
+    ratio or quantity of that material lot used in that finished product lot
+    (0 if not used).
+
+    The input Excel sheet must contain the following columns (in any order):
+
+    - ``Finished Product Lot``: identifier for the finished product lot.
+    - ``Material Lot``: identifier for the specific lot of the raw material.
+    - ``Ratio or Quantity``: numeric contribution of this material lot to the
+      finished product lot (e.g. mass fraction or absolute quantity).
+    - ``Material``: name or identifier for the material type.
+
+    Note:
+        A summary of the ratio/quantity sum is printed for each finished
+        product lot as a simple consistency check. The function prints
+        diagnostic messages to stdout and returns ``(False, False)`` if any
+        material lot assignment is missing.
+
+    Args:
+        filename (str): Path to the Excel workbook containing the materials
+            table.
+        sheetname (str): Name of the worksheet within the workbook to read.
+
+    Returns:
+        tuple: A two-element tuple ``(JR, materials_used)``:
+
+            - **JR** (list of pandas.DataFrame): One DataFrame per material
+              (in the same order as ``materials_used``). Each DataFrame has
+              shape ``(n_fp_lots, n_material_lots + 1)``, where the first
+              column ``FPLot`` holds the finished product lot identifiers and
+              the remaining columns are named after the material lots.
+            - **materials_used** (list of str): Ordered list of unique
+              material names found in the sheet, corresponding to the
+              entries in ``JR``.
+
+            If validation fails, both elements are ``False``.
+
+    Raises:
+        FileNotFoundError: If ``filename`` does not point to an existing file.
+        ValueError: If ``sheetname`` is not found in the workbook.
+
+    Example:
+        >>> JR, materials = parse_materials("batch_records.xlsx", "Blends")
+        Lot :Lot_A ratio/qty adds to 1.0
+        Lot :Lot_B ratio/qty adds to 1.0
+        >>> len(JR)          # one matrix per material
+        3
+        >>> JR[0].columns.tolist()
+        ['FPLot', 'MatLot_1', 'MatLot_2']
+        >>> materials
+        ['Excipient_A', 'Excipient_B', 'API']
+    """
     materials = pd.read_excel(filename, sheet_name=sheetname)
     ok = True
     for lot in unique(materials, 'Finished Product Lot'):
@@ -3402,9 +3565,9 @@ def jrpls(Xi, Ri, Y, A, *, shush=False):
         Per Garcia-Munoz, Chemom. Intell. Lab. Syst. 133 (2014) 49–62.
 
         Args:
-            Xi (dict): Process data blocks ``{'campaign': pd.DataFrame}``.
+            Xi (dict): Raw material property blocks ``{'Material Type': pd.DataFrame}``.
                 Each DataFrame's first column is observation IDs.
-            Ri (dict): Raw material property blocks ``{'campaign': pd.DataFrame}``.
+            Ri (dict): Blending matrices ``{'Material Type': pd.DataFrame}``.
                 Keys must match ``Xi``. First column is lot IDs.
             Y (pd.DataFrame or np.ndarray): Shared response matrix. Rows match
                 lots across all campaigns.
@@ -3616,14 +3779,14 @@ def jrpls_pred(rnew, jrplsobj):
                 - ``speR`` (ndarray): R-space SPE.
                 - ``T2`` (ndarray): Hotelling's T².
                 
-    Example:
-        rnew={
-              'MAT1':        [('A0129',0.557949425 ),('A0130',0.442050575 )],
-              'MAT2':    [('Lac0003',1)],
-              'MAT3':       [('TLC018', 1) ],
-              'MAT4':       [('M0012',  1)  ],
-              'MAT5':[('CS0017', 1) ]
-              }
+        Example:
+            rnew={
+                  'MAT1':        [('A0129',0.557949425 ),('A0130',0.442050575 )],
+                  'MAT2':    [('Lac0003',1)],
+                  'MAT3':       [('TLC018', 1) ],
+                  'MAT4':       [('M0012',  1)  ],
+                  'MAT5':[('CS0017', 1) ]
+                  }
         
     """
     ok = True
@@ -3680,11 +3843,11 @@ def tpls(Xi, Ri, Z, Y, A, *, shush=False):
         raw material properties (R), and product quality (Y).
 
         Args:
-            Z (pd.DataFrame or np.ndarray): Process trajectory matrix.
+            Z (pd.DataFrame or np.ndarray): Data from Process matrix.
                 First column is observation IDs if a DataFrame.
-            Xi (dict): Process data blocks ``{'campaign': pd.DataFrame}``.
+            Xi (dict): Material Property data blocks ``{'Material Type': pd.DataFrame}``.
                 Each DataFrame's first column is observation IDs.
-            Ri (dict): Raw material property blocks ``{'campaign': pd.DataFrame}``.
+            Ri (dict): Blending information property blocks ``{'Material Type': pd.DataFrame}``.
                 Keys must match ``Xi``. First column is lot IDs.
             Y (pd.DataFrame or np.ndarray): Shared response matrix. Rows match
                 lots across all campaigns.
