@@ -37,15 +37,16 @@
 <span id="pyphi-plots-module"></span><h1>pyphi.plots module<a class="headerlink" href="#module-pyphi.plots" title="Link to this heading">¶</a></h1>
 <p>Plots for pyPhi</p>
 <p>&#64;author: Sal Garcia &lt;<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a>&gt; &lt;<a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p>
-<dl class="simple">
-<dt>Changes on Feb 25th 2026:</dt><dd><ul class="simple">
+<p>Changes on Feb 25th 2026:</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Bokeh 3.x: tooltips removed from figure(); now added via explicit HoverTool</p></li>
 <li><p>Extracted shared helpers: _get_lv_labels, _get_xvar_labels, _get_yvar_labels,
 _new_output_file, _make_bokeh_palette, _resolve_lpls_space, _mask_by_class,
 _add_hover</p></li>
 <li><p>Fixed loop-variable collision in predvsobs (i → j)</p></li>
 <li><p>Fixed output_file inside loop in mb_r2pb</p></li>
-<li><p>Fixed 2-D <a href="#id1"><span class="problematic" id="id2">y_</span></a> array in score_line (.flatten())</p></li>
+<li><p>Fixed 2-D <code class="docutils literal notranslate"><span class="pre">y_</span></code> array in score_line (.flatten())</p></li>
 <li><p>Fixed nan_policy on vbar (not supported); use per-series ColumnDataSource</p></li>
 <li><p>Fixed bitwise ~ on bool in lineplot</p></li>
 <li><p>Added unbound-variable guard in contributions_plot</p></li>
@@ -57,8 +58,7 @@ _add_hover</p></li>
 <li><p>loadings / weighted_loadings: PLS now produces single HTML with X (blue)
 and Y (red) bars on a shared axis per LV</p></li>
 </ul>
-</dd>
-</dl>
+</div></blockquote>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyphi.plots.r2pv">
 <span class="sig-prename descclassname"><span class="pre">pyphi.plots.</span></span><span class="sig-name descname"><span class="pre">r2pv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvm_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotwidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotheight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">400</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addtitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zspace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pyphi/plots.html#r2pv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.plots.r2pv" title="Link to this definition">¶</a></dt>

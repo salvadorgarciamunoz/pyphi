@@ -36,7 +36,12 @@
 
 <span class="sd">By Sal Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)</span>
 
+<span class="sd">Added March 13</span>
+
+<span class="sd">        * Added routine to fix duplicaed obsID</span>
+<span class="sd">        </span>
 <span class="sd">Added Feb 23 2026</span>
+
 <span class="sd">        * Added _validate_inputs function for input validation and observation reconciliation</span>
 <span class="sd">        * Integrated validation into pca, pls, lpls entry points</span>
 <span class="sd">        * Replaced np.tile with numpy broadcasting throughout</span>
@@ -47,11 +52,16 @@
 <span class="sd">        * Replaced hardcoded t-distribution with scipy.stats</span>
 
 <span class="sd">Added Feb 07 2026</span>
+
 <span class="sd">        * fixed cat_2_matrix for the output to be consistent with MBPLS</span>
+<span class="sd">        </span>
 <span class="sd">Added Jan 30 2025</span>
+
 <span class="sd">        * Added a pinv alternative protection in spectra_savgol for the case where</span>
 <span class="sd">          inv fails</span>
+<span class="sd">          </span>
 <span class="sd">Added Jan 20 2025</span>
+
 <span class="sd">        * Added the &#39;cca&#39; flag to the pls routine to calculate CCA between</span>
 <span class="sd">          the Ts and each of the Ys (one by one), calculating loadings and scores </span>
 <span class="sd">          equivalent to a perfectly orthogonalized OPLS model. The covariant scores (Tcv)</span>
@@ -63,39 +73,55 @@
 <span class="sd">          as of now cca-multi remains unused.</span>
 
 <span class="sd">Added Nov 18th, 2024</span>
+
 <span class="sd">        * replaced interp2d with RectBivariateSpline </span>
 <span class="sd">        * Protected SPE lim calculations for near zero residuals</span>
 <span class="sd">        * Added build_polynomial function to create linear regression</span>
 <span class="sd">          models with variable selection assited by PLS</span>
 
 <span class="sd">by merge from James</span>
+
 <span class="sd">        * Added spectra preprocessing methods</span>
 <span class="sd">        * bootstrap PLS</span>
 <span class="sd">        </span>
 <span class="sd">by Salvador Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)</span>
 <span class="sd">Added Dec 19th 2023</span>
+
 <span class="sd">        * phi.clean_htmls  removes all html files in the working directory</span>
 <span class="sd">        * clean_empty_rows returns also the names of the rows removed</span>
+<span class="sd">        </span>
 <span class="sd">Added May 1st</span>
+
 <span class="sd">        * YMB is now added in the same structure as the XMB</span>
 <span class="sd">        * Corrected the dimensionality of the lwpls prediction, it was a double-nested array.</span>
 <span class="sd">        </span>
 <span class="sd">Added Apr 30</span>
+
 <span class="sd">        * Modified Multi-block PLS to include the block name in the variable name</span>
+<span class="sd">        </span>
 <span class="sd">Added Apr 29</span>
+
 <span class="sd">        * Included the unique routine and adjusted the parse_materials routine so materials </span>
 <span class="sd">          and lots are in the same order as in the raw data</span>
 <span class="sd">          </span>
 <span class="sd">Added Apr 27</span>
+
 <span class="sd">        * Enhanced adapt_pls_4_pyomo to use variable names as indices if flag is sent</span>
+<span class="sd">        </span>
 <span class="sd">Added Apr 25</span>
+
 <span class="sd">        * Enhanced the varimax_rotation to adjust the r2 and r2pv to the rotated loadings</span>
+<span class="sd">        </span>
 <span class="sd">Added Apr 21</span>
+
 <span class="sd">        * Re added varimax_rotation with complete model rotation for PCA and PLS</span>
 <span class="sd">        </span>
 <span class="sd">Added Apr 17 </span>
+
 <span class="sd">        * Added tpls and tpls_pred</span>
+<span class="sd">        </span>
 <span class="sd">Added Apr 15 </span>
+
 <span class="sd">        * Added jrpls model and jrpls_pred</span>
 <span class="sd">        * Added routines to reconcile columns to rows identifier so that X and R materices</span>
 <span class="sd">          correspond correctly</span>
@@ -103,21 +129,26 @@
 <span class="sd">          of dataframes containing only those observations present in all dataframes</span>
 <span class="sd">          </span>
 <span class="sd">Added on Apr 9 2023</span>
+
 <span class="sd">        * Added lpls and lpls_pred routines</span>
 <span class="sd">        * Added parse_materials to read linear table and produce R or Ri</span>
 <span class="sd">        </span>
 <span class="sd">Release as of Nov 23 2022</span>
+
 <span class="sd">        * Added a function to export PLS model to gPROMS code</span>
 
 <span class="sd">Release as of Aug 22 2022</span>
+
 <span class="sd">        * Fixed access to NEOS server and use of GAMS instead of IPOPT</span>
 <span class="sd">        </span>
-<span class="sd">Release as of Aug 12 2022       </span>
+<span class="sd">Release as of Aug 12 2022  </span>
+<span class="sd">     </span>
 <span class="sd">        * Fixed the SPE calculations in pls_pred and pca_pred</span>
 <span class="sd">        * Changed to a more efficient inversion in pca_pred (=pls_pred)</span>
 <span class="sd">        * Added a pseudo-inverse option in pmp for pca_pred</span>
 <span class="sd">        </span>
 <span class="sd">Release as of Aug 2 2022</span>
+
 <span class="sd">        * Added replicate_data</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
@@ -178,7 +209,10 @@
 
 
 <span class="k">if</span> <span class="n">pyomo_ok</span> <span class="ow">and</span> <span class="n">ipopt_ok</span><span class="p">:</span>
-    <span class="n">ma57_ok</span> <span class="o">=</span> <span class="n">ma57_dummy_check</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">ma57_ok</span> <span class="o">=</span> <span class="n">ma57_dummy_check</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">ma57_ok</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="k">else</span><span class="p">:</span>
     <span class="n">ma57_ok</span> <span class="o">=</span> <span class="kc">False</span>
 
@@ -188,6 +222,78 @@
 <span class="c1"># =============================================================================</span>
 <span class="c1"># Helper functions (new in v1.0)</span>
 <span class="c1"># =============================================================================</span>
+
+<div class="viewcode-block" id="add_auto_obs_id">
+<a class="viewcode-back" href="../../pyphi.calc.html#pyphi.calc.add_auto_obs_id">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_auto_obs_id</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add an ``Auto Obs ID`` column that makes duplicate first-column values unique.</span>
+
+<span class="sd">    Scans the first column of *df* for duplicate values. Unique values are</span>
+<span class="sd">    copied as-is; duplicated values receive a zero-padded numeric suffix</span>
+<span class="sd">    (e.g. ``A.1``, ``A.01``, ``A.001``) whose width is determined by the</span>
+<span class="sd">    total occurrence count for that specific ID:</span>
+
+<span class="sd">    * fewer than 10 occurrences → no padding (``A.1`` … ``A.9``)</span>
+<span class="sd">    * 10–99 occurrences → one leading zero (``A.01`` … ``A.99``)</span>
+<span class="sd">    * 100–999 occurrences → two leading zeros (``A.001`` … ``A.999``)</span>
+
+<span class="sd">    The new column is inserted at position 0; the original identifier column</span>
+<span class="sd">    is preserved unchanged.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df (pd.DataFrame): Input dataframe whose first column contains</span>
+<span class="sd">            observation identifiers. Must have at least one column.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        df (pd.DataFrame): A copy of *df* with ``Auto Obs ID`` prepended as the</span>
+<span class="sd">            first column.</span>
+<span class="sd">        </span>
+<span class="sd">        df_classid (pd.DataFrame): A dataframe with ``Auto Obs ID`` as</span>
+<span class="sd">            first column and the original column ID as second column.</span>
+<span class="sd">        </span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If *df* is empty (no columns).</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; data = {&quot;Batch ID&quot;: [&quot;A&quot;, &quot;A&quot;, &quot;B&quot;], &quot;Temp&quot;: [10, 11, 22]}</span>
+<span class="sd">        &gt;&gt;&gt; df = pd.DataFrame(data)</span>
+<span class="sd">        &gt;&gt;&gt; add_auto_obs_id(df)[&quot;Auto Obs ID&quot;].tolist()</span>
+<span class="sd">        [&#39;A.1&#39;, &#39;A.2&#39;, &#39;B&#39;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">id_col</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">id_col</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+    <span class="n">duplicated_ids</span> <span class="o">=</span> <span class="n">counts</span><span class="p">[</span><span class="n">counts</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
+
+    <span class="n">auto_ids</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">occurrence_tracker</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="n">id_col</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">duplicated_ids</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="n">counts</span><span class="p">[</span><span class="n">val</span><span class="p">]</span>  <span class="c1"># total occurrences of this ID</span>
+            <span class="n">occurrence_tracker</span><span class="p">[</span><span class="n">val</span><span class="p">]</span> <span class="o">=</span> <span class="n">occurrence_tracker</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">occurrence_tracker</span><span class="p">[</span><span class="n">val</span><span class="p">]</span>
+
+            <span class="c1"># Determine zero-padding width based on total duplicate count</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+                <span class="n">suffix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span>        <span class="c1"># e.g. .1</span>
+            <span class="k">elif</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">:</span>
+                <span class="n">suffix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">idx</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">&quot;</span>    <span class="c1"># e.g. .01</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">suffix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">idx</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">&quot;</span>    <span class="c1"># e.g. .001</span>
+
+            <span class="n">auto_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">auto_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Auto Obs ID&quot;</span><span class="p">,</span> <span class="n">auto_ids</span><span class="p">)</span>
+    
+    <span class="n">df_classid</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="p">]</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">df</span><span class="p">,</span><span class="n">df_classid</span></div>
+
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_extract_array</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract numpy array, observation IDs, and variable IDs from DataFrame or ndarray.</span>
@@ -322,7 +428,8 @@
             <span class="n">unique_dupes</span> <span class="o">=</span> <span class="n">dupes</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> has duplicate observation IDs: </span><span class="si">{</span><span class="n">unique_dupes</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot; ... and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">unique_dupes</span><span class="p">)</span><span class="o">-</span><span class="mi">10</span><span class="si">}</span><span class="s2"> more&quot;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_dupes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">10</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+                <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot; ... and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">unique_dupes</span><span class="p">)</span><span class="o">-</span><span class="mi">10</span><span class="si">}</span><span class="s2"> more&quot;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_dupes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">10</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="o">+</span> <span class="s2">&quot;. Use phi.add_auto_obs_id(df) to automatically generate unique IDs.&quot;</span><span class="p">)</span>
     
     <span class="c1"># --- DataFrame-specific validation ---</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
@@ -2237,10 +2344,12 @@
 <span class="sd">            mvmobj (dict): Fitted PCA or PLS model.</span>
 <span class="sd">            Xnew (pd.DataFrame or np.ndarray): Observations to diagnose.</span>
 <span class="sd">            cont_type (str): Type of contribution to compute.</span>
+<span class="sd">            </span>
 <span class="sd">                ``&#39;scores&#39;``: contribution to each score.</span>
 <span class="sd">                ``&#39;spex&#39;``: contribution to X-space SPE.</span>
 <span class="sd">                ``&#39;spey&#39;``: contribution to Y-space SPE (PLS only).</span>
 <span class="sd">                ``&#39;t2&#39;``: contribution to Hotelling&#39;s T².</span>
+<span class="sd">                </span>
 <span class="sd">            Ynew (pd.DataFrame or np.ndarray): Y observations (optional,</span>
 <span class="sd">                required for ``cont_type=&#39;spey&#39;``).</span>
 
@@ -2942,6 +3051,7 @@
 <span class="sd">                - ``Wb`` (dict): Per-block weights.</span>
 <span class="sd">                - ``r2xb`` (dict): Per-block R² contributions.</span>
 <span class="sd">                - ``block_importance`` (ndarray): Variance importance per block.</span>
+<span class="sd">                </span>
 <span class="sd">                Plus all standard PLS keys (``Q``, ``r2y``, ``speX``, etc.).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">x_means</span><span class="o">=</span><span class="p">[];</span> <span class="n">x_stds</span><span class="o">=</span><span class="p">[];</span> <span class="n">y_means</span><span class="o">=</span><span class="p">[];</span> <span class="n">y_stds</span><span class="o">=</span><span class="p">[]</span>
@@ -3292,7 +3402,66 @@
 <div class="viewcode-block" id="parse_materials">
 <a class="viewcode-back" href="../../pyphi.calc.html#pyphi.calc.parse_materials">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">parse_materials</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">sheetname</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;Build R matrices for JRPLS from linear table in Excel.&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build JR matrices for JRPLS from a linear materials table in Excel.</span>
+
+<span class="sd">    Reads a structured Excel sheet describing the composition of finished</span>
+<span class="sd">    product lots in terms of their constituent material lots and quantities</span>
+<span class="sd">    (or ratios). Validates that every finished product lot has a material lot</span>
+<span class="sd">    assigned for each material, then constructs one JR matrix per material.</span>
+
+<span class="sd">    Each JR matrix is a DataFrame with one row per finished product lot and</span>
+<span class="sd">    one column per material lot for that material. The cell values are the</span>
+<span class="sd">    ratio or quantity of that material lot used in that finished product lot</span>
+<span class="sd">    (0 if not used).</span>
+
+<span class="sd">    The input Excel sheet must contain the following columns (in any order):</span>
+
+<span class="sd">    - ``Finished Product Lot``: identifier for the finished product lot.</span>
+<span class="sd">    - ``Material Lot``: identifier for the specific lot of the raw material.</span>
+<span class="sd">    - ``Ratio or Quantity``: numeric contribution of this material lot to the</span>
+<span class="sd">      finished product lot (e.g. mass fraction or absolute quantity).</span>
+<span class="sd">    - ``Material``: name or identifier for the material type.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        A summary of the ratio/quantity sum is printed for each finished</span>
+<span class="sd">        product lot as a simple consistency check. The function prints</span>
+<span class="sd">        diagnostic messages to stdout and returns ``(False, False)`` if any</span>
+<span class="sd">        material lot assignment is missing.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filename (str): Path to the Excel workbook containing the materials</span>
+<span class="sd">            table.</span>
+<span class="sd">        sheetname (str): Name of the worksheet within the workbook to read.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: A two-element tuple ``(JR, materials_used)``:</span>
+
+<span class="sd">            - **JR** (list of pandas.DataFrame): One DataFrame per material</span>
+<span class="sd">              (in the same order as ``materials_used``). Each DataFrame has</span>
+<span class="sd">              shape ``(n_fp_lots, n_material_lots + 1)``, where the first</span>
+<span class="sd">              column ``FPLot`` holds the finished product lot identifiers and</span>
+<span class="sd">              the remaining columns are named after the material lots.</span>
+<span class="sd">            - **materials_used** (list of str): Ordered list of unique</span>
+<span class="sd">              material names found in the sheet, corresponding to the</span>
+<span class="sd">              entries in ``JR``.</span>
+
+<span class="sd">            If validation fails, both elements are ``False``.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        FileNotFoundError: If ``filename`` does not point to an existing file.</span>
+<span class="sd">        ValueError: If ``sheetname`` is not found in the workbook.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; JR, materials = parse_materials(&quot;batch_records.xlsx&quot;, &quot;Blends&quot;)</span>
+<span class="sd">        Lot :Lot_A ratio/qty adds to 1.0</span>
+<span class="sd">        Lot :Lot_B ratio/qty adds to 1.0</span>
+<span class="sd">        &gt;&gt;&gt; len(JR)          # one matrix per material</span>
+<span class="sd">        3</span>
+<span class="sd">        &gt;&gt;&gt; JR[0].columns.tolist()</span>
+<span class="sd">        [&#39;FPLot&#39;, &#39;MatLot_1&#39;, &#39;MatLot_2&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; materials</span>
+<span class="sd">        [&#39;Excipient_A&#39;, &#39;Excipient_B&#39;, &#39;API&#39;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">materials</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="n">sheetname</span><span class="p">)</span>
     <span class="n">ok</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="k">for</span> <span class="n">lot</span> <span class="ow">in</span> <span class="n">unique</span><span class="p">(</span><span class="n">materials</span><span class="p">,</span> <span class="s1">&#39;Finished Product Lot&#39;</span><span class="p">):</span>
@@ -3590,9 +3759,9 @@
 <span class="sd">        Per Garcia-Munoz, Chemom. Intell. Lab. Syst. 133 (2014) 49–62.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            Xi (dict): Process data blocks ``{&#39;campaign&#39;: pd.DataFrame}``.</span>
+<span class="sd">            Xi (dict): Raw material property blocks ``{&#39;Material Type&#39;: pd.DataFrame}``.</span>
 <span class="sd">                Each DataFrame&#39;s first column is observation IDs.</span>
-<span class="sd">            Ri (dict): Raw material property blocks ``{&#39;campaign&#39;: pd.DataFrame}``.</span>
+<span class="sd">            Ri (dict): Blending matrices ``{&#39;Material Type&#39;: pd.DataFrame}``.</span>
 <span class="sd">                Keys must match ``Xi``. First column is lot IDs.</span>
 <span class="sd">            Y (pd.DataFrame or np.ndarray): Shared response matrix. Rows match</span>
 <span class="sd">                lots across all campaigns.</span>
@@ -3807,14 +3976,14 @@
 <span class="sd">                - ``speR`` (ndarray): R-space SPE.</span>
 <span class="sd">                - ``T2`` (ndarray): Hotelling&#39;s T².</span>
 <span class="sd">                </span>
-<span class="sd">    Example:</span>
-<span class="sd">        rnew={</span>
-<span class="sd">              &#39;MAT1&#39;:        [(&#39;A0129&#39;,0.557949425 ),(&#39;A0130&#39;,0.442050575 )],</span>
-<span class="sd">              &#39;MAT2&#39;:    [(&#39;Lac0003&#39;,1)],</span>
-<span class="sd">              &#39;MAT3&#39;:       [(&#39;TLC018&#39;, 1) ],</span>
-<span class="sd">              &#39;MAT4&#39;:       [(&#39;M0012&#39;,  1)  ],</span>
-<span class="sd">              &#39;MAT5&#39;:[(&#39;CS0017&#39;, 1) ]</span>
-<span class="sd">              }</span>
+<span class="sd">        Example:</span>
+<span class="sd">            rnew={</span>
+<span class="sd">                  &#39;MAT1&#39;:        [(&#39;A0129&#39;,0.557949425 ),(&#39;A0130&#39;,0.442050575 )],</span>
+<span class="sd">                  &#39;MAT2&#39;:    [(&#39;Lac0003&#39;,1)],</span>
+<span class="sd">                  &#39;MAT3&#39;:       [(&#39;TLC018&#39;, 1) ],</span>
+<span class="sd">                  &#39;MAT4&#39;:       [(&#39;M0012&#39;,  1)  ],</span>
+<span class="sd">                  &#39;MAT5&#39;:[(&#39;CS0017&#39;, 1) ]</span>
+<span class="sd">                  }</span>
 <span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">ok</span> <span class="o">=</span> <span class="kc">True</span>
@@ -3874,11 +4043,11 @@
 <span class="sd">        raw material properties (R), and product quality (Y).</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            Z (pd.DataFrame or np.ndarray): Process trajectory matrix.</span>
+<span class="sd">            Z (pd.DataFrame or np.ndarray): Data from Process matrix.</span>
 <span class="sd">                First column is observation IDs if a DataFrame.</span>
-<span class="sd">            Xi (dict): Process data blocks ``{&#39;campaign&#39;: pd.DataFrame}``.</span>
+<span class="sd">            Xi (dict): Material Property data blocks ``{&#39;Material Type&#39;: pd.DataFrame}``.</span>
 <span class="sd">                Each DataFrame&#39;s first column is observation IDs.</span>
-<span class="sd">            Ri (dict): Raw material property blocks ``{&#39;campaign&#39;: pd.DataFrame}``.</span>
+<span class="sd">            Ri (dict): Blending information property blocks ``{&#39;Material Type&#39;: pd.DataFrame}``.</span>
 <span class="sd">                Keys must match ``Xi``. First column is lot IDs.</span>
 <span class="sd">            Y (pd.DataFrame or np.ndarray): Shared response matrix. Rows match</span>
 <span class="sd">                lots across all campaigns.</span>

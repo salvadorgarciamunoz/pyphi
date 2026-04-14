@@ -40,12 +40,13 @@ with first column being batch identifier and following columns
 being process variables.
 Optionally the second column labeled ‘PHASE’,’Phase’ or ‘phase’ indicating
 the phase of exceution</p>
-<p>Change log:
-* added Dec 28 2023  Titles can be sent to contribution plots via plot_title flag</p>
-<blockquote>
-<div><p>Monitoring diagnostics are also plotted against sample starting with 1</p>
-</div></blockquote>
+<p>Change log:</p>
 <ul class="simple">
+<li><dl class="simple">
+<dt>added Dec 28 2023  Titles can be sent to contribution plots via plot_title flag</dt><dd><p>Monitoring diagnostics are also plotted against sample starting with 1</p>
+</dd>
+</dl>
+</li>
 <li><dl class="simple">
 <dt>added Dec 27 2023  Corrected plots to use correct xaxis starting with sample =1</dt><dd><p>Ammended indicator variable alignment not to replace the IV with a linear sequence but to keep orginal data</p>
 </dd>
@@ -108,9 +109,10 @@ values in the order they first appear in the DataFrame.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>X</strong> (<em>np.ndarray</em>) – 2-D input array, may contain <code class="docutils literal notranslate"><span class="pre">np.nan</span></code>.</p></li>
-<li><p><strong>axis</strong> (<em>int</em>) – Axis along which to compute the mean.
-<code class="docutils literal notranslate"><span class="pre">0</span></code> = column-wise (mean of each column across rows).
-<code class="docutils literal notranslate"><span class="pre">1</span></code> = row-wise (mean of each row across columns).</p></li>
+<li><p><strong>axis</strong> (<em>int</em>) – <p>Axis along which to compute the mean.</p>
+<p><code class="docutils literal notranslate"><span class="pre">0</span></code> = column-wise (mean of each column across rows).
+<code class="docutils literal notranslate"><span class="pre">1</span></code> = row-wise (mean of each row across columns).</p>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

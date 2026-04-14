@@ -37,8 +37,15 @@
 <span id="pyphi-calc-module"></span><h1>pyphi.calc module<a class="headerlink" href="#module-pyphi.calc" title="Link to this heading">¶</a></h1>
 <p>Phi for Python (pyPhi)  —  Version 2.0</p>
 <p>By Sal Garcia (<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> <a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>)</p>
-<dl class="simple">
-<dt>Added Feb 23 2026</dt><dd><ul class="simple">
+<p>Added March 13</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Added routine to fix duplicaed obsID</p></li>
+</ul>
+</div></blockquote>
+<p>Added Feb 23 2026</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Added _validate_inputs function for input validation and observation reconciliation</p></li>
 <li><p>Integrated validation into pca, pls, lpls entry points</p></li>
 <li><p>Replaced np.tile with numpy broadcasting throughout</p></li>
@@ -48,17 +55,23 @@
 <li><p>Replaced hardcoded F-distribution and chi2 lookup tables with scipy.stats</p></li>
 <li><p>Replaced hardcoded t-distribution with scipy.stats</p></li>
 </ul>
-</dd>
-<dt>Added Feb 07 2026</dt><dd><ul class="simple">
+</div></blockquote>
+<p>Added Feb 07 2026</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>fixed cat_2_matrix for the output to be consistent with MBPLS</p></li>
 </ul>
-</dd>
-<dt>Added Jan 30 2025</dt><dd><ul class="simple">
+</div></blockquote>
+<p>Added Jan 30 2025</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Added a pinv alternative protection in spectra_savgol for the case where
 inv fails</p></li>
 </ul>
-</dd>
-<dt>Added Jan 20 2025</dt><dd><ul class="simple">
+</div></blockquote>
+<p>Added Jan 20 2025</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Added the ‘cca’ flag to the pls routine to calculate CCA between
 the Ts and each of the Ys (one by one), calculating loadings and scores
 equivalent to a perfectly orthogonalized OPLS model. The covariant scores (Tcv)
@@ -68,20 +81,23 @@ as keys to the model object.
 <li><p>Added cca and cca-multi routines to perform PLS-CCA (alternative to OPLS)
 as of now cca-multi remains unused.</p></li>
 </ul>
-</dd>
-<dt>Added Nov 18th, 2024</dt><dd><ul class="simple">
+</div></blockquote>
+<p>Added Nov 18th, 2024</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>replaced interp2d with RectBivariateSpline</p></li>
 <li><p>Protected SPE lim calculations for near zero residuals</p></li>
 <li><p>Added build_polynomial function to create linear regression
 models with variable selection assited by PLS</p></li>
 </ul>
-</dd>
-<dt>by merge from James</dt><dd><ul class="simple">
+</div></blockquote>
+<p>by merge from James</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Added spectra preprocessing methods</p></li>
 <li><p>bootstrap PLS</p></li>
 </ul>
-</dd>
-</dl>
+</div></blockquote>
 <p>by Salvador Garcia (<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> <a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>)
 Added Dec 19th 2023</p>
 <blockquote>
@@ -90,73 +106,142 @@ Added Dec 19th 2023</p>
 <li><p>clean_empty_rows returns also the names of the rows removed</p></li>
 </ul>
 </div></blockquote>
-<dl class="simple">
-<dt>Added May 1st</dt><dd><ul class="simple">
+<p>Added May 1st</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>YMB is now added in the same structure as the XMB</p></li>
 <li><p>Corrected the dimensionality of the lwpls prediction, it was a double-nested array.</p></li>
 </ul>
-</dd>
-<dt>Added Apr 30</dt><dd><ul class="simple">
+</div></blockquote>
+<p>Added Apr 30</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Modified Multi-block PLS to include the block name in the variable name</p></li>
 </ul>
-</dd>
-<dt>Added Apr 29</dt><dd><ul class="simple">
+</div></blockquote>
+<p>Added Apr 29</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Included the unique routine and adjusted the parse_materials routine so materials
 and lots are in the same order as in the raw data</p></li>
 </ul>
-</dd>
-<dt>Added Apr 27</dt><dd><ul class="simple">
+</div></blockquote>
+<p>Added Apr 27</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Enhanced adapt_pls_4_pyomo to use variable names as indices if flag is sent</p></li>
 </ul>
-</dd>
-<dt>Added Apr 25</dt><dd><ul class="simple">
+</div></blockquote>
+<p>Added Apr 25</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Enhanced the varimax_rotation to adjust the r2 and r2pv to the rotated loadings</p></li>
 </ul>
-</dd>
-<dt>Added Apr 21</dt><dd><ul class="simple">
+</div></blockquote>
+<p>Added Apr 21</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Re added varimax_rotation with complete model rotation for PCA and PLS</p></li>
 </ul>
-</dd>
-<dt>Added Apr 17</dt><dd><ul class="simple">
+</div></blockquote>
+<p>Added Apr 17</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Added tpls and tpls_pred</p></li>
 </ul>
-</dd>
-<dt>Added Apr 15</dt><dd><ul class="simple">
+</div></blockquote>
+<p>Added Apr 15</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Added jrpls model and jrpls_pred</p></li>
 <li><p>Added routines to reconcile columns to rows identifier so that X and R materices
 correspond correctly</p></li>
 <li><p>Added routines to reconcile rows across a list of dataframes and produces a list
 of dataframes containing only those observations present in all dataframes</p></li>
 </ul>
-</dd>
-<dt>Added on Apr 9 2023</dt><dd><ul class="simple">
+</div></blockquote>
+<p>Added on Apr 9 2023</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Added lpls and lpls_pred routines</p></li>
 <li><p>Added parse_materials to read linear table and produce R or Ri</p></li>
 </ul>
-</dd>
-<dt>Release as of Nov 23 2022</dt><dd><ul class="simple">
+</div></blockquote>
+<p>Release as of Nov 23 2022</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Added a function to export PLS model to gPROMS code</p></li>
 </ul>
-</dd>
-<dt>Release as of Aug 22 2022</dt><dd><ul class="simple">
+</div></blockquote>
+<p>Release as of Aug 22 2022</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Fixed access to NEOS server and use of GAMS instead of IPOPT</p></li>
 </ul>
-</dd>
-<dt>Release as of Aug 12 2022</dt><dd><ul class="simple">
+</div></blockquote>
+<p>Release as of Aug 12 2022</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Fixed the SPE calculations in pls_pred and pca_pred</p></li>
 <li><p>Changed to a more efficient inversion in pca_pred (=pls_pred)</p></li>
 <li><p>Added a pseudo-inverse option in pmp for pca_pred</p></li>
 </ul>
-</dd>
-<dt>Release as of Aug 2 2022</dt><dd><ul class="simple">
+</div></blockquote>
+<p>Release as of Aug 2 2022</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Added replicate_data</p></li>
 </ul>
-</dd>
-</dl>
+</div></blockquote>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyphi.calc.ma57_dummy_check">
 <span class="sig-prename descclassname"><span class="pre">pyphi.calc.</span></span><span class="sig-name descname"><span class="pre">ma57_dummy_check</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/calc.html#ma57_dummy_check"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.calc.ma57_dummy_check" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.calc.add_auto_obs_id">
+<span class="sig-prename descclassname"><span class="pre">pyphi.calc.</span></span><span class="sig-name descname"><span class="pre">add_auto_obs_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/pyphi/calc.html#add_auto_obs_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.calc.add_auto_obs_id" title="Link to this definition">¶</a></dt>
+<dd><p>Add an <code class="docutils literal notranslate"><span class="pre">Auto</span> <span class="pre">Obs</span> <span class="pre">ID</span></code> column that makes duplicate first-column values unique.</p>
+<p>Scans the first column of <em>df</em> for duplicate values. Unique values are
+copied as-is; duplicated values receive a zero-padded numeric suffix
+(e.g. <code class="docutils literal notranslate"><span class="pre">A.1</span></code>, <code class="docutils literal notranslate"><span class="pre">A.01</span></code>, <code class="docutils literal notranslate"><span class="pre">A.001</span></code>) whose width is determined by the
+total occurrence count for that specific ID:</p>
+<ul class="simple">
+<li><p>fewer than 10 occurrences → no padding (<code class="docutils literal notranslate"><span class="pre">A.1</span></code> … <code class="docutils literal notranslate"><span class="pre">A.9</span></code>)</p></li>
+<li><p>10–99 occurrences → one leading zero (<code class="docutils literal notranslate"><span class="pre">A.01</span></code> … <code class="docutils literal notranslate"><span class="pre">A.99</span></code>)</p></li>
+<li><p>100–999 occurrences → two leading zeros (<code class="docutils literal notranslate"><span class="pre">A.001</span></code> … <code class="docutils literal notranslate"><span class="pre">A.999</span></code>)</p></li>
+</ul>
+<p>The new column is inserted at position 0; the original identifier column
+is preserved unchanged.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>df</strong> (<em>pd.DataFrame</em>) – Input dataframe whose first column contains
+observation identifiers. Must have at least one column.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A copy of <em>df</em> with <code class="docutils literal notranslate"><span class="pre">Auto</span> <span class="pre">Obs</span> <span class="pre">ID</span></code> prepended as the</dt><dd><p>first column.</p>
+</dd>
+<dt>df_classid (pd.DataFrame): A dataframe with <code class="docutils literal notranslate"><span class="pre">Auto</span> <span class="pre">Obs</span> <span class="pre">ID</span></code> as</dt><dd><p>first column and the original column ID as second column.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>df (pd.DataFrame)</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If <em>df</em> is empty (no columns).</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Batch ID&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">],</span> <span class="s2">&quot;Temp&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">22</span><span class="p">]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">add_auto_obs_id</span><span class="p">(</span><span class="n">df</span><span class="p">)[</span><span class="s2">&quot;Auto Obs ID&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<span class="go">[&#39;A.1&#39;, &#39;A.2&#39;, &#39;B&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pyphi.calc.f99">
@@ -1146,7 +1231,77 @@ replicated rows (same type as input).</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyphi.calc.parse_materials">
 <span class="sig-prename descclassname"><span class="pre">pyphi.calc.</span></span><span class="sig-name descname"><span class="pre">parse_materials</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sheetname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/calc.html#parse_materials"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.calc.parse_materials" title="Link to this definition">¶</a></dt>
-<dd><p>Build R matrices for JRPLS from linear table in Excel.</p>
+<dd><p>Build JR matrices for JRPLS from a linear materials table in Excel.</p>
+<p>Reads a structured Excel sheet describing the composition of finished
+product lots in terms of their constituent material lots and quantities
+(or ratios). Validates that every finished product lot has a material lot
+assigned for each material, then constructs one JR matrix per material.</p>
+<p>Each JR matrix is a DataFrame with one row per finished product lot and
+one column per material lot for that material. The cell values are the
+ratio or quantity of that material lot used in that finished product lot
+(0 if not used).</p>
+<p>The input Excel sheet must contain the following columns (in any order):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Finished</span> <span class="pre">Product</span> <span class="pre">Lot</span></code>: identifier for the finished product lot.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Material</span> <span class="pre">Lot</span></code>: identifier for the specific lot of the raw material.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Ratio</span> <span class="pre">or</span> <span class="pre">Quantity</span></code>: numeric contribution of this material lot to the
+finished product lot (e.g. mass fraction or absolute quantity).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Material</span></code>: name or identifier for the material type.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A summary of the ratio/quantity sum is printed for each finished
+product lot as a simple consistency check. The function prints
+diagnostic messages to stdout and returns <code class="docutils literal notranslate"><span class="pre">(False,</span> <span class="pre">False)</span></code> if any
+material lot assignment is missing.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – Path to the Excel workbook containing the materials
+table.</p></li>
+<li><p><strong>sheetname</strong> (<em>str</em>) – Name of the worksheet within the workbook to read.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>A two-element tuple <code class="docutils literal notranslate"><span class="pre">(JR,</span> <span class="pre">materials_used)</span></code>:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>JR</strong> (list of pandas.DataFrame): One DataFrame per material
+(in the same order as <code class="docutils literal notranslate"><span class="pre">materials_used</span></code>). Each DataFrame has
+shape <code class="docutils literal notranslate"><span class="pre">(n_fp_lots,</span> <span class="pre">n_material_lots</span> <span class="pre">+</span> <span class="pre">1)</span></code>, where the first
+column <code class="docutils literal notranslate"><span class="pre">FPLot</span></code> holds the finished product lot identifiers and
+the remaining columns are named after the material lots.</p></li>
+<li><p><strong>materials_used</strong> (list of str): Ordered list of unique
+material names found in the sheet, corresponding to the
+entries in <code class="docutils literal notranslate"><span class="pre">JR</span></code>.</p></li>
+</ul>
+<p>If validation fails, both elements are <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>FileNotFoundError</strong> – If <code class="docutils literal notranslate"><span class="pre">filename</span></code> does not point to an existing file.</p></li>
+<li><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">sheetname</span></code> is not found in the workbook.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">JR</span><span class="p">,</span> <span class="n">materials</span> <span class="o">=</span> <span class="n">parse_materials</span><span class="p">(</span><span class="s2">&quot;batch_records.xlsx&quot;</span><span class="p">,</span> <span class="s2">&quot;Blends&quot;</span><span class="p">)</span>
+<span class="go">Lot :Lot_A ratio/qty adds to 1.0</span>
+<span class="go">Lot :Lot_B ratio/qty adds to 1.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">JR</span><span class="p">)</span>          <span class="c1"># one matrix per material</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">JR</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<span class="go">[&#39;FPLot&#39;, &#39;MatLot_1&#39;, &#39;MatLot_2&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">materials</span>
+<span class="go">[&#39;Excipient_A&#39;, &#39;Excipient_B&#39;, &#39;API&#39;]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -1291,9 +1446,9 @@ their own X (process) and R (raw material) blocks sharing a common Y.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>Xi</strong> (<em>dict</em>) – Process data blocks <code class="docutils literal notranslate"><span class="pre">{'campaign':</span> <span class="pre">pd.DataFrame}</span></code>.
+<li><p><strong>Xi</strong> (<em>dict</em>) – Raw material property blocks <code class="docutils literal notranslate"><span class="pre">{'Material</span> <span class="pre">Type':</span> <span class="pre">pd.DataFrame}</span></code>.
 Each DataFrame’s first column is observation IDs.</p></li>
-<li><p><strong>Ri</strong> (<em>dict</em>) – Raw material property blocks <code class="docutils literal notranslate"><span class="pre">{'campaign':</span> <span class="pre">pd.DataFrame}</span></code>.
+<li><p><strong>Ri</strong> (<em>dict</em>) – Blending matrices <code class="docutils literal notranslate"><span class="pre">{'Material</span> <span class="pre">Type':</span> <span class="pre">pd.DataFrame}</span></code>.
 Keys must match <code class="docutils literal notranslate"><span class="pre">Xi</span></code>. First column is lot IDs.</p></li>
 <li><p><strong>Y</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – Shared response matrix. Rows match
 lots across all campaigns.</p></li>
@@ -1318,18 +1473,19 @@ lots across all campaigns.</p></li>
 <dt class="sig sig-object py" id="pyphi.calc.jrpls_pred">
 <span class="sig-prename descclassname"><span class="pre">pyphi.calc.</span></span><span class="sig-name descname"><span class="pre">jrpls_pred</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jrplsobj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/calc.html#jrpls_pred"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.calc.jrpls_pred" title="Link to this definition">¶</a></dt>
 <dd><p>Predict Y for a new observation using a fitted JRPLS model.</p>
-<blockquote>
-<div><dl>
-<dt>Args:</dt><dd><dl class="simple">
-<dt>xnew (pd.DataFrame or np.ndarray): New process observation(s).</dt><dd><p>Variables must match the specified campaign’s X block.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>xnew</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – New process observation(s).
+Variables must match the specified campaign’s X block.</p></li>
+<li><p><strong>rnew</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – New raw material lot properties.
+Variables must match the specified campaign’s R block.</p></li>
+<li><p><strong>campaign</strong> (<em>str</em>) – Name of the campaign this observation belongs to.</p></li>
+<li><p><strong>jrpls_obj</strong> (<em>dict</em>) – Fitted JRPLS model from <a class="reference internal" href="#pyphi.calc.jrpls" title="pyphi.calc.jrpls"><code class="xref py py-func docutils literal notranslate"><span class="pre">jrpls()</span></code></a>.</p></li>
+</ul>
 </dd>
-<dt>rnew (pd.DataFrame or np.ndarray): New raw material lot properties.</dt><dd><p>Variables must match the specified campaign’s R block.</p>
-</dd>
-</dl>
-<p>campaign (str): Name of the campaign this observation belongs to.
-jrpls_obj (dict): Fitted JRPLS model from <a class="reference internal" href="#pyphi.calc.jrpls" title="pyphi.calc.jrpls"><code class="xref py py-func docutils literal notranslate"><span class="pre">jrpls()</span></code></a>.</p>
-</dd>
-<dt>Returns:</dt><dd><p>dict: Prediction results with keys:</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>Prediction results with keys:</p>
 <blockquote>
 <div><ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Tnew</span></code> (ndarray): Projected X-scores.</p></li>
@@ -1339,9 +1495,12 @@ jrpls_obj (dict): Fitted JRPLS model from <a class="reference internal" href="#p
 <li><p><code class="docutils literal notranslate"><span class="pre">T2</span></code> (ndarray): Hotelling’s T².</p></li>
 </ul>
 </div></blockquote>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
 </dd>
 </dl>
-</div></blockquote>
 <p class="rubric">Example</p>
 <dl class="simple">
 <dt>rnew={</dt><dd><p>‘MAT1’:        [(‘A0129’,0.557949425 ),(‘A0130’,0.442050575 )],
@@ -1363,11 +1522,11 @@ raw material properties (R), and product quality (Y).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>Z</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – Process trajectory matrix.
+<li><p><strong>Z</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – Data from Process matrix.
 First column is observation IDs if a DataFrame.</p></li>
-<li><p><strong>Xi</strong> (<em>dict</em>) – Process data blocks <code class="docutils literal notranslate"><span class="pre">{'campaign':</span> <span class="pre">pd.DataFrame}</span></code>.
+<li><p><strong>Xi</strong> (<em>dict</em>) – Material Property data blocks <code class="docutils literal notranslate"><span class="pre">{'Material</span> <span class="pre">Type':</span> <span class="pre">pd.DataFrame}</span></code>.
 Each DataFrame’s first column is observation IDs.</p></li>
-<li><p><strong>Ri</strong> (<em>dict</em>) – Raw material property blocks <code class="docutils literal notranslate"><span class="pre">{'campaign':</span> <span class="pre">pd.DataFrame}</span></code>.
+<li><p><strong>Ri</strong> (<em>dict</em>) – Blending information property blocks <code class="docutils literal notranslate"><span class="pre">{'Material</span> <span class="pre">Type':</span> <span class="pre">pd.DataFrame}</span></code>.
 Keys must match <code class="docutils literal notranslate"><span class="pre">Xi</span></code>. First column is lot IDs.</p></li>
 <li><p><strong>Y</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – Shared response matrix. Rows match
 lots across all campaigns.</p></li>
@@ -1641,6 +1800,7 @@ and response Y. Equivalent to computing the predictive component in OPLS.</p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">pyphi.calc module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#pyphi.calc.ma57_dummy_check"><code class="docutils literal notranslate"><span class="pre">ma57_dummy_check()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.calc.add_auto_obs_id"><code class="docutils literal notranslate"><span class="pre">add_auto_obs_id()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pyphi.calc.f99"><code class="docutils literal notranslate"><span class="pre">f99()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pyphi.calc.f95"><code class="docutils literal notranslate"><span class="pre">f95()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pyphi.calc.spe_ci"><code class="docutils literal notranslate"><span class="pre">spe_ci()</span></code></a></li>

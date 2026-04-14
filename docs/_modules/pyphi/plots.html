@@ -39,13 +39,14 @@
 <span class="sd">@author: Sal Garcia &lt;sgarciam@ic.ac.uk&gt; &lt;salvadorgarciamunoz@gmail.com&gt;</span>
 
 <span class="sd">Changes on Feb 25th 2026:</span>
+
 <span class="sd">  - Bokeh 3.x: tooltips removed from figure(); now added via explicit HoverTool</span>
 <span class="sd">  - Extracted shared helpers: _get_lv_labels, _get_xvar_labels, _get_yvar_labels,</span>
 <span class="sd">    _new_output_file, _make_bokeh_palette, _resolve_lpls_space, _mask_by_class,</span>
 <span class="sd">    _add_hover</span>
 <span class="sd">  - Fixed loop-variable collision in predvsobs (i → j)</span>
 <span class="sd">  - Fixed output_file inside loop in mb_r2pb</span>
-<span class="sd">  - Fixed 2-D y_ array in score_line (.flatten())</span>
+<span class="sd">  - Fixed 2-D ``y_`` array in score_line (.flatten())</span>
 <span class="sd">  - Fixed nan_policy on vbar (not supported); use per-series ColumnDataSource</span>
 <span class="sd">  - Fixed bitwise ~ on bool in lineplot</span>
 <span class="sd">  - Added unbound-variable guard in contributions_plot</span>
@@ -56,6 +57,7 @@
 <span class="sd">  - Replaced math.pi with np.pi</span>
 <span class="sd">  - loadings / weighted_loadings: PLS now produces single HTML with X (blue)</span>
 <span class="sd">    and Y (red) bars on a shared axis per LV</span>
+<span class="sd">    </span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
