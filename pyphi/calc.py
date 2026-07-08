@@ -3,9 +3,15 @@ Phi for Python (pyPhi)  —  Version 2.0
 
 By Sal Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
 
+Added July 8 2026
+       * Fixed a bug in reconcile_rows_to_columns and fixed
+         docstrings in it and in LPLS
+
 Added March 13
 
         * Added routine to fix duplicaed obsID
+        * Added add_auto_var_id to rename duplicate variable (column) identifiers
+        * Added _check_var_duplicates inside _validate_inputs to detect duplicate variable IDs
         
 Added Feb 23 2026
 
@@ -256,6 +262,79 @@ def add_auto_obs_id(df: pd.DataFrame) -> pd.DataFrame:
     
     return df,df_classid
 
+def add_auto_var_id(df: pd.DataFrame) -> pd.DataFrame:
+    """Rename duplicate variable (column) identifiers to make them unique.
+
+    Scans columns 1 onwards of *df* for duplicate names. Unique names are
+    kept as-is; duplicated names receive a zero-padded numeric suffix
+    (e.g. ``pH.1``, ``pH.01``, ``pH.001``) whose width is determined by the
+    total occurrence count for that specific name:
+
+    * fewer than 10 occurrences → no padding (``pH.1`` … ``pH.9``)
+    * 10–99 occurrences → one leading zero (``pH.01`` … ``pH.99``)
+    * 100–999 occurrences → two leading zeros (``pH.001`` … ``pH.999``)
+
+    The first column (observation ID column) is always left unchanged.
+
+    Args:
+        df (pd.DataFrame): Input dataframe whose first column contains
+            observation identifiers and remaining columns are variables.
+            Must have at least 2 columns.
+
+    Returns:
+        df (pd.DataFrame): A copy of *df* with duplicate variable column
+            names renamed in-place (first column unchanged).
+
+        df_varid (pd.DataFrame): A two-column dataframe mapping the new
+            unique variable name (``Auto Var ID``) to the original column
+            name (``Original Var ID``), one row per renamed variable.
+
+    Raises:
+        ValueError: If *df* has fewer than 2 columns.
+
+    Example:
+        >>> data = {"Obs": ["a", "b"], "pH": [7.0, 7.1], "pH": [8.0, 8.1]}
+        >>> df = pd.DataFrame(data)
+        >>> add_auto_var_id(df).columns.tolist()
+        ['Obs', 'pH.1', 'pH.2']
+    """
+    if df.shape[1] < 2:
+        raise ValueError(
+            "df must have at least 2 columns (1 obs ID column + 1 data column), "
+            f"got {df.shape[1]}")
+
+    var_cols = list(df.columns[1:])
+    from collections import Counter
+    counts = Counter(var_cols)
+    duplicated_names = {name for name, cnt in counts.items() if cnt > 1}
+
+    new_names = []
+    occurrence_tracker = {}
+    renamed_pairs = []  # (new_name, original_name) for duplicates only
+
+    for name in var_cols:
+        if name in duplicated_names:
+            n = counts[name]
+            occurrence_tracker[name] = occurrence_tracker.get(name, 0) + 1
+            idx = occurrence_tracker[name]
+            if n < 10:
+                suffix = f"{idx}"
+            elif n < 100:
+                suffix = f"{idx:02d}"
+            else:
+                suffix = f"{idx:03d}"
+            new_name = f"{name}.{suffix}"
+            new_names.append(new_name)
+            renamed_pairs.append((new_name, str(name)))
+        else:
+            new_names.append(name)
+
+    df = df.copy()
+    df.columns = [df.columns[0]] + new_names
+
+    df_varid = pd.DataFrame(renamed_pairs, columns=["Auto Var ID", "Original Var ID"])
+    return df, df_varid
+
 def _extract_array(X):
     """Extract numpy array, observation IDs, and variable IDs from DataFrame or ndarray.
     
@@ -391,15 +470,28 @@ def _validate_inputs(X, Y=None, A=None, mcs=None):
                 f"{name} has duplicate observation IDs: {unique_dupes[:10]}"
                 + (f" ... and {len(unique_dupes)-10} more" if len(unique_dupes) > 10 else "")
                 + ". Use phi.add_auto_obs_id(df) to automatically generate unique IDs.")
-    
+
+    # --- Helper: check for duplicate variable (column) IDs ---
+    def _check_var_duplicates(df, name):
+        var_cols = pd.Series([str(c) for c in df.columns[1:]])
+        dupes = var_cols[var_cols.duplicated(keep=False)]
+        if len(dupes) > 0:
+            unique_dupes = dupes.unique().tolist()
+            raise ValueError(
+                f"{name} has duplicate variable IDs: {unique_dupes[:10]}"
+                + (f" ... and {len(unique_dupes)-10} more" if len(unique_dupes) > 10 else "")
+                + ". Use phi.add_auto_var_id(df) to automatically generate unique variable names.")
+
     # --- DataFrame-specific validation ---
     if isinstance(X, pd.DataFrame):
         _check_df_structure(X, "X")
         _check_duplicates(X, "X")
-    
+        _check_var_duplicates(X, "X")
+
     if Y is not None and isinstance(Y, pd.DataFrame):
         _check_df_structure(Y, "Y")
         _check_duplicates(Y, "Y")
+        _check_var_duplicates(Y, "Y")
     
     # --- Validate A against dimensions ---
     if A is not None:
@@ -3348,31 +3440,55 @@ def reconcile_rows(df_list):
         all_rows = [r for r in all_rows if r in rows]
     return [isin_ordered_col0(df, all_rows) for df in df_list]
     
-def reconcile_rows_to_columns(df_list_r, df_list_c): 
+def reconcile_rows_to_columns(X_list, R_list):
     """Map DataFrame rows to the columns of another DataFrame.
-
         Used in L-shaped data structures where material lot IDs appear as
         column headers in X and as row IDs in R.
-
         Args:
-            X (pd.DataFrame): Process data where columns (after the first)
-                correspond to lot IDs.
-            R (pd.DataFrame): Material property data where the first column
-                contains lot IDs.
+            X_list (list of pd.DataFrame): Material property matrices where the first column
+                corresponds to raw material lot IDs and the following columns have the
+                physical properties of each lot. One row per lot (raw material lot x properties).
+            R_list (list of pd.DataFrame): Blending ratio matrices where the first column
+                contains FINISHED PRODUCT lot IDs and each subsequent column represents the
+                ratio of each material (lot in X) added to that finished product lot
+                (finished product lots x material lot).
 
+                Material lot IDs (rows of the first column of X, and column names of R after
+                the first) must be unique within each dataframe, and must match between the
+                corresponding X and R dataframe.
         Returns:
             tuple: ``(X_matched, R_matched)`` — aligned matrices ready for LPLS.
+        Raises:
+            ValueError: if material lot IDs are duplicated within an X or R dataframe.
     """
     df_list_r_o = []; df_list_c_o = []
-    for dfr, dfc in zip(df_list_r, df_list_c):
-        all_ids = list(set(dfc.columns[1:].tolist()) & set(dfr[dfr.columns[0]].values.tolist()))
-        # Preserve order from dfr
-        rows = dfr[dfr.columns[0]].values.tolist()
+    for idx, (dfr, dfc) in enumerate(zip(X_list, R_list)):
+        id_col = dfr.columns[0]
+        rows = dfr[id_col].values.tolist()
         cols = dfc.columns[1:].tolist()
-        all_ids = [i for i in rows if i in cols]
+
+        # --- belt: reject malformed input outright ---
+        dup_rows = pd.Index(rows)[pd.Index(rows).duplicated()].unique().tolist()
+        if dup_rows:
+            raise ValueError(
+                f"X_list[{idx}]: duplicate raw material lot IDs in column '{id_col}': {dup_rows}. "
+                "Lot IDs must be unique."
+            )
+        dup_cols = pd.Index(cols)[pd.Index(cols).duplicated()].unique().tolist()
+        if dup_cols:
+            raise ValueError(
+                f"R_list[{idx}]: duplicate material lot ID columns: {dup_cols}. "
+                "Lot IDs must be unique."
+            )
+
+        # --- suspenders: even if a dup slipped through, never propagate it ---
+        seen = set()
+        all_ids = [i for i in rows if i in cols and not (i in seen or seen.add(i))]
+
         dfr_ = isin_ordered_col0(dfr, all_ids)
         dfc_ = dfc[all_ids].copy()
         dfc_.insert(0, dfc.columns[0], dfc[dfc.columns[0]].values.tolist())
+
         df_list_r_o.append(dfr_); df_list_c_o.append(dfc_)
     return df_list_r_o, df_list_c_o
 
@@ -3390,10 +3506,10 @@ def lpls(X, R, Y, A, *, shush=False):
         Per Muteki et al., Chemom. Intell. Lab. Syst. 85 (2007) 186–194.
 
         Args:
-            X (pd.DataFrame or np.ndarray): Process data matrix (n_obs × n_x).
+            X (pd.DataFrame or np.ndarray): Material Property data matrix (n_obs × n_x).
                 First column is observation IDs if a DataFrame.
-            R (pd.DataFrame or np.ndarray): Raw material property matrix
-                (n_lots × n_r). Columns of X map to rows of R.
+            R (pd.DataFrame or np.ndarray): Blending Data matrix
+                (n_lots × n_r). Rows of X map to Columns of R.
             Y (pd.DataFrame or np.ndarray): Quality/response matrix
                 (n_lots × n_y). Rows match rows of R.
             A (int): Number of latent variables.
