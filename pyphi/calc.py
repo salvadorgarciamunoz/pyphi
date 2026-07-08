@@ -6,6 +6,9 @@ By Sal Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
 Added July 8 2026
        * Fixed a bug in reconcile_rows_to_columns and fixed
          docstrings in it and in LPLS
+         
+         Added cleaning code to reconcile_rows_to_columns to
+         remove unused materials and low varying properties
 
 Added March 13
 
@@ -3440,7 +3443,7 @@ def reconcile_rows(df_list):
         all_rows = [r for r in all_rows if r in rows]
     return [isin_ordered_col0(df, all_rows) for df in df_list]
     
-def reconcile_rows_to_columns(X_list, R_list):
+def reconcile_rows_to_columns(X_list, R_list, const_var_tol=1e-9):
     """Map DataFrame rows to the columns of another DataFrame.
         Used in L-shaped data structures where material lot IDs appear as
         column headers in X and as row IDs in R.
@@ -3448,30 +3451,46 @@ def reconcile_rows_to_columns(X_list, R_list):
             X_list (list of pd.DataFrame): Material property matrices where the first column
                 corresponds to raw material lot IDs and the following columns have the
                 physical properties of each lot. One row per lot (raw material lot x properties).
-            R_list (list of pd.DataFrame): Blending ratio matrices where the first column
-                contains FINISHED PRODUCT lot IDs and each subsequent column represents the
-                ratio of each material (lot in X) added to that finished product lot
-                (finished product lots x material lot).
+            R_list (list of pd.DataFrame): Blending ratio/quantity matrices where the first
+                column contains FINISHED PRODUCT lot IDs and each subsequent column represents
+                the ratio or quantity of each material (lot in X) added to that finished product
+                lot (finished product lots x material lot). Values must be numeric, non-negative,
+                and must not contain NaN. Ratios need not sum to 1 (quantities are also valid).
 
                 Material lot IDs (rows of the first column of X, and column names of R after
                 the first) must be unique within each dataframe, and must match between the
                 corresponding X and R dataframe.
+            const_var_tol (float): Variance threshold below which a property column in X is
+                treated as constant (no discriminating information) and dropped.
         Returns:
             tuple: ``(X_matched, R_matched)`` — aligned matrices ready for LPLS.
+                A material lot is dropped from both X and R if either:
+                  (a) its ratio/quantity column in R sums to exactly zero, i.e. it was never
+                      used in any finished product, or
+                  (b) its property row in X is entirely NaN (no properties recorded).
+                A property column in X is dropped (from X only) if either:
+                  (a) it is entirely NaN across all remaining materials, or
+                  (b) its variance across all remaining materials is below const_var_tol.
+                Row/column correspondence between X_matched and R_matched is preserved
+                throughout, and asserted before returning.
         Raises:
-            ValueError: if material lot IDs are duplicated within an X or R dataframe.
+            ValueError: if material lot IDs are duplicated within an X or R dataframe, if X has
+                duplicate property column names, if R contains NaN, non-numeric, or negative
+                ratio/quantity values, or if no material lot IDs overlap between a corresponding
+                X/R pair.
     """
     df_list_r_o = []; df_list_c_o = []
     for idx, (dfr, dfc) in enumerate(zip(X_list, R_list)):
-        id_col = dfr.columns[0]
-        rows = dfr[id_col].values.tolist()
+        id_col_x = dfr.columns[0]
+        id_col_r = dfc.columns[0]
+        rows = dfr[id_col_x].values.tolist()
         cols = dfc.columns[1:].tolist()
 
         # --- belt: reject malformed input outright ---
         dup_rows = pd.Index(rows)[pd.Index(rows).duplicated()].unique().tolist()
         if dup_rows:
             raise ValueError(
-                f"X_list[{idx}]: duplicate raw material lot IDs in column '{id_col}': {dup_rows}. "
+                f"X_list[{idx}]: duplicate raw material lot IDs in column '{id_col_x}': {dup_rows}. "
                 "Lot IDs must be unique."
             )
         dup_cols = pd.Index(cols)[pd.Index(cols).duplicated()].unique().tolist()
@@ -3480,14 +3499,127 @@ def reconcile_rows_to_columns(X_list, R_list):
                 f"R_list[{idx}]: duplicate material lot ID columns: {dup_cols}. "
                 "Lot IDs must be unique."
             )
+        dup_props = dfr.columns[1:][dfr.columns[1:].duplicated()].unique().tolist()
+        if dup_props:
+            raise ValueError(
+                f"X_list[{idx}]: duplicate property column names: {dup_props}. "
+                "Property columns must be unique."
+            )
+        bad_dtype_cols = [c for c in cols if not pd.api.types.is_numeric_dtype(dfc[c])]
+        if bad_dtype_cols:
+            raise ValueError(
+                f"R_list[{idx}]: non-numeric ratio/quantity column(s): {bad_dtype_cols}. "
+                "R must contain only numbers."
+            )
+        nan_cols = dfc.columns[1:][dfc[cols].isna().any(axis=0)].tolist()
+        if nan_cols:
+            raise ValueError(
+                f"R_list[{idx}]: NaN values found in column(s): {nan_cols}. "
+                "R must not contain NaN."
+            )
+        neg_cols = dfc.columns[1:][(dfc[cols] < 0).any(axis=0)].tolist()
+        if neg_cols:
+            raise ValueError(
+                f"R_list[{idx}]: negative value(s) found in column(s): {neg_cols}. "
+                "Ratios/quantities in R must be non-negative."
+            )
 
         # --- suspenders: even if a dup slipped through, never propagate it ---
         seen = set()
         all_ids = [i for i in rows if i in cols and not (i in seen or seen.add(i))]
 
+        if not all_ids:
+            raise ValueError(
+                f"X_list[{idx}]/R_list[{idx}]: no material lot IDs overlap between X's "
+                f"first column and R's columns. Check for naming mismatches."
+            )
+
+        only_in_x = sorted(set(rows) - set(cols), key=lambda i: rows.index(i))
+        only_in_r = sorted(set(cols) - set(rows), key=lambda i: cols.index(i))
+        if only_in_x:
+            print(
+                f"[reconcile_rows_to_columns] Dataset {idx}: {len(only_in_x)} material lot(s) "
+                f"in X have no matching column in R and will be dropped: {only_in_x}"
+            )
+        if only_in_r:
+            print(
+                f"[reconcile_rows_to_columns] Dataset {idx}: {len(only_in_r)} material lot "
+                f"column(s) in R have no matching row in X and will be dropped: {only_in_r}"
+            )
+
         dfr_ = isin_ordered_col0(dfr, all_ids)
         dfc_ = dfc[all_ids].copy()
-        dfc_.insert(0, dfc.columns[0], dfc[dfc.columns[0]].values.tolist())
+        dfc_.insert(0, id_col_r, dfc[id_col_r].values.tolist())
+
+        # --- identify materials never used (ratio/quantity column sums to exactly 0 in R) ---
+        col_sums = dfc_[all_ids].sum(axis=0)
+        zero_mask = col_sums == 0
+        unused_ids = zero_mask[zero_mask].index.tolist()
+
+        # --- identify materials with no properties recorded (all-NaN row in X) ---
+        prop_cols = dfr_.columns[1:]
+        nan_row_mask = dfr_[prop_cols].isna().all(axis=1)
+        missing_prop_ids = dfr_.loc[nan_row_mask, id_col_x].tolist()
+
+        # --- union: drop these materials from both X (rows) and R (columns) ---
+        drop_ids = set(unused_ids) | set(missing_prop_ids)
+        if drop_ids:
+            if unused_ids:
+                print(
+                    f"[reconcile_rows_to_columns] Dataset {idx}: removing "
+                    f"{len(unused_ids)} material lot(s) with a ratio/quantity column summing "
+                    f"to exactly zero (never used in any finished product): {unused_ids}"
+                )
+            if missing_prop_ids:
+                print(
+                    f"[reconcile_rows_to_columns] Dataset {idx}: removing "
+                    f"{len(missing_prop_ids)} material lot(s) with no properties "
+                    f"recorded in X (all-NaN row): {missing_prop_ids}"
+                )
+            kept_ids = [i for i in all_ids if i not in drop_ids]
+            if not kept_ids:
+                raise ValueError(
+                    f"X_list[{idx}]/R_list[{idx}]: all material lots were removed "
+                    "(unused in R or missing properties in X). Nothing left to return."
+                )
+            dfc_ = dfc_[[id_col_r] + kept_ids].copy()
+            dfr_ = isin_ordered_col0(dfr_, kept_ids)
+        else:
+            kept_ids = all_ids
+
+        # --- drop property columns in X that are all-NaN or effectively constant ---
+        prop_cols = dfr_.columns[1:]
+        allnan_mask = dfr_[prop_cols].isna().all(axis=0)
+        allnan_props = prop_cols[allnan_mask].tolist()
+
+        remaining_cols = prop_cols[~allnan_mask]
+        var_mask = dfr_[remaining_cols].var(ddof=0, skipna=True) < const_var_tol
+        const_props = remaining_cols[var_mask].tolist()
+
+        if allnan_props:
+            print(
+                f"[reconcile_rows_to_columns] Dataset {idx}: removing "
+                f"{len(allnan_props)} property column(s) with no recorded values "
+                f"(all-NaN) across all materials: {allnan_props}"
+            )
+        if const_props:
+            print(
+                f"[reconcile_rows_to_columns] Dataset {idx}: removing "
+                f"{len(const_props)} property column(s) with variance below "
+                f"{const_var_tol} across all materials (no discriminating information): "
+                f"{const_props}"
+            )
+        drop_props = allnan_props + const_props
+        if drop_props:
+            dfr_ = dfr_.drop(columns=drop_props)
+
+        # --- final correspondence check (belt-and-suspenders) ---
+        final_ids_x = dfr_[id_col_x].tolist()
+        final_ids_r = dfc_.columns[1:].tolist()
+        assert final_ids_x == final_ids_r, (
+            f"Internal error in dataset {idx}: X row order {final_ids_x} does not match "
+            f"R column order {final_ids_r} after filtering."
+        )
 
         df_list_r_o.append(dfr_); df_list_c_o.append(dfc_)
     return df_list_r_o, df_list_c_o
