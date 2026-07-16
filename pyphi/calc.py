@@ -2,7 +2,9 @@
 Phi for Python (pyPhi)  —  Version 2.0
 
 By Sal Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
-
+AddedJukly 16 2026
+        * Recoded the reconcile_rows_to_columns due to bugs found.
+        
 Added July 8 2026
        * Fixed a bug in reconcile_rows_to_columns and fixed
          docstrings in it and in LPLS
@@ -143,6 +145,7 @@ from numpy import eye, asarray, dot, sum, diag
 from numpy.linalg import svd
 import matplotlib.pyplot as plt
 from statsmodels.distributions.empirical_distribution import ECDF
+from collections import defaultdict
 
 os.environ['NEOS_EMAIL'] = 'pyphisoftware@gmail.com' 
 
@@ -3443,168 +3446,453 @@ def reconcile_rows(df_list):
         all_rows = [r for r in all_rows if r in rows]
     return [isin_ordered_col0(df, all_rows) for df in df_list]
     
-def reconcile_rows_to_columns(X_list, R_list, const_var_tol=1e-9):
-    """Map DataFrame rows to the columns of another DataFrame.
-        Used in L-shaped data structures where material lot IDs appear as
-        column headers in X and as row IDs in R.
-        Args:
-            X_list (list of pd.DataFrame): Material property matrices where the first column
-                corresponds to raw material lot IDs and the following columns have the
-                physical properties of each lot. One row per lot (raw material lot x properties).
-            R_list (list of pd.DataFrame): Blending ratio/quantity matrices where the first
-                column contains FINISHED PRODUCT lot IDs and each subsequent column represents
-                the ratio or quantity of each material (lot in X) added to that finished product
-                lot (finished product lots x material lot). Values must be numeric, non-negative,
-                and must not contain NaN. Ratios need not sum to 1 (quantities are also valid).
 
-                Material lot IDs (rows of the first column of X, and column names of R after
-                the first) must be unique within each dataframe, and must match between the
-                corresponding X and R dataframe.
-            const_var_tol (float): Variance threshold below which a property column in X is
-                treated as constant (no discriminating information) and dropped.
+def reconcile_rows_to_columns(X_list, R_list, Y_Z=None, materials=None, Y_Z_names=None,
+                               const_var_tol=1e-9):
+    """Reconcile L-shaped/T-shaped material data (per Garcia-Munoz, JRPLS/TPLS) so that,
+        for each material type i: X_list[i]'s rows (raw material lots) match R_list[i]'s
+        columns after the first (also raw material lots), and every R_list[i]'s rows
+        (finished product lots) are restricted to a single common, ordered set of lots
+        shared across all material types and all auxiliary (Y/Z) matrices.
+
+        Args:
+            X_list (list of pd.DataFrame): Material property matrices, one per material type.
+                First column = raw material lot IDs (unique within each, non-null). Following
+                columns = physical properties (one row per lot).
+            R_list (list of pd.DataFrame): Blending ratio/quantity matrices, one per material
+                type, aligned index-for-index with X_list. First column = finished product lot
+                IDs (unique within each, non-null). Following columns = raw material lot IDs
+                (matching the corresponding X_list[i]). Values must be numeric, non-negative,
+                not NaN.
+            Y_Z (list of pd.DataFrame, optional): Auxiliary matrices (e.g. quality attributes Y,
+                process conditions Z) whose first column is the finished product lot ID and
+                must reference the same lots as R_list. Must have at least one data column
+                beyond the ID column. Not required to be numeric-only; only row-completeness
+                is checked.
+            materials (list of str, optional): Display name for each material type, same order
+                as X_list/R_list. Defaults to "Material 1", "Material 2", ... if omitted.
+            Y_Z_names (list of str, optional): Display name for each Y_Z matrix. Defaults to
+                "Y_Z[0]", "Y_Z[1]", ... if omitted.
+            const_var_tol (float): Variance threshold below which a property column in an X_i
+                is treated as constant (no discriminating information) and dropped. Skipped
+                (with a warning) if fewer than 2 material lots remain for that type, since
+                variance is degenerate with a single data point.
+
         Returns:
-            tuple: ``(X_matched, R_matched)`` — aligned matrices ready for LPLS.
-                A material lot is dropped from both X and R if either:
-                  (a) its ratio/quantity column in R sums to exactly zero, i.e. it was never
-                      used in any finished product, or
-                  (b) its property row in X is entirely NaN (no properties recorded).
-                A property column in X is dropped (from X only) if either:
-                  (a) it is entirely NaN across all remaining materials, or
-                  (b) its variance across all remaining materials is below const_var_tol.
-                Row/column correspondence between X_matched and R_matched is preserved
-                throughout, and asserted before returning.
+            If Y_Z is None: tuple (X_matched_list, R_matched_list).
+            If Y_Z is provided: tuple (X_matched_list, R_matched_list, Y_Z_matched_list).
+
+            A finished product lot is excluded from every returned matrix if any of:
+              (a) it used a raw material lot with no matching physical-property row in the
+                  corresponding X_i,
+              (b) it has no row at all, or zero usage of every characterized material, for
+                  any one material type (a finished product lot must use at least one
+                  material of each kind),
+              (c) its row in any Y_Z matrix is missing entirely or entirely NaN.
+            Every reason for every excluded lot is captured (a lot can be excluded for
+            multiple simultaneous reasons, all reported).
+
+            Within each retained (X_i, R_i) pair: a material lot is dropped from both if its
+            ratio/quantity column sums to exactly zero among retained lots, or its property
+            row in X_i is entirely NaN. A property column in X_i is dropped (X_i only) if it
+            is entirely NaN, or (with >=2 material lots remaining) its variance is below
+            const_var_tol.
+
+            All returned R_matched and Y_Z_matched matrices share one identical row order.
         Raises:
-            ValueError: if material lot IDs are duplicated within an X or R dataframe, if X has
-                duplicate property column names, if R contains NaN, non-numeric, or negative
-                ratio/quantity values, or if no material lot IDs overlap between a corresponding
-                X/R pair.
+            ValueError: duplicated or null lot IDs, duplicated property columns, non-numeric/
+                NaN/negative values in R, a Y_Z matrix with no data columns, or no finished
+                product lots remaining after reconciliation.
     """
-    df_list_r_o = []; df_list_c_o = []
+    n_types = len(X_list)
+    if len(R_list) != n_types:
+        raise ValueError("X_list and R_list must have the same length (one entry per material type).")
+
+    materials = materials if materials is not None else [f"Material {i+1}" for i in range(n_types)]
+    if len(materials) != n_types:
+        raise ValueError("materials must have the same length as X_list/R_list.")
+
+    if Y_Z is not None:
+        Y_Z_names = Y_Z_names if Y_Z_names is not None else [f"Y_Z[{i}]" for i in range(len(Y_Z))]
+        if len(Y_Z_names) != len(Y_Z):
+            raise ValueError("Y_Z_names must have the same length as Y_Z.")
+
+    id_col_x = [dfr.columns[0] for dfr in X_list]
+    id_col_r = [dfc.columns[0] for dfc in R_list]
+
+    # ================================================================
+    # Phase 0: belt validation
+    # ================================================================
     for idx, (dfr, dfc) in enumerate(zip(X_list, R_list)):
-        id_col_x = dfr.columns[0]
-        id_col_r = dfc.columns[0]
-        rows = dfr[id_col_x].values.tolist()
+        rows = dfr[id_col_x[idx]].values.tolist()
         cols = dfc.columns[1:].tolist()
 
-        # --- belt: reject malformed input outright ---
+        if dfr[id_col_x[idx]].isna().any():
+            raise ValueError(
+                f"X_list[{idx}] ({materials[idx]}): null/NaN value(s) found in the material "
+                f"lot ID column '{id_col_x[idx]}'. Lot IDs cannot be null."
+            )
+        if dfc[id_col_r[idx]].isna().any():
+            raise ValueError(
+                f"R_list[{idx}] ({materials[idx]}): null/NaN value(s) found in the finished "
+                f"product lot ID column '{id_col_r[idx]}'. Lot IDs cannot be null."
+            )
+
         dup_rows = pd.Index(rows)[pd.Index(rows).duplicated()].unique().tolist()
         if dup_rows:
             raise ValueError(
-                f"X_list[{idx}]: duplicate raw material lot IDs in column '{id_col_x}': {dup_rows}. "
-                "Lot IDs must be unique."
+                f"X_list[{idx}] ({materials[idx]}): duplicate raw material lot IDs in column "
+                f"'{id_col_x[idx]}': {dup_rows}. Lot IDs must be unique."
             )
         dup_cols = pd.Index(cols)[pd.Index(cols).duplicated()].unique().tolist()
         if dup_cols:
             raise ValueError(
-                f"R_list[{idx}]: duplicate material lot ID columns: {dup_cols}. "
-                "Lot IDs must be unique."
+                f"R_list[{idx}] ({materials[idx]}): duplicate material lot ID columns: "
+                f"{dup_cols}. Lot IDs must be unique."
             )
         dup_props = dfr.columns[1:][dfr.columns[1:].duplicated()].unique().tolist()
         if dup_props:
             raise ValueError(
-                f"X_list[{idx}]: duplicate property column names: {dup_props}. "
-                "Property columns must be unique."
+                f"X_list[{idx}] ({materials[idx]}): duplicate property column names: "
+                f"{dup_props}. Property columns must be unique."
+            )
+        dup_lots = pd.Index(dfc[id_col_r[idx]].tolist())
+        dup_lots = dup_lots[dup_lots.duplicated()].unique().tolist()
+        if dup_lots:
+            raise ValueError(
+                f"R_list[{idx}] ({materials[idx]}): duplicate finished product lot IDs in "
+                f"column '{id_col_r[idx]}': {dup_lots}. Finished product lot IDs must be unique."
             )
         bad_dtype_cols = [c for c in cols if not pd.api.types.is_numeric_dtype(dfc[c])]
         if bad_dtype_cols:
             raise ValueError(
-                f"R_list[{idx}]: non-numeric ratio/quantity column(s): {bad_dtype_cols}. "
-                "R must contain only numbers."
+                f"R_list[{idx}] ({materials[idx]}): non-numeric ratio/quantity column(s): "
+                f"{bad_dtype_cols}. R must contain only numbers."
             )
         nan_cols = dfc.columns[1:][dfc[cols].isna().any(axis=0)].tolist()
         if nan_cols:
             raise ValueError(
-                f"R_list[{idx}]: NaN values found in column(s): {nan_cols}. "
-                "R must not contain NaN."
+                f"R_list[{idx}] ({materials[idx]}): NaN values found in column(s): "
+                f"{nan_cols}. R must not contain NaN."
             )
         neg_cols = dfc.columns[1:][(dfc[cols] < 0).any(axis=0)].tolist()
         if neg_cols:
             raise ValueError(
-                f"R_list[{idx}]: negative value(s) found in column(s): {neg_cols}. "
-                "Ratios/quantities in R must be non-negative."
+                f"R_list[{idx}] ({materials[idx]}): negative value(s) found in column(s): "
+                f"{neg_cols}. Ratios/quantities in R must be non-negative."
             )
 
-        # --- suspenders: even if a dup slipped through, never propagate it ---
-        seen = set()
-        all_ids = [i for i in rows if i in cols and not (i in seen or seen.add(i))]
+        lot_ids = set(dfc[id_col_r[idx]].values.tolist())
+        overlap = lot_ids & set(cols)
+        if overlap:
+            print(
+                f"[reconcile_rows_to_columns] WARNING - {materials[idx]}: {len(overlap)} ID(s) "
+                f"appear BOTH as a finished product lot ID and as a material lot column header "
+                f"in the same R matrix: {sorted(overlap)}. This may indicate R_list[{idx}] is "
+                f"transposed or mislabeled -- verify rows = finished product lots, "
+                f"columns[1:] = material lots."
+            )
+
+        x_id_dtype = dfr[id_col_x[idx]].dtype
+        r_col_dtype = dfc.columns[1:].dtype
+        if x_id_dtype != r_col_dtype and not (
+            pd.api.types.is_numeric_dtype(x_id_dtype) and pd.api.types.is_numeric_dtype(r_col_dtype)
+        ):
+            print(
+                f"[reconcile_rows_to_columns] WARNING - {materials[idx]}: dtype mismatch between "
+                f"X's material lot ID column ({x_id_dtype}) and R's material lot column headers "
+                f"({r_col_dtype}). Lot ID matching may silently fail if these represent the same "
+                f"values as different types (e.g. int vs str). Consider casting both to the same "
+                f"type before calling this function."
+            )
+
+    id_col_yz = []
+    if Y_Z is not None:
+        for j, dfyz in enumerate(Y_Z):
+            idc = dfyz.columns[0]
+            id_col_yz.append(idc)
+
+            if dfyz[idc].isna().any():
+                raise ValueError(
+                    f"Y_Z[{j}] ({Y_Z_names[j]}): null/NaN value(s) found in the finished "
+                    f"product lot ID column '{idc}'. Lot IDs cannot be null."
+                )
+            if len(dfyz.columns) < 2:
+                raise ValueError(
+                    f"Y_Z[{j}] ({Y_Z_names[j]}): has no data columns beyond the ID column "
+                    f"'{idc}'. Nothing to check for completeness."
+                )
+            dup_yz = pd.Index(dfyz[idc].tolist())
+            dup_yz = dup_yz[dup_yz.duplicated()].unique().tolist()
+            if dup_yz:
+                raise ValueError(
+                    f"Y_Z[{j}] ({Y_Z_names[j]}): duplicate finished product lot IDs in column "
+                    f"'{idc}': {dup_yz}. Finished product lot IDs must be unique."
+                )
+
+    # ================================================================
+    # Universe of all finished product lots referenced anywhere in R
+    # ================================================================
+    all_r_lots = set()
+    for dfc, idc in zip(R_list, id_col_r):
+        all_r_lots |= set(dfc[idc].values.tolist())
+
+    # ================================================================
+    # Phase 1: per-material-type unmatched raw materials + finished-lot
+    # problem classification. Every lot is checked against every type
+    # unconditionally (no sequential narrowing) so a lot's FULL set of
+    # problems is always captured, even if it already fails on another type.
+    # ================================================================
+    missing_materials_by_type = []
+    valid_cols_by_type = []
+    material_missing_detail = {}           # material name -> unmatched raw material lot IDs
+    unused_x_materials_detail = {}         # material name -> X lot IDs never referenced in R
+    material_problems = defaultdict(dict)  # finished lot -> {material name: reason} (truly missing/zero usage)
+    unmatched_material_exclusions = defaultdict(dict)  # finished lot -> {material name: unmatched lot ids used}
+
+    for idx in range(n_types):
+        dfr, dfc = X_list[idx], R_list[idx]
+        id_col_x_i, id_col_r_i = id_col_x[idx], id_col_r[idx]
+
+        material_ids_in_x = set(dfr[id_col_x_i].values.tolist())
+        all_material_cols = dfc.columns[1:].tolist()
+        unmatched_cols = [c for c in all_material_cols if c not in material_ids_in_x]
+        valid_cols = [c for c in all_material_cols if c in material_ids_in_x]
+
+        missing_materials_by_type.append(unmatched_cols)
+        valid_cols_by_type.append(valid_cols)
+
+        if unmatched_cols:
+            material_missing_detail[materials[idx]] = unmatched_cols
+            print(
+                f"[reconcile_rows_to_columns] {materials[idx]}: raw material lot(s) "
+                f"{unmatched_cols} appear as columns in R but have no matching physical-"
+                f"property row in X."
+            )
+
+        if not valid_cols:
+            print(
+                f"[reconcile_rows_to_columns] WARNING - {materials[idx]}: none of the "
+                f"material lot columns in R have a matching row in X. Every finished product "
+                f"lot will be flagged as missing {materials[idx]} usage below."
+            )
+
+        present_ids = set(dfc[id_col_r_i].values.tolist())
+
+        if unmatched_cols:
+            used_unmatched_mask = (dfc[unmatched_cols] > 0).any(axis=1)
+            lots_used_unmatched = set(dfc.loc[used_unmatched_mask, id_col_r_i])
+        else:
+            lots_used_unmatched = set()
+
+        if valid_cols:
+            zero_valid_mask = dfc[valid_cols].sum(axis=1) == 0
+        else:
+            zero_valid_mask = pd.Series(True, index=dfc.index)
+        lots_zero_valid = set(dfc.loc[zero_valid_mask, id_col_r_i]) - lots_used_unmatched
+
+        lots_absent = all_r_lots - present_ids
+
+        if lots_used_unmatched:
+            for lot in sorted(lots_used_unmatched, key=str):
+                row = dfc.loc[dfc[id_col_r_i] == lot, unmatched_cols].iloc[0]
+                used_list = [c for c in unmatched_cols if row[c] > 0]
+                unmatched_material_exclusions[lot][materials[idx]] = used_list
+            print(
+                f"[reconcile_rows_to_columns] {materials[idx]}: finished product lot(s) "
+                f"{sorted(lots_used_unmatched, key=str)} used one or more unmatched raw "
+                f"materials and will be excluded from the analysis."
+            )
+
+        if lots_zero_valid:
+            for lot in lots_zero_valid:
+                material_problems[lot][materials[idx]] = (
+                    "zero usage of any characterized material of this type"
+                )
+            print(
+                f"[reconcile_rows_to_columns] {materials[idx]}: finished product lot(s) "
+                f"{sorted(lots_zero_valid, key=str)} show zero usage of any characterized "
+                f"raw material of this type and will be excluded."
+            )
+
+        if lots_absent:
+            for lot in lots_absent:
+                material_problems[lot][materials[idx]] = (
+                    "no row present in R for this material type"
+                )
+            print(
+                f"[reconcile_rows_to_columns] {materials[idx]}: finished product lot(s) "
+                f"{sorted(lots_absent, key=str)} have no row at all in this material type's "
+                f"R matrix and will be excluded."
+            )
+
+    # ================================================================
+    # Phase 2: Y_Z row-completeness check, same unconditional treatment.
+    # ================================================================
+    yz_problems = defaultdict(dict)   # finished lot -> {Y_Z name: reason}
+
+    if Y_Z is not None:
+        for j, dfyz in enumerate(Y_Z):
+            idc = id_col_yz[j]
+            data_cols = dfyz.columns[1:].tolist()
+            present_ids = set(dfyz[idc].values.tolist())
+
+            nan_mask = dfyz[data_cols].isna().all(axis=1)
+            all_nan_lots = set(dfyz.loc[nan_mask, idc].values.tolist())
+            absent_lots = all_r_lots - present_ids
+
+            for lot in absent_lots:
+                yz_problems[lot][Y_Z_names[j]] = "no row present in this matrix"
+            for lot in (all_nan_lots & all_r_lots):
+                yz_problems[lot].setdefault(Y_Z_names[j], "all values are NaN (no data recorded)")
+
+            newly_flagged = sorted((absent_lots | (all_nan_lots & all_r_lots)), key=str)
+            if newly_flagged:
+                print(
+                    f"[reconcile_rows_to_columns] {Y_Z_names[j]}: finished product lot(s) "
+                    f"{newly_flagged} have no data recorded (row missing or all values NaN) "
+                    f"and will be excluded from the analysis."
+                )
+
+            extra_in_yz = present_ids - all_r_lots
+            if extra_in_yz:
+                print(
+                    f"[reconcile_rows_to_columns] {Y_Z_names[j]}: {len(extra_in_yz)} lot ID(s) "
+                    f"present in this matrix have no corresponding row in any R matrix and "
+                    f"will be ignored: {sorted(extra_in_yz, key=str)}"
+                )
+
+            if n_types:
+                x_r_id_dtype = R_list[0][id_col_r[0]].dtype
+                yz_id_dtype = dfyz[idc].dtype
+                if yz_id_dtype != x_r_id_dtype and not (
+                    pd.api.types.is_numeric_dtype(x_r_id_dtype) and pd.api.types.is_numeric_dtype(yz_id_dtype)
+                ):
+                    print(
+                        f"[reconcile_rows_to_columns] WARNING - {Y_Z_names[j]}: dtype mismatch "
+                        f"between its finished product lot ID column ({yz_id_dtype}) and R's "
+                        f"finished product lot ID column ({x_r_id_dtype}). Lot ID matching may "
+                        f"silently fail if these represent the same values as different types."
+                    )
+
+    # ================================================================
+    # Phase 3: final keep set + one canonical row order shared everywhere
+    # ================================================================
+    excluded_lots = set(material_problems.keys()) | set(unmatched_material_exclusions.keys()) | set(yz_problems.keys())
+    keep_lots = all_r_lots - excluded_lots
+
+    if not keep_lots:
+        raise ValueError(
+            "reconcile_rows_to_columns: no finished product lots remain after reconciliation. "
+            "Check the printed messages above for the reasons lots were excluded."
+        )
+
+    canonical_order = []
+    seen = set()
+    for dfc, idc in zip(R_list, id_col_r):
+        for v in dfc[idc]:
+            if v in keep_lots and v not in seen:
+                canonical_order.append(v); seen.add(v)
+
+    # ================================================================
+    # Phase 4: reconciled (X_i, R_i) pairs, restricted + canonically ordered
+    # ================================================================
+    df_list_r_o = []
+    df_list_c_o = []
+    for idx, (dfr, dfc) in enumerate(zip(X_list, R_list)):
+        id_col_x_i = id_col_x[idx]
+        id_col_r_i = id_col_r[idx]
+
+        dfc_kept = dfc[dfc[id_col_r_i].isin(keep_lots)].copy()
+        missing_from_this_r = set(canonical_order) - set(dfc_kept[id_col_r_i])
+        if missing_from_this_r:
+            raise ValueError(
+                f"Internal error in {materials[idx]}: expected finished product lot(s) "
+                f"{sorted(missing_from_this_r, key=str)} to be present after filtering, but "
+                f"they are missing from R_list[{idx}]. This should not happen -- please report."
+            )
+        dfc_kept = dfc_kept.set_index(id_col_r_i).loc[canonical_order].reset_index()
+
+        rows = dfr[id_col_x_i].values.tolist()
+        cols = valid_cols_by_type[idx]
+
+        seen_ids = set()
+        all_ids = [i for i in rows if i in cols and not (i in seen_ids or seen_ids.add(i))]
 
         if not all_ids:
             raise ValueError(
-                f"X_list[{idx}]/R_list[{idx}]: no material lot IDs overlap between X's "
-                f"first column and R's columns. Check for naming mismatches."
+                f"X_list[{idx}] ({materials[idx]}): no material lot IDs overlap between X's "
+                f"first column and R's valid columns. Check for naming mismatches."
             )
 
         only_in_x = sorted(set(rows) - set(cols), key=lambda i: rows.index(i))
-        only_in_r = sorted(set(cols) - set(rows), key=lambda i: cols.index(i))
         if only_in_x:
-            print(
-                f"[reconcile_rows_to_columns] Dataset {idx}: {len(only_in_x)} material lot(s) "
-                f"in X have no matching column in R and will be dropped: {only_in_x}"
-            )
-        if only_in_r:
-            print(
-                f"[reconcile_rows_to_columns] Dataset {idx}: {len(only_in_r)} material lot "
-                f"column(s) in R have no matching row in X and will be dropped: {only_in_r}"
-            )
+            unused_x_materials_detail[materials[idx]] = only_in_x
 
         dfr_ = isin_ordered_col0(dfr, all_ids)
-        dfc_ = dfc[all_ids].copy()
-        dfc_.insert(0, id_col_r, dfc[id_col_r].values.tolist())
+        dfc_ = dfc_kept[all_ids].copy()
+        dfc_.insert(0, id_col_r_i, dfc_kept[id_col_r_i].values.tolist())
 
-        # --- identify materials never used (ratio/quantity column sums to exactly 0 in R) ---
         col_sums = dfc_[all_ids].sum(axis=0)
         zero_mask = col_sums == 0
         unused_ids = zero_mask[zero_mask].index.tolist()
 
-        # --- identify materials with no properties recorded (all-NaN row in X) ---
         prop_cols = dfr_.columns[1:]
         nan_row_mask = dfr_[prop_cols].isna().all(axis=1)
-        missing_prop_ids = dfr_.loc[nan_row_mask, id_col_x].tolist()
+        missing_prop_ids = dfr_.loc[nan_row_mask, id_col_x_i].tolist()
 
-        # --- union: drop these materials from both X (rows) and R (columns) ---
         drop_ids = set(unused_ids) | set(missing_prop_ids)
         if drop_ids:
             if unused_ids:
                 print(
-                    f"[reconcile_rows_to_columns] Dataset {idx}: removing "
+                    f"[reconcile_rows_to_columns] {materials[idx]}: removing "
                     f"{len(unused_ids)} material lot(s) with a ratio/quantity column summing "
-                    f"to exactly zero (never used in any finished product): {unused_ids}"
+                    f"to exactly zero among retained finished product lots: {unused_ids}"
                 )
             if missing_prop_ids:
                 print(
-                    f"[reconcile_rows_to_columns] Dataset {idx}: removing "
+                    f"[reconcile_rows_to_columns] {materials[idx]}: removing "
                     f"{len(missing_prop_ids)} material lot(s) with no properties "
                     f"recorded in X (all-NaN row): {missing_prop_ids}"
                 )
             kept_ids = [i for i in all_ids if i not in drop_ids]
             if not kept_ids:
                 raise ValueError(
-                    f"X_list[{idx}]/R_list[{idx}]: all material lots were removed "
-                    "(unused in R or missing properties in X). Nothing left to return."
+                    f"X_list[{idx}] ({materials[idx]}): all material lots were removed. "
+                    "Nothing left to return."
                 )
-            dfc_ = dfc_[[id_col_r] + kept_ids].copy()
+            dfc_ = dfc_[[id_col_r_i] + kept_ids].copy()
             dfr_ = isin_ordered_col0(dfr_, kept_ids)
         else:
             kept_ids = all_ids
 
-        # --- drop property columns in X that are all-NaN or effectively constant ---
         prop_cols = dfr_.columns[1:]
         allnan_mask = dfr_[prop_cols].isna().all(axis=0)
         allnan_props = prop_cols[allnan_mask].tolist()
-
         remaining_cols = prop_cols[~allnan_mask]
-        var_mask = dfr_[remaining_cols].var(ddof=0, skipna=True) < const_var_tol
-        const_props = remaining_cols[var_mask].tolist()
+
+        if len(dfr_) < 2:
+            const_props = []
+            if len(remaining_cols) > 0:
+                print(
+                    f"[reconcile_rows_to_columns] WARNING - {materials[idx]}: only "
+                    f"{len(dfr_)} raw material lot(s) remain after reconciliation. Skipping "
+                    f"the constant-property check (variance is degenerate with fewer than 2 "
+                    f"lots); note this material type may have too little data for JRPLS/TPLS."
+                )
+        else:
+            var_mask = dfr_[remaining_cols].var(ddof=0, skipna=True) < const_var_tol
+            const_props = remaining_cols[var_mask].tolist()
 
         if allnan_props:
             print(
-                f"[reconcile_rows_to_columns] Dataset {idx}: removing "
+                f"[reconcile_rows_to_columns] {materials[idx]}: removing "
                 f"{len(allnan_props)} property column(s) with no recorded values "
                 f"(all-NaN) across all materials: {allnan_props}"
             )
         if const_props:
             print(
-                f"[reconcile_rows_to_columns] Dataset {idx}: removing "
+                f"[reconcile_rows_to_columns] {materials[idx]}: removing "
                 f"{len(const_props)} property column(s) with variance below "
                 f"{const_var_tol} across all materials (no discriminating information): "
                 f"{const_props}"
@@ -3613,16 +3901,112 @@ def reconcile_rows_to_columns(X_list, R_list, const_var_tol=1e-9):
         if drop_props:
             dfr_ = dfr_.drop(columns=drop_props)
 
-        # --- final correspondence check (belt-and-suspenders) ---
-        final_ids_x = dfr_[id_col_x].tolist()
+        final_ids_x = dfr_[id_col_x_i].tolist()
         final_ids_r = dfc_.columns[1:].tolist()
         assert final_ids_x == final_ids_r, (
-            f"Internal error in dataset {idx}: X row order {final_ids_x} does not match "
+            f"Internal error in {materials[idx]}: X row order {final_ids_x} does not match "
             f"R column order {final_ids_r} after filtering."
         )
+        assert dfc_[id_col_r_i].tolist() == canonical_order, (
+            f"Internal error in {materials[idx]}: finished product lot order does not match "
+            f"the canonical order shared across all outputs."
+        )
 
-        df_list_r_o.append(dfr_); df_list_c_o.append(dfc_)
+        df_list_r_o.append(dfr_)
+        df_list_c_o.append(dfc_)
+
+    # ================================================================
+    # Phase 5: reconciled Y_Z matrices, restricted + canonically ordered
+    # ================================================================
+    df_list_yz_o = None
+    if Y_Z is not None:
+        df_list_yz_o = []
+        for j, dfyz in enumerate(Y_Z):
+            idc = id_col_yz[j]
+            dfyz_ = dfyz[dfyz[idc].isin(keep_lots)].copy()
+            missing_from_yz = set(canonical_order) - set(dfyz_[idc])
+            if missing_from_yz:
+                raise ValueError(
+                    f"Internal error in {Y_Z_names[j]}: expected finished product lot(s) "
+                    f"{sorted(missing_from_yz, key=str)} to be present after filtering, but "
+                    f"they are missing. This should not happen -- please report."
+                )
+            dfyz_ = dfyz_.set_index(idc).loc[canonical_order].reset_index()
+            assert dfyz_[idc].tolist() == canonical_order, (
+                f"Internal error in {Y_Z_names[j]}: finished product lot order does not match "
+                f"the canonical order shared across all outputs."
+            )
+            df_list_yz_o.append(dfyz_)
+
+    # ================================================================
+    # Phase 6: consolidated summary
+    # ================================================================
+    print("\n" + "=" * 70)
+    print("RECONCILE_ROWS_TO_COLUMNS -- SUMMARY")
+    print("=" * 70)
+
+    print("\nLots of raw materials missing physical properties:")
+    if material_missing_detail:
+        for mat_name, lots in material_missing_detail.items():
+            print(f"  {mat_name}:")
+            for lot in lots:
+                print(f"    {lot}")
+    else:
+        print("  (none)")
+
+    print("\nUnused raw materials (present in X, never referenced in R):")
+    if unused_x_materials_detail:
+        for mat_name, lots in unused_x_materials_detail.items():
+            print(f"  {mat_name} ({len(lots)} lot(s)):")
+            for lot in lots:
+                print(f"    {lot}")
+    else:
+        print("  (none)")
+
+    print("\nLots of finished product excluded (consumed a raw material lot missing physical properties):")
+    if unmatched_material_exclusions:
+        for lot, mats in unmatched_material_exclusions.items():
+            for mat_name, used_list in mats.items():
+                print(f"  {lot}:")
+                print(f"    {mat_name} lot(s) {used_list} have no physical properties recorded")
+    else:
+        print("  (none)")
+
+    print("\nLots of finished product missing materials consumed:")
+    if material_problems:
+        for lot, mats in material_problems.items():
+            names = list(mats.keys())
+            joined = " and ".join(names) if len(names) <= 2 else ", ".join(names[:-1]) + f", and {names[-1]}"
+            print(f"  {lot}:")
+            print(f"    Missing {joined}")
+    else:
+        print("  (none)")
+
+    if Y_Z is not None:
+        print("\nLots of finished product excluded due to missing quality/process data:")
+        if yz_problems:
+            by_source = defaultdict(list)
+            for lot, sources in yz_problems.items():
+                for src in sources:
+                    by_source[src].append(lot)
+            for src, lots in by_source.items():
+                print(f"  {src}:")
+                for lot in lots:
+                    print(f"    {lot}")
+        else:
+            print("  (none)")
+
+    total_lots = len(all_r_lots)
+    total_excluded = len(excluded_lots)
+    print(f"\nTotal finished product lots: {total_lots}")
+    print(f"Retained: {len(keep_lots)}   Excluded: {total_excluded}")
+    print("=" * 70 + "\n")
+
+    if Y_Z is not None:
+        return df_list_r_o, df_list_c_o, df_list_yz_o
     return df_list_r_o, df_list_c_o
+
+
 
 # =============================================================================
 # LPLS, JRPLS, TPLS (use optimized _Ab_btbinv)
