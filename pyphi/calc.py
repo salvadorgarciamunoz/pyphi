@@ -141,7 +141,7 @@ from scipy.interpolate import RectBivariateSpline
 from scipy.stats import t as t_dist
 from shutil import which
 import os
-from numpy import eye, asarray, dot, sum, diag
+from numpy import eye, asarray, dot, diag
 from numpy.linalg import svd
 import matplotlib.pyplot as plt
 from statsmodels.distributions.empirical_distribution import ECDF
