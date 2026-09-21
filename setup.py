@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pyphi-mvda",
-    version="6.0.5",
+    version="6.0.6",
     license="MIT",
     url="https://salvadorgarciamunoz.github.io/pyphi/",
     author="Sal Garcia",
