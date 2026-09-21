@@ -143,14 +143,44 @@ def _add_hline(p) -> None:
     )
 
 
-def _add_ci_ellipse(p, T_matrix: np.ndarray, mvmobj: dict, xd: int, yd: int) -> None:
-    T1 = T_matrix[:, [xd - 1]]
-    T2 = T_matrix[:, [yd - 1]]
+def _add_ci_ellipse(p, T_matrix: np.ndarray, mvmobj: dict, xd: int, yd: int,
+                    T_train: Optional[np.ndarray] = None) -> None:
+    """Overlay 95% (gold) and 99% (red) Hotelling T2 confidence ellipses.
+
+        The ellipse describes the *model* (training set) score distribution, so
+        the score covariance and the sample size used to build it must always
+        come from the training scores. When new observations are projected onto
+        an existing model, their scores are what is being judged against the
+        limits -- they must never be used to compute the limits themselves.
+
+        Args:
+            p: Bokeh figure to draw on.
+            T_matrix (np.ndarray): Scores being plotted (may be new-observation
+                scores). Only used as the covariance source when ``T_train`` is
+                not supplied, which preserves legacy behaviour for external
+                callers.
+            mvmobj (dict): Fitted model.
+            xd (int): Component plotted on the x-axis (1-indexed).
+            yd (int): Component plotted on the y-axis (1-indexed).
+            T_train (np.ndarray): Training scores defining the ellipse. Pass
+                ``mvmobj['T']`` for X-space scores, or the training R-scores
+                matrix when plotting r-scores. Default ``None``.
+
+        Returns:
+            None
+    """
+    if T_train is None:
+        T_ref = T_matrix
+        n_ref = mvmobj["T"].shape[0]
+    else:
+        T_ref = T_train
+        n_ref = T_train.shape[0]
+
+    T1 = T_ref[:, [xd - 1]]
+    T2 = T_ref[:, [yd - 1]]
     T_aux = np.hstack((T1, T2))
     st = (T_aux.T @ T_aux) / T_aux.shape[0]
-    xd95, xd99, yd95p, yd95n, yd99p, yd99n = phi.scores_conf_int_calc(
-        st, mvmobj["T"].shape[0]
-    )
+    xd95, xd99, yd95p, yd95n, yd99p, yd99n = phi.scores_conf_int_calc(st, n_ref)
     p.line(xd95, yd95p, line_color="gold", line_dash="dashed")
     p.line(xd95, yd95n, line_color="gold", line_dash="dashed")
     p.line(xd99, yd99p, line_color="red",  line_dash="dashed")
@@ -814,6 +844,13 @@ def score_scatter(
         pred = phi.pls_pred(X_, mvmobj) if "Q" in mvmobj else phi.pca_pred(X_, mvmobj)
         T_matrix = pred["Tnew"]
 
+    # Reference scores for the confidence ellipses. These must always be the
+    # TRAINING scores stored in the model -- never the scores of a projected
+    # Xnew set, and never the model+new stack built below for include_model.
+    # Captured here, before include_model can modify T_matrix. When Xnew is
+    # None, T_matrix already holds the training scores (X-space or R-space).
+    T_train_ci = T_matrix if Xnew is None else mvmobj["T"]
+
     if include_model:
         ObsID_model = _obs_ids_from_model(mvmobj)
         T_model = mvmobj["T"].copy()
@@ -906,7 +943,7 @@ def score_scatter(
                 offset += chunk
 
     if add_ci:
-        _add_ci_ellipse(p, T_matrix, mvmobj, xydim[0], xydim[1])
+        _add_ci_ellipse(p, T_matrix, mvmobj, xydim[0], xydim[1], T_train=T_train_ci)
 
     p.xaxis.axis_label = f"{ax_lbl} [{xydim[0]}]"
     p.yaxis.axis_label = f"{ax_lbl} [{xydim[1]}]"
@@ -1196,7 +1233,8 @@ def diagnostics(
         p = figure(tools=TOOLS, width=plotwidth, title="Score Scatter")
         _add_hover(p, TOOLTIPS)
         p.scatter("tx", "ty", source=source, size=10)
-        _add_ci_ellipse(p, mvmobj["T"], mvmobj, score_plot_xydim[0], score_plot_xydim[1])
+        _add_ci_ellipse(p, mvmobj["T"], mvmobj, score_plot_xydim[0], score_plot_xydim[1],
+                        T_train=mvmobj["T"])
         p.xaxis.axis_label = f"t [{score_plot_xydim[0]}]"
         p.yaxis.axis_label = f"t [{score_plot_xydim[1]}]"
         _add_origin_lines(p)
