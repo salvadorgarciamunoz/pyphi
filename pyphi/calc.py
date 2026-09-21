@@ -2369,10 +2369,9 @@ def contributions(mvmobj, X, cont_type, *, Y=False, from_obs=False, to_obs=False
                 ``to_obs`` is not supplied, or if ``Y`` is supplied for a
                 statistic or model that has no Y-space.
 
-    Ref: Miller, P., Swanson, R.E. and Heckler, C.E., 1998. Contribution plots: a missing link
-        in multivariate quality control. 
-        Applied mathematics and computer science, 8(4), pp.775-792.
-        
+        Ref: Miller, P., Swanson, R.E. and Heckler, C.E., 1998. Contribution plots: a
+        missing link in multivariate quality control. Applied mathematics and computer
+        science, 8(4), pp.775-792.
     """
     cont_type_aliases = {'scores': 'scores',
                          'ht2': 'ht2', 't2': 'ht2',
@@ -5144,17 +5143,15 @@ def tpls_pred(rnew, znew, tplsobj):
                 - ``speZ`` (ndarray): Z-space SPE.
                 - ``T2`` (ndarray): Hotelling's T².
                 
-    Example for rnew:
-        
-        rnew={
-              'MAT1':        [('A0129',0.557949425 ),('A0130',0.442050575 )],
-              'MAT2':    [('Lac0003',1)],
-              'MAT3':       [('TLC018', 1) ],
-              'MAT4':       [('M0012',  1)  ],
-              'MAT5':[('CS0017', 1) ]
-              }
-        
-        
+        Example for rnew::
+
+            rnew={
+                  'MAT1':        [('A0129',0.557949425 ),('A0130',0.442050575 )],
+                  'MAT2':    [('Lac0003',1)],
+                  'MAT3':       [('TLC018', 1) ],
+                  'MAT4':       [('M0012',  1)  ],
+                  'MAT5':[('CS0017', 1) ]
+                  }
     """
     ok = True
     if isinstance(rnew, list):
