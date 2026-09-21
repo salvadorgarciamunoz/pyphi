@@ -36,11 +36,29 @@
   <section id="module-pyphi.calc">
 <span id="pyphi-calc-module"></span><h1>pyphi.calc module<a class="headerlink" href="#module-pyphi.calc" title="Link to this heading">¶</a></h1>
 <p>Phi for Python (pyPhi)  —  Version 2.0</p>
-<p>By Sal Garcia (<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> <a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>)</p>
+<p>By Sal Garcia (<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> <a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>)
+AddedJukly 16 2026</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Recoded the reconcile_rows_to_columns due to bugs found.</p></li>
+</ul>
+</div></blockquote>
+<dl>
+<dt>Added July 8 2026</dt><dd><ul>
+<li><p>Fixed a bug in reconcile_rows_to_columns and fixed
+docstrings in it and in LPLS</p>
+<p>Added cleaning code to reconcile_rows_to_columns to
+remove unused materials and low varying properties</p>
+</li>
+</ul>
+</dd>
+</dl>
 <p>Added March 13</p>
 <blockquote>
 <div><ul class="simple">
 <li><p>Added routine to fix duplicaed obsID</p></li>
+<li><p>Added add_auto_var_id to rename duplicate variable (column) identifiers</p></li>
+<li><p>Added _check_var_duplicates inside _validate_inputs to detect duplicate variable IDs</p></li>
 </ul>
 </div></blockquote>
 <p>Added Feb 23 2026</p>
@@ -239,6 +257,52 @@ observation identifiers. Must have at least one column.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">add_auto_obs_id</span><span class="p">(</span><span class="n">df</span><span class="p">)[</span><span class="s2">&quot;Auto Obs ID&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 <span class="go">[&#39;A.1&#39;, &#39;A.2&#39;, &#39;B&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyphi.calc.add_auto_var_id">
+<span class="sig-prename descclassname"><span class="pre">pyphi.calc.</span></span><span class="sig-name descname"><span class="pre">add_auto_var_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/pyphi/calc.html#add_auto_var_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.calc.add_auto_var_id" title="Link to this definition">¶</a></dt>
+<dd><p>Rename duplicate variable (column) identifiers to make them unique.</p>
+<p>Scans columns 1 onwards of <em>df</em> for duplicate names. Unique names are
+kept as-is; duplicated names receive a zero-padded numeric suffix
+(e.g. <code class="docutils literal notranslate"><span class="pre">pH.1</span></code>, <code class="docutils literal notranslate"><span class="pre">pH.01</span></code>, <code class="docutils literal notranslate"><span class="pre">pH.001</span></code>) whose width is determined by the
+total occurrence count for that specific name:</p>
+<ul class="simple">
+<li><p>fewer than 10 occurrences → no padding (<code class="docutils literal notranslate"><span class="pre">pH.1</span></code> … <code class="docutils literal notranslate"><span class="pre">pH.9</span></code>)</p></li>
+<li><p>10–99 occurrences → one leading zero (<code class="docutils literal notranslate"><span class="pre">pH.01</span></code> … <code class="docutils literal notranslate"><span class="pre">pH.99</span></code>)</p></li>
+<li><p>100–999 occurrences → two leading zeros (<code class="docutils literal notranslate"><span class="pre">pH.001</span></code> … <code class="docutils literal notranslate"><span class="pre">pH.999</span></code>)</p></li>
+</ul>
+<p>The first column (observation ID column) is always left unchanged.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>df</strong> (<em>pd.DataFrame</em>) – Input dataframe whose first column contains
+observation identifiers and remaining columns are variables.
+Must have at least 2 columns.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A copy of <em>df</em> with duplicate variable column</dt><dd><p>names renamed in-place (first column unchanged).</p>
+</dd>
+<dt>df_varid (pd.DataFrame): A two-column dataframe mapping the new</dt><dd><p>unique variable name (<code class="docutils literal notranslate"><span class="pre">Auto</span> <span class="pre">Var</span> <span class="pre">ID</span></code>) to the original column
+name (<code class="docutils literal notranslate"><span class="pre">Original</span> <span class="pre">Var</span> <span class="pre">ID</span></code>), one row per renamed variable.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>df (pd.DataFrame)</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If <em>df</em> has fewer than 2 columns.</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Obs&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">],</span> <span class="s2">&quot;pH&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">7.0</span><span class="p">,</span> <span class="mf">7.1</span><span class="p">],</span> <span class="s2">&quot;pH&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">8.0</span><span class="p">,</span> <span class="mf">8.1</span><span class="p">]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">add_auto_var_id</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<span class="go">[&#39;Obs&#39;, &#39;pH.1&#39;, &#39;pH.2&#39;]</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -754,20 +818,44 @@ the score space for distance calculation.</p></li>
 <blockquote>
 <div><dl>
 <dt>Args:</dt><dd><p>mvmobj (dict): Fitted PCA or PLS model.
-Xnew (pd.DataFrame or np.ndarray): Observations to diagnose.
-cont_type (str): Type of contribution to compute.</p>
+X (pd.DataFrame or np.ndarray): Observations to diagnose. If a</p>
 <blockquote>
-<div><p><code class="docutils literal notranslate"><span class="pre">'scores'</span></code>: contribution to each score.
-<code class="docutils literal notranslate"><span class="pre">'spex'</span></code>: contribution to X-space SPE.
-<code class="docutils literal notranslate"><span class="pre">'spey'</span></code>: contribution to Y-space SPE (PLS only).
-<code class="docutils literal notranslate"><span class="pre">'t2'</span></code>: contribution to Hotelling’s T².</p>
+<div><p>DataFrame, the first column is taken as the observation ID.</p>
+</div></blockquote>
+<p>cont_type (str): Type of contribution to compute.</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">'scores'</span></code>: contribution to the scores (signed).
+<code class="docutils literal notranslate"><span class="pre">'ht2'</span></code>: contribution to Hotelling’s T² (squared, positive).
+<code class="docutils literal notranslate"><span class="pre">'spe'</span></code>: contribution to SPE. Returns X-space contributions,
+or the tuple <code class="docutils literal notranslate"><span class="pre">(contsX,</span> <span class="pre">contsY)</span></code> when <code class="docutils literal notranslate"><span class="pre">Y</span></code> is supplied for a
+PLS model.</p>
+<p><code class="docutils literal notranslate"><span class="pre">'t2'</span></code> is accepted as an alias for <code class="docutils literal notranslate"><span class="pre">'ht2'</span></code>. Matching is
+case-insensitive.</p>
 </div></blockquote>
 <dl class="simple">
-<dt>Ynew (pd.DataFrame or np.ndarray): Y observations (optional,</dt><dd><p>required for <code class="docutils literal notranslate"><span class="pre">cont_type='spey'</span></code>).</p>
+<dt>Y (pd.DataFrame or np.ndarray): Y observations. Only used when</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cont_type='spe'</span></code> with a PLS model; adds Y-space SPE
+contributions to the output. Default <code class="docutils literal notranslate"><span class="pre">False</span></code> (X-space only).</p>
+</dd>
+<dt>to_obs (int or list[int]): Row index/indices of the observation(s)</dt><dd><p>to diagnose. Required. Multiple observations are averaged.</p>
+</dd>
+<dt>from_obs (int or list[int]): Row index/indices of the reference</dt><dd><p>observation(s) for difference contributions. Only used for
+<code class="docutils literal notranslate"><span class="pre">'scores'</span></code> and <code class="docutils literal notranslate"><span class="pre">'ht2'</span></code>; ignored for <code class="docutils literal notranslate"><span class="pre">'spe'</span></code>. If <code class="docutils literal notranslate"><span class="pre">False</span></code>
+(default) the model origin is used as the reference.</p>
+</dd>
+<dt>lv_space (int or list[int]): 1-based component index/indices to</dt><dd><p>include. Only used for <code class="docutils literal notranslate"><span class="pre">'scores'</span></code> and <code class="docutils literal notranslate"><span class="pre">'ht2'</span></code>. If <code class="docutils literal notranslate"><span class="pre">False</span></code>
+(default) all components are summed.</p>
 </dd>
 </dl>
 </dd>
-<dt>Returns:</dt><dd><p>ndarray: Contribution values (n_obs × n_vars).</p>
+<dt>Returns:</dt><dd><p>ndarray: Contribution values, shape <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">n_vars)</span></code>.
+tuple[ndarray, ndarray]: <code class="docutils literal notranslate"><span class="pre">(contsX,</span> <span class="pre">contsY)</span></code> for
+<code class="docutils literal notranslate"><span class="pre">cont_type='spe'</span></code> when <code class="docutils literal notranslate"><span class="pre">Y</span></code> is supplied for a PLS model.</p>
+</dd>
+<dt>Raises:</dt><dd><dl class="simple">
+<dt>ValueError: If <code class="docutils literal notranslate"><span class="pre">cont_type</span></code> is not one of the values above, if</dt><dd><p><code class="docutils literal notranslate"><span class="pre">to_obs</span></code> is not supplied, or if <code class="docutils literal notranslate"><span class="pre">Y</span></code> is supplied for a
+statistic or model that has no Y-space.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </div></blockquote>
@@ -1334,24 +1422,69 @@ ordered set of observation IDs.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pyphi.calc.reconcile_rows_to_columns">
-<span class="sig-prename descclassname"><span class="pre">pyphi.calc.</span></span><span class="sig-name descname"><span class="pre">reconcile_rows_to_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df_list_r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_list_c</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/calc.html#reconcile_rows_to_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.calc.reconcile_rows_to_columns" title="Link to this definition">¶</a></dt>
-<dd><p>Map DataFrame rows to the columns of another DataFrame.</p>
-<p>Used in L-shaped data structures where material lot IDs appear as
-column headers in X and as row IDs in R.</p>
+<span class="sig-prename descclassname"><span class="pre">pyphi.calc.</span></span><span class="sig-name descname"><span class="pre">reconcile_rows_to_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">R_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_Z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">materials</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y_Z_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">const_var_tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-09</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/calc.html#reconcile_rows_to_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.calc.reconcile_rows_to_columns" title="Link to this definition">¶</a></dt>
+<dd><p>Reconcile L-shaped/T-shaped material data (per Garcia-Munoz, JRPLS/TPLS) so that,
+for each material type i: X_list[i]’s rows (raw material lots) match R_list[i]’s
+columns after the first (also raw material lots), and every R_list[i]’s rows
+(finished product lots) are restricted to a single common, ordered set of lots
+shared across all material types and all auxiliary (Y/Z) matrices.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<em>pd.DataFrame</em>) – Process data where columns (after the first)
-correspond to lot IDs.</p></li>
-<li><p><strong>R</strong> (<em>pd.DataFrame</em>) – Material property data where the first column
-contains lot IDs.</p></li>
+<li><p><strong>X_list</strong> (<em>list</em><em> of </em><em>pd.DataFrame</em>) – Material property matrices, one per material type.
+First column = raw material lot IDs (unique within each, non-null). Following
+columns = physical properties (one row per lot).</p></li>
+<li><p><strong>R_list</strong> (<em>list</em><em> of </em><em>pd.DataFrame</em>) – Blending ratio/quantity matrices, one per material
+type, aligned index-for-index with X_list. First column = finished product lot
+IDs (unique within each, non-null). Following columns = raw material lot IDs
+(matching the corresponding X_list[i]). Values must be numeric, non-negative,
+not NaN.</p></li>
+<li><p><strong>Y_Z</strong> (<em>list</em><em> of </em><em>pd.DataFrame</em><em>, </em><em>optional</em>) – Auxiliary matrices (e.g. quality attributes Y,
+process conditions Z) whose first column is the finished product lot ID and
+must reference the same lots as R_list. Must have at least one data column
+beyond the ID column. Not required to be numeric-only; only row-completeness
+is checked.</p></li>
+<li><p><strong>materials</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Display name for each material type, same order
+as X_list/R_list. Defaults to “Material 1”, “Material 2”, … if omitted.</p></li>
+<li><p><strong>Y_Z_names</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Display name for each Y_Z matrix. Defaults to
+“Y_Z[0]”, “Y_Z[1]”, … if omitted.</p></li>
+<li><p><strong>const_var_tol</strong> (<em>float</em>) – Variance threshold below which a property column in an X_i
+is treated as constant (no discriminating information) and dropped. Skipped
+(with a warning) if fewer than 2 material lots remain for that type, since
+variance is degenerate with a single data point.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(X_matched,</span> <span class="pre">R_matched)</span></code> — aligned matrices ready for LPLS.</p>
+<dd class="field-even"><p><p>tuple (X_matched_list, R_matched_list).
+If Y_Z is provided: tuple (X_matched_list, R_matched_list, Y_Z_matched_list).</p>
+<dl class="simple">
+<dt>A finished product lot is excluded from every returned matrix if any of:</dt><dd><ol class="loweralpha simple">
+<li><p>it used a raw material lot with no matching physical-property row in the
+corresponding X_i,</p></li>
+<li><p>it has no row at all, or zero usage of every characterized material, for
+any one material type (a finished product lot must use at least one
+material of each kind),</p></li>
+<li><p>its row in any Y_Z matrix is missing entirely or entirely NaN.</p></li>
+</ol>
+</dd>
+</dl>
+<p>Every reason for every excluded lot is captured (a lot can be excluded for
+multiple simultaneous reasons, all reported).</p>
+<p>Within each retained (X_i, R_i) pair: a material lot is dropped from both if its
+ratio/quantity column sums to exactly zero among retained lots, or its property
+row in X_i is entirely NaN. A property column in X_i is dropped (X_i only) if it
+is entirely NaN, or (with &gt;=2 material lots remaining) its variance is below
+const_var_tol.</p>
+<p>All returned R_matched and Y_Z_matched matrices share one identical row order.</p>
+</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple</p>
+<dd class="field-odd"><p>If Y_Z is None</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – duplicated or null lot IDs, duplicated property columns, non-numeric/
+    NaN/negative values in R, a Y_Z matrix with no data columns, or no finished
+    product lots remaining after reconciliation.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1367,10 +1500,10 @@ correspond to lots described by R columns.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – Process data matrix (n_obs × n_x).
+<li><p><strong>X</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – Material Property data matrix (n_obs × n_x).
 First column is observation IDs if a DataFrame.</p></li>
-<li><p><strong>R</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – Raw material property matrix
-(n_lots × n_r). Columns of X map to rows of R.</p></li>
+<li><p><strong>R</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – Blending Data matrix
+(n_lots × n_r). Rows of X map to Columns of R.</p></li>
 <li><p><strong>Y</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – Quality/response matrix
 (n_lots × n_y). Rows match rows of R.</p></li>
 <li><p><strong>A</strong> (<em>int</em>) – Number of latent variables.</p></li>
@@ -1801,6 +1934,7 @@ and response Y. Equivalent to computing the predictive component in OPLS.</p>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">pyphi.calc module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#pyphi.calc.ma57_dummy_check"><code class="docutils literal notranslate"><span class="pre">ma57_dummy_check()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pyphi.calc.add_auto_obs_id"><code class="docutils literal notranslate"><span class="pre">add_auto_obs_id()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.calc.add_auto_var_id"><code class="docutils literal notranslate"><span class="pre">add_auto_var_id()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pyphi.calc.f99"><code class="docutils literal notranslate"><span class="pre">f99()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pyphi.calc.f95"><code class="docutils literal notranslate"><span class="pre">f95()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pyphi.calc.spe_ci"><code class="docutils literal notranslate"><span class="pre">spe_ci()</span></code></a></li>

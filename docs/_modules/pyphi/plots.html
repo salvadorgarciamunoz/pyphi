@@ -1415,7 +1415,7 @@
 <span class="sd">            cont_type (str): Type of contribution to compute and plot.</span>
 <span class="sd">                ``&#39;scores&#39;``: contribution to each latent variable score.</span>
 <span class="sd">                ``&#39;spe&#39;``: contribution to SPE (X and, for PLS, Y).</span>
-<span class="sd">                ``&#39;t2&#39;``: contribution to Hotelling&#39;s T².</span>
+<span class="sd">                ``&#39;ht2&#39;``: contribution to Hotelling&#39;s T².</span>
 <span class="sd">            Y (pd.DataFrame or np.ndarray): Y data. Required for</span>
 <span class="sd">                ``cont_type=&#39;spe&#39;`` with a PLS model. Default ``False``</span>
 <span class="sd">                (not provided).</span>
@@ -1426,8 +1426,9 @@
 <span class="sd">            to_obs (int, str, or list): The observation(s) to diagnose. Can be an</span>
 <span class="sd">                integer index, observation ID string, or list thereof. This</span>
 <span class="sd">                argument is required. Default ``None``.</span>
-<span class="sd">            lv_space (bool): If ``True``, computes contributions in latent</span>
-<span class="sd">                variable space. Default ``False``.</span>
+<span class="sd">            lv_space (int, list[int], or bool): 1-based component index or</span>
+<span class="sd">                indices to include (``&#39;scores&#39;`` and ``&#39;ht2&#39;`` only). If</span>
+<span class="sd">                ``False`` (default), all components are summed.</span>
 <span class="sd">            plotwidth (int): Width of the plot in pixels. Default ``800``.</span>
 <span class="sd">            plotheight (int): Height of the plot in pixels. Default ``600``.</span>
 <span class="sd">            xgrid (bool): If ``True``, shows vertical grid lines. Default ``False``.</span>

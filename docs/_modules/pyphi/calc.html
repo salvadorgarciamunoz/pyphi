@@ -35,10 +35,21 @@
 <span class="sd">Phi for Python (pyPhi)  —  Version 2.0</span>
 
 <span class="sd">By Sal Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)</span>
+<span class="sd">AddedJukly 16 2026</span>
+<span class="sd">        * Recoded the reconcile_rows_to_columns due to bugs found.</span>
+<span class="sd">        </span>
+<span class="sd">Added July 8 2026</span>
+<span class="sd">       * Fixed a bug in reconcile_rows_to_columns and fixed</span>
+<span class="sd">         docstrings in it and in LPLS</span>
+<span class="sd">         </span>
+<span class="sd">         Added cleaning code to reconcile_rows_to_columns to</span>
+<span class="sd">         remove unused materials and low varying properties</span>
 
 <span class="sd">Added March 13</span>
 
 <span class="sd">        * Added routine to fix duplicaed obsID</span>
+<span class="sd">        * Added add_auto_var_id to rename duplicate variable (column) identifiers</span>
+<span class="sd">        * Added _check_var_duplicates inside _validate_inputs to detect duplicate variable IDs</span>
 <span class="sd">        </span>
 <span class="sd">Added Feb 23 2026</span>
 
@@ -163,10 +174,11 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">t</span> <span class="k">as</span> <span class="n">t_dist</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">shutil</span><span class="w"> </span><span class="kn">import</span> <span class="n">which</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">eye</span><span class="p">,</span> <span class="n">asarray</span><span class="p">,</span> <span class="n">dot</span><span class="p">,</span> <span class="nb">sum</span><span class="p">,</span> <span class="n">diag</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">eye</span><span class="p">,</span> <span class="n">asarray</span><span class="p">,</span> <span class="n">dot</span><span class="p">,</span> <span class="n">diag</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">numpy.linalg</span><span class="w"> </span><span class="kn">import</span> <span class="n">svd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.distributions.empirical_distribution</span><span class="w"> </span><span class="kn">import</span> <span class="n">ECDF</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
 
 <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;NEOS_EMAIL&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;pyphisoftware@gmail.com&#39;</span> 
 
@@ -293,6 +305,82 @@
     <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     
     <span class="k">return</span> <span class="n">df</span><span class="p">,</span><span class="n">df_classid</span></div>
+
+
+<div class="viewcode-block" id="add_auto_var_id">
+<a class="viewcode-back" href="../../pyphi.calc.html#pyphi.calc.add_auto_var_id">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_auto_var_id</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Rename duplicate variable (column) identifiers to make them unique.</span>
+
+<span class="sd">    Scans columns 1 onwards of *df* for duplicate names. Unique names are</span>
+<span class="sd">    kept as-is; duplicated names receive a zero-padded numeric suffix</span>
+<span class="sd">    (e.g. ``pH.1``, ``pH.01``, ``pH.001``) whose width is determined by the</span>
+<span class="sd">    total occurrence count for that specific name:</span>
+
+<span class="sd">    * fewer than 10 occurrences → no padding (``pH.1`` … ``pH.9``)</span>
+<span class="sd">    * 10–99 occurrences → one leading zero (``pH.01`` … ``pH.99``)</span>
+<span class="sd">    * 100–999 occurrences → two leading zeros (``pH.001`` … ``pH.999``)</span>
+
+<span class="sd">    The first column (observation ID column) is always left unchanged.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df (pd.DataFrame): Input dataframe whose first column contains</span>
+<span class="sd">            observation identifiers and remaining columns are variables.</span>
+<span class="sd">            Must have at least 2 columns.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        df (pd.DataFrame): A copy of *df* with duplicate variable column</span>
+<span class="sd">            names renamed in-place (first column unchanged).</span>
+
+<span class="sd">        df_varid (pd.DataFrame): A two-column dataframe mapping the new</span>
+<span class="sd">            unique variable name (``Auto Var ID``) to the original column</span>
+<span class="sd">            name (``Original Var ID``), one row per renamed variable.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If *df* has fewer than 2 columns.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; data = {&quot;Obs&quot;: [&quot;a&quot;, &quot;b&quot;], &quot;pH&quot;: [7.0, 7.1], &quot;pH&quot;: [8.0, 8.1]}</span>
+<span class="sd">        &gt;&gt;&gt; df = pd.DataFrame(data)</span>
+<span class="sd">        &gt;&gt;&gt; add_auto_var_id(df).columns.tolist()</span>
+<span class="sd">        [&#39;Obs&#39;, &#39;pH.1&#39;, &#39;pH.2&#39;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;df must have at least 2 columns (1 obs ID column + 1 data column), &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">var_cols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">var_cols</span><span class="p">)</span>
+    <span class="n">duplicated_names</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">cnt</span> <span class="ow">in</span> <span class="n">counts</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">cnt</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">}</span>
+
+    <span class="n">new_names</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">occurrence_tracker</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">renamed_pairs</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># (new_name, original_name) for duplicates only</span>
+
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">var_cols</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">duplicated_names</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="n">counts</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="n">occurrence_tracker</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">occurrence_tracker</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">occurrence_tracker</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+                <span class="n">suffix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">elif</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">:</span>
+                <span class="n">suffix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">idx</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">suffix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">idx</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">new_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">new_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_name</span><span class="p">)</span>
+            <span class="n">renamed_pairs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">new_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="n">new_names</span>
+
+    <span class="n">df_varid</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">renamed_pairs</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Auto Var ID&quot;</span><span class="p">,</span> <span class="s2">&quot;Original Var ID&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">df</span><span class="p">,</span> <span class="n">df_varid</span></div>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_extract_array</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
@@ -430,15 +518,28 @@
                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> has duplicate observation IDs: </span><span class="si">{</span><span class="n">unique_dupes</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot; ... and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">unique_dupes</span><span class="p">)</span><span class="o">-</span><span class="mi">10</span><span class="si">}</span><span class="s2"> more&quot;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_dupes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">10</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
                 <span class="o">+</span> <span class="s2">&quot;. Use phi.add_auto_obs_id(df) to automatically generate unique IDs.&quot;</span><span class="p">)</span>
-    
+
+    <span class="c1"># --- Helper: check for duplicate variable (column) IDs ---</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_var_duplicates</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="n">var_cols</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">:]])</span>
+        <span class="n">dupes</span> <span class="o">=</span> <span class="n">var_cols</span><span class="p">[</span><span class="n">var_cols</span><span class="o">.</span><span class="n">duplicated</span><span class="p">(</span><span class="n">keep</span><span class="o">=</span><span class="kc">False</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dupes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">unique_dupes</span> <span class="o">=</span> <span class="n">dupes</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> has duplicate variable IDs: </span><span class="si">{</span><span class="n">unique_dupes</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot; ... and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">unique_dupes</span><span class="p">)</span><span class="o">-</span><span class="mi">10</span><span class="si">}</span><span class="s2"> more&quot;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_dupes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">10</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="o">+</span> <span class="s2">&quot;. Use phi.add_auto_var_id(df) to automatically generate unique variable names.&quot;</span><span class="p">)</span>
+
     <span class="c1"># --- DataFrame-specific validation ---</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
         <span class="n">_check_df_structure</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">)</span>
         <span class="n">_check_duplicates</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">)</span>
-    
+        <span class="n">_check_var_duplicates</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">Y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
         <span class="n">_check_df_structure</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
         <span class="n">_check_duplicates</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+        <span class="n">_check_var_duplicates</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
     
     <span class="c1"># --- Validate A against dimensions ---</span>
     <span class="k">if</span> <span class="n">A</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -2342,37 +2443,85 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            mvmobj (dict): Fitted PCA or PLS model.</span>
-<span class="sd">            Xnew (pd.DataFrame or np.ndarray): Observations to diagnose.</span>
+<span class="sd">            X (pd.DataFrame or np.ndarray): Observations to diagnose. If a</span>
+<span class="sd">                DataFrame, the first column is taken as the observation ID.</span>
 <span class="sd">            cont_type (str): Type of contribution to compute.</span>
-<span class="sd">            </span>
-<span class="sd">                ``&#39;scores&#39;``: contribution to each score.</span>
-<span class="sd">                ``&#39;spex&#39;``: contribution to X-space SPE.</span>
-<span class="sd">                ``&#39;spey&#39;``: contribution to Y-space SPE (PLS only).</span>
-<span class="sd">                ``&#39;t2&#39;``: contribution to Hotelling&#39;s T².</span>
-<span class="sd">                </span>
-<span class="sd">            Ynew (pd.DataFrame or np.ndarray): Y observations (optional,</span>
-<span class="sd">                required for ``cont_type=&#39;spey&#39;``).</span>
+
+<span class="sd">                ``&#39;scores&#39;``: contribution to the scores (signed).</span>
+<span class="sd">                ``&#39;ht2&#39;``: contribution to Hotelling&#39;s T² (squared, positive).</span>
+<span class="sd">                ``&#39;spe&#39;``: contribution to SPE. Returns X-space contributions,</span>
+<span class="sd">                or the tuple ``(contsX, contsY)`` when ``Y`` is supplied for a</span>
+<span class="sd">                PLS model.</span>
+
+<span class="sd">                ``&#39;t2&#39;`` is accepted as an alias for ``&#39;ht2&#39;``. Matching is</span>
+<span class="sd">                case-insensitive.</span>
+
+<span class="sd">            Y (pd.DataFrame or np.ndarray): Y observations. Only used when</span>
+<span class="sd">                ``cont_type=&#39;spe&#39;`` with a PLS model; adds Y-space SPE</span>
+<span class="sd">                contributions to the output. Default ``False`` (X-space only).</span>
+<span class="sd">            to_obs (int or list[int]): Row index/indices of the observation(s)</span>
+<span class="sd">                to diagnose. Required. Multiple observations are averaged.</span>
+<span class="sd">            from_obs (int or list[int]): Row index/indices of the reference</span>
+<span class="sd">                observation(s) for difference contributions. Only used for</span>
+<span class="sd">                ``&#39;scores&#39;`` and ``&#39;ht2&#39;``; ignored for ``&#39;spe&#39;``. If ``False``</span>
+<span class="sd">                (default) the model origin is used as the reference.</span>
+<span class="sd">            lv_space (int or list[int]): 1-based component index/indices to</span>
+<span class="sd">                include. Only used for ``&#39;scores&#39;`` and ``&#39;ht2&#39;``. If ``False``</span>
+<span class="sd">                (default) all components are summed.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            ndarray: Contribution values (n_obs × n_vars).</span>
-<span class="sd">            </span>
+<span class="sd">            ndarray: Contribution values, shape ``(1, n_vars)``.</span>
+<span class="sd">            tuple[ndarray, ndarray]: ``(contsX, contsY)`` for</span>
+<span class="sd">            ``cont_type=&#39;spe&#39;`` when ``Y`` is supplied for a PLS model.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If ``cont_type`` is not one of the values above, if</span>
+<span class="sd">                ``to_obs`` is not supplied, or if ``Y`` is supplied for a</span>
+<span class="sd">                statistic or model that has no Y-space.</span>
+
 <span class="sd">    Ref: Miller, P., Swanson, R.E. and Heckler, C.E., 1998. Contribution plots: a missing link</span>
 <span class="sd">        in multivariate quality control. </span>
 <span class="sd">        Applied mathematics and computer science, 8(4), pp.775-792.</span>
 <span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cont_type_aliases</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;scores&#39;</span><span class="p">:</span> <span class="s1">&#39;scores&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;ht2&#39;</span><span class="p">:</span> <span class="s1">&#39;ht2&#39;</span><span class="p">,</span> <span class="s1">&#39;t2&#39;</span><span class="p">:</span> <span class="s1">&#39;ht2&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;spe&#39;</span><span class="p">:</span> <span class="s1">&#39;spe&#39;</span><span class="p">}</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cont_type</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;contributions: &#39;cont_type&#39; must be a string, got &quot;</span>
+                        <span class="o">+</span> <span class="nb">type</span><span class="p">(</span><span class="n">cont_type</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+    <span class="n">cont_type_given</span> <span class="o">=</span> <span class="n">cont_type</span>
+    <span class="n">cont_type_key</span>   <span class="o">=</span> <span class="n">cont_type</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">cont_type_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cont_type_aliases</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;contributions: unknown cont_type &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">cont_type_given</span><span class="p">)</span>
+                         <span class="o">+</span> <span class="s2">&quot;. Valid options are &#39;scores&#39;, &#39;ht2&#39; and &#39;spe&#39; &quot;</span>
+                         <span class="o">+</span> <span class="s2">&quot;(&#39;t2&#39; is accepted as an alias for &#39;ht2&#39;).&quot;</span><span class="p">)</span>
+    <span class="n">cont_type</span> <span class="o">=</span> <span class="n">cont_type_aliases</span><span class="p">[</span><span class="n">cont_type_key</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">cont_type</span> <span class="o">!=</span> <span class="s1">&#39;spe&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;contributions: &#39;Y&#39; is only used with cont_type=&#39;spe&#39;; &quot;</span>
+                             <span class="o">+</span> <span class="s2">&quot;got cont_type=&quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">cont_type_given</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;Q&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mvmobj</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;contributions: &#39;Y&#39; requires a PLS model; &quot;</span>
+                             <span class="o">+</span> <span class="s1">&#39;the model supplied has no Y-space.&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">to_obs</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;contributions: the &#39;to_obs&#39; argument is required &quot;</span>
+                         <span class="o">+</span> <span class="s1">&#39;(row index or list of row indices to diagnose).&#39;</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lv_space</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
         <span class="n">lv_space</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">mvmobj</span><span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lv_space</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lv_space</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)):</span>
         <span class="n">lv_space</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lv_space</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lv_space</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="n">lv_space</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lv_space</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
     
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">to_obs</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-        <span class="n">to_obs</span> <span class="o">=</span> <span class="p">[</span><span class="n">to_obs</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">to_obs</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)):</span>
+        <span class="n">to_obs</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">to_obs</span><span class="p">)]</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">from_obs</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>    
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">from_obs</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-           <span class="n">from_obs</span> <span class="o">=</span> <span class="p">[</span><span class="n">from_obs</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">from_obs</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)):</span>
+           <span class="n">from_obs</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">from_obs</span><span class="p">)]</span>
         
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
         <span class="n">X_</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -3528,35 +3677,569 @@
     <span class="k">return</span> <span class="p">[</span><span class="n">isin_ordered_col0</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">all_rows</span><span class="p">)</span> <span class="k">for</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">df_list</span><span class="p">]</span></div>
 
     
+
 <div class="viewcode-block" id="reconcile_rows_to_columns">
 <a class="viewcode-back" href="../../pyphi.calc.html#pyphi.calc.reconcile_rows_to_columns">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">reconcile_rows_to_columns</span><span class="p">(</span><span class="n">df_list_r</span><span class="p">,</span> <span class="n">df_list_c</span><span class="p">):</span> 
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Map DataFrame rows to the columns of another DataFrame.</span>
-
-<span class="sd">        Used in L-shaped data structures where material lot IDs appear as</span>
-<span class="sd">        column headers in X and as row IDs in R.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">reconcile_rows_to_columns</span><span class="p">(</span><span class="n">X_list</span><span class="p">,</span> <span class="n">R_list</span><span class="p">,</span> <span class="n">Y_Z</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">materials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">Y_Z_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">const_var_tol</span><span class="o">=</span><span class="mf">1e-9</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reconcile L-shaped/T-shaped material data (per Garcia-Munoz, JRPLS/TPLS) so that,</span>
+<span class="sd">        for each material type i: X_list[i]&#39;s rows (raw material lots) match R_list[i]&#39;s</span>
+<span class="sd">        columns after the first (also raw material lots), and every R_list[i]&#39;s rows</span>
+<span class="sd">        (finished product lots) are restricted to a single common, ordered set of lots</span>
+<span class="sd">        shared across all material types and all auxiliary (Y/Z) matrices.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            X (pd.DataFrame): Process data where columns (after the first)</span>
-<span class="sd">                correspond to lot IDs.</span>
-<span class="sd">            R (pd.DataFrame): Material property data where the first column</span>
-<span class="sd">                contains lot IDs.</span>
+<span class="sd">            X_list (list of pd.DataFrame): Material property matrices, one per material type.</span>
+<span class="sd">                First column = raw material lot IDs (unique within each, non-null). Following</span>
+<span class="sd">                columns = physical properties (one row per lot).</span>
+<span class="sd">            R_list (list of pd.DataFrame): Blending ratio/quantity matrices, one per material</span>
+<span class="sd">                type, aligned index-for-index with X_list. First column = finished product lot</span>
+<span class="sd">                IDs (unique within each, non-null). Following columns = raw material lot IDs</span>
+<span class="sd">                (matching the corresponding X_list[i]). Values must be numeric, non-negative,</span>
+<span class="sd">                not NaN.</span>
+<span class="sd">            Y_Z (list of pd.DataFrame, optional): Auxiliary matrices (e.g. quality attributes Y,</span>
+<span class="sd">                process conditions Z) whose first column is the finished product lot ID and</span>
+<span class="sd">                must reference the same lots as R_list. Must have at least one data column</span>
+<span class="sd">                beyond the ID column. Not required to be numeric-only; only row-completeness</span>
+<span class="sd">                is checked.</span>
+<span class="sd">            materials (list of str, optional): Display name for each material type, same order</span>
+<span class="sd">                as X_list/R_list. Defaults to &quot;Material 1&quot;, &quot;Material 2&quot;, ... if omitted.</span>
+<span class="sd">            Y_Z_names (list of str, optional): Display name for each Y_Z matrix. Defaults to</span>
+<span class="sd">                &quot;Y_Z[0]&quot;, &quot;Y_Z[1]&quot;, ... if omitted.</span>
+<span class="sd">            const_var_tol (float): Variance threshold below which a property column in an X_i</span>
+<span class="sd">                is treated as constant (no discriminating information) and dropped. Skipped</span>
+<span class="sd">                (with a warning) if fewer than 2 material lots remain for that type, since</span>
+<span class="sd">                variance is degenerate with a single data point.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            tuple: ``(X_matched, R_matched)`` — aligned matrices ready for LPLS.</span>
+<span class="sd">            If Y_Z is None: tuple (X_matched_list, R_matched_list).</span>
+<span class="sd">            If Y_Z is provided: tuple (X_matched_list, R_matched_list, Y_Z_matched_list).</span>
+
+<span class="sd">            A finished product lot is excluded from every returned matrix if any of:</span>
+<span class="sd">              (a) it used a raw material lot with no matching physical-property row in the</span>
+<span class="sd">                  corresponding X_i,</span>
+<span class="sd">              (b) it has no row at all, or zero usage of every characterized material, for</span>
+<span class="sd">                  any one material type (a finished product lot must use at least one</span>
+<span class="sd">                  material of each kind),</span>
+<span class="sd">              (c) its row in any Y_Z matrix is missing entirely or entirely NaN.</span>
+<span class="sd">            Every reason for every excluded lot is captured (a lot can be excluded for</span>
+<span class="sd">            multiple simultaneous reasons, all reported).</span>
+
+<span class="sd">            Within each retained (X_i, R_i) pair: a material lot is dropped from both if its</span>
+<span class="sd">            ratio/quantity column sums to exactly zero among retained lots, or its property</span>
+<span class="sd">            row in X_i is entirely NaN. A property column in X_i is dropped (X_i only) if it</span>
+<span class="sd">            is entirely NaN, or (with &gt;=2 material lots remaining) its variance is below</span>
+<span class="sd">            const_var_tol.</span>
+
+<span class="sd">            All returned R_matched and Y_Z_matched matrices share one identical row order.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: duplicated or null lot IDs, duplicated property columns, non-numeric/</span>
+<span class="sd">                NaN/negative values in R, a Y_Z matrix with no data columns, or no finished</span>
+<span class="sd">                product lots remaining after reconciliation.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">df_list_r_o</span> <span class="o">=</span> <span class="p">[];</span> <span class="n">df_list_c_o</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">dfr</span><span class="p">,</span> <span class="n">dfc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">df_list_r</span><span class="p">,</span> <span class="n">df_list_c</span><span class="p">):</span>
-        <span class="n">all_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">dfc</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">dfr</span><span class="p">[</span><span class="n">dfr</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
-        <span class="c1"># Preserve order from dfr</span>
-        <span class="n">rows</span> <span class="o">=</span> <span class="n">dfr</span><span class="p">[</span><span class="n">dfr</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">n_types</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_list</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">R_list</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_types</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;X_list and R_list must have the same length (one entry per material type).&quot;</span><span class="p">)</span>
+
+    <span class="n">materials</span> <span class="o">=</span> <span class="n">materials</span> <span class="k">if</span> <span class="n">materials</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;Material </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_types</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">materials</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_types</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;materials must have the same length as X_list/R_list.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">Y_Z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">Y_Z_names</span> <span class="o">=</span> <span class="n">Y_Z_names</span> <span class="k">if</span> <span class="n">Y_Z_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;Y_Z[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">]&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Y_Z</span><span class="p">))]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">Y_Z_names</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">Y_Z</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Y_Z_names must have the same length as Y_Z.&quot;</span><span class="p">)</span>
+
+    <span class="n">id_col_x</span> <span class="o">=</span> <span class="p">[</span><span class="n">dfr</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">dfr</span> <span class="ow">in</span> <span class="n">X_list</span><span class="p">]</span>
+    <span class="n">id_col_r</span> <span class="o">=</span> <span class="p">[</span><span class="n">dfc</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">dfc</span> <span class="ow">in</span> <span class="n">R_list</span><span class="p">]</span>
+
+    <span class="c1"># ================================================================</span>
+    <span class="c1"># Phase 0: belt validation</span>
+    <span class="c1"># ================================================================</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">dfr</span><span class="p">,</span> <span class="n">dfc</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">X_list</span><span class="p">,</span> <span class="n">R_list</span><span class="p">)):</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">dfr</span><span class="p">[</span><span class="n">id_col_x</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
         <span class="n">cols</span> <span class="o">=</span> <span class="n">dfc</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-        <span class="n">all_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">rows</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">cols</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">dfr</span><span class="p">[</span><span class="n">id_col_x</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;X_list[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">] (</span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">): null/NaN value(s) found in the material &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;lot ID column &#39;</span><span class="si">{</span><span class="n">id_col_x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39;. Lot IDs cannot be null.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">dfc</span><span class="p">[</span><span class="n">id_col_r</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;R_list[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">] (</span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">): null/NaN value(s) found in the finished &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;product lot ID column &#39;</span><span class="si">{</span><span class="n">id_col_r</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39;. Lot IDs cannot be null.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">dup_rows</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">rows</span><span class="p">)[</span><span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span><span class="o">.</span><span class="n">duplicated</span><span class="p">()]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">dup_rows</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;X_list[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">] (</span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">): duplicate raw material lot IDs in column &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">id_col_x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">dup_rows</span><span class="si">}</span><span class="s2">. Lot IDs must be unique.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">dup_cols</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">cols</span><span class="p">)[</span><span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">cols</span><span class="p">)</span><span class="o">.</span><span class="n">duplicated</span><span class="p">()]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">dup_cols</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;R_list[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">] (</span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">): duplicate material lot ID columns: &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dup_cols</span><span class="si">}</span><span class="s2">. Lot IDs must be unique.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">dup_props</span> <span class="o">=</span> <span class="n">dfr</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">:][</span><span class="n">dfr</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">duplicated</span><span class="p">()]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">dup_props</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;X_list[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">] (</span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">): duplicate property column names: &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dup_props</span><span class="si">}</span><span class="s2">. Property columns must be unique.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">dup_lots</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">dfc</span><span class="p">[</span><span class="n">id_col_r</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+        <span class="n">dup_lots</span> <span class="o">=</span> <span class="n">dup_lots</span><span class="p">[</span><span class="n">dup_lots</span><span class="o">.</span><span class="n">duplicated</span><span class="p">()]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">dup_lots</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;R_list[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">] (</span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">): duplicate finished product lot IDs in &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;column &#39;</span><span class="si">{</span><span class="n">id_col_r</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">dup_lots</span><span class="si">}</span><span class="s2">. Finished product lot IDs must be unique.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">bad_dtype_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cols</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_numeric_dtype</span><span class="p">(</span><span class="n">dfc</span><span class="p">[</span><span class="n">c</span><span class="p">])]</span>
+        <span class="k">if</span> <span class="n">bad_dtype_cols</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;R_list[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">] (</span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">): non-numeric ratio/quantity column(s): &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">bad_dtype_cols</span><span class="si">}</span><span class="s2">. R must contain only numbers.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">nan_cols</span> <span class="o">=</span> <span class="n">dfc</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">:][</span><span class="n">dfc</span><span class="p">[</span><span class="n">cols</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">nan_cols</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;R_list[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">] (</span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">): NaN values found in column(s): &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">nan_cols</span><span class="si">}</span><span class="s2">. R must not contain NaN.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">neg_cols</span> <span class="o">=</span> <span class="n">dfc</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">:][(</span><span class="n">dfc</span><span class="p">[</span><span class="n">cols</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">neg_cols</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;R_list[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">] (</span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">): negative value(s) found in column(s): &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">neg_cols</span><span class="si">}</span><span class="s2">. Ratios/quantities in R must be non-negative.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">lot_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">dfc</span><span class="p">[</span><span class="n">id_col_r</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+        <span class="n">overlap</span> <span class="o">=</span> <span class="n">lot_ids</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">cols</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">overlap</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[reconcile_rows_to_columns] WARNING - </span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">overlap</span><span class="p">)</span><span class="si">}</span><span class="s2"> ID(s) &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;appear BOTH as a finished product lot ID and as a material lot column header &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;in the same R matrix: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">overlap</span><span class="p">)</span><span class="si">}</span><span class="s2">. This may indicate R_list[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">] is &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;transposed or mislabeled -- verify rows = finished product lots, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;columns[1:] = material lots.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">x_id_dtype</span> <span class="o">=</span> <span class="n">dfr</span><span class="p">[</span><span class="n">id_col_x</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span><span class="o">.</span><span class="n">dtype</span>
+        <span class="n">r_col_dtype</span> <span class="o">=</span> <span class="n">dfc</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">dtype</span>
+        <span class="k">if</span> <span class="n">x_id_dtype</span> <span class="o">!=</span> <span class="n">r_col_dtype</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_numeric_dtype</span><span class="p">(</span><span class="n">x_id_dtype</span><span class="p">)</span> <span class="ow">and</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_numeric_dtype</span><span class="p">(</span><span class="n">r_col_dtype</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[reconcile_rows_to_columns] WARNING - </span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">: dtype mismatch between &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;X&#39;s material lot ID column (</span><span class="si">{</span><span class="n">x_id_dtype</span><span class="si">}</span><span class="s2">) and R&#39;s material lot column headers &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">r_col_dtype</span><span class="si">}</span><span class="s2">). Lot ID matching may silently fail if these represent the same &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;values as different types (e.g. int vs str). Consider casting both to the same &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;type before calling this function.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="n">id_col_yz</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">Y_Z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">dfyz</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Y_Z</span><span class="p">):</span>
+            <span class="n">idc</span> <span class="o">=</span> <span class="n">dfyz</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">id_col_yz</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idc</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">dfyz</span><span class="p">[</span><span class="n">idc</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Y_Z[</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">] (</span><span class="si">{</span><span class="n">Y_Z_names</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">}</span><span class="s2">): null/NaN value(s) found in the finished &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;product lot ID column &#39;</span><span class="si">{</span><span class="n">idc</span><span class="si">}</span><span class="s2">&#39;. Lot IDs cannot be null.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dfyz</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Y_Z[</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">] (</span><span class="si">{</span><span class="n">Y_Z_names</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">}</span><span class="s2">): has no data columns beyond the ID column &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">idc</span><span class="si">}</span><span class="s2">&#39;. Nothing to check for completeness.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">dup_yz</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">dfyz</span><span class="p">[</span><span class="n">idc</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+            <span class="n">dup_yz</span> <span class="o">=</span> <span class="n">dup_yz</span><span class="p">[</span><span class="n">dup_yz</span><span class="o">.</span><span class="n">duplicated</span><span class="p">()]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">dup_yz</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Y_Z[</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">] (</span><span class="si">{</span><span class="n">Y_Z_names</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">}</span><span class="s2">): duplicate finished product lot IDs in column &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">idc</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">dup_yz</span><span class="si">}</span><span class="s2">. Finished product lot IDs must be unique.&quot;</span>
+                <span class="p">)</span>
+
+    <span class="c1"># ================================================================</span>
+    <span class="c1"># Universe of all finished product lots referenced anywhere in R</span>
+    <span class="c1"># ================================================================</span>
+    <span class="n">all_r_lots</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">dfc</span><span class="p">,</span> <span class="n">idc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">R_list</span><span class="p">,</span> <span class="n">id_col_r</span><span class="p">):</span>
+        <span class="n">all_r_lots</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">(</span><span class="n">dfc</span><span class="p">[</span><span class="n">idc</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+    <span class="c1"># ================================================================</span>
+    <span class="c1"># Phase 1: per-material-type unmatched raw materials + finished-lot</span>
+    <span class="c1"># problem classification. Every lot is checked against every type</span>
+    <span class="c1"># unconditionally (no sequential narrowing) so a lot&#39;s FULL set of</span>
+    <span class="c1"># problems is always captured, even if it already fails on another type.</span>
+    <span class="c1"># ================================================================</span>
+    <span class="n">missing_materials_by_type</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">valid_cols_by_type</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">material_missing_detail</span> <span class="o">=</span> <span class="p">{}</span>           <span class="c1"># material name -&gt; unmatched raw material lot IDs</span>
+    <span class="n">unused_x_materials_detail</span> <span class="o">=</span> <span class="p">{}</span>         <span class="c1"># material name -&gt; X lot IDs never referenced in R</span>
+    <span class="n">material_problems</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>  <span class="c1"># finished lot -&gt; {material name: reason} (truly missing/zero usage)</span>
+    <span class="n">unmatched_material_exclusions</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>  <span class="c1"># finished lot -&gt; {material name: unmatched lot ids used}</span>
+
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_types</span><span class="p">):</span>
+        <span class="n">dfr</span><span class="p">,</span> <span class="n">dfc</span> <span class="o">=</span> <span class="n">X_list</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">R_list</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">id_col_x_i</span><span class="p">,</span> <span class="n">id_col_r_i</span> <span class="o">=</span> <span class="n">id_col_x</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">id_col_r</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="n">material_ids_in_x</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">dfr</span><span class="p">[</span><span class="n">id_col_x_i</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+        <span class="n">all_material_cols</span> <span class="o">=</span> <span class="n">dfc</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">unmatched_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">all_material_cols</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">material_ids_in_x</span><span class="p">]</span>
+        <span class="n">valid_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">all_material_cols</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">material_ids_in_x</span><span class="p">]</span>
+
+        <span class="n">missing_materials_by_type</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">unmatched_cols</span><span class="p">)</span>
+        <span class="n">valid_cols_by_type</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">valid_cols</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">unmatched_cols</span><span class="p">:</span>
+            <span class="n">material_missing_detail</span><span class="p">[</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span> <span class="o">=</span> <span class="n">unmatched_cols</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[reconcile_rows_to_columns] </span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">: raw material lot(s) &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">unmatched_cols</span><span class="si">}</span><span class="s2"> appear as columns in R but have no matching physical-&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;property row in X.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">valid_cols</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[reconcile_rows_to_columns] WARNING - </span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">: none of the &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;material lot columns in R have a matching row in X. Every finished product &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;lot will be flagged as missing </span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2"> usage below.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">present_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">dfc</span><span class="p">[</span><span class="n">id_col_r_i</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="n">unmatched_cols</span><span class="p">:</span>
+            <span class="n">used_unmatched_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">dfc</span><span class="p">[</span><span class="n">unmatched_cols</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">lots_used_unmatched</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">dfc</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">used_unmatched_mask</span><span class="p">,</span> <span class="n">id_col_r_i</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lots_used_unmatched</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">valid_cols</span><span class="p">:</span>
+            <span class="n">zero_valid_mask</span> <span class="o">=</span> <span class="n">dfc</span><span class="p">[</span><span class="n">valid_cols</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">zero_valid_mask</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">dfc</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">lots_zero_valid</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">dfc</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">zero_valid_mask</span><span class="p">,</span> <span class="n">id_col_r_i</span><span class="p">])</span> <span class="o">-</span> <span class="n">lots_used_unmatched</span>
+
+        <span class="n">lots_absent</span> <span class="o">=</span> <span class="n">all_r_lots</span> <span class="o">-</span> <span class="n">present_ids</span>
+
+        <span class="k">if</span> <span class="n">lots_used_unmatched</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">lot</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">lots_used_unmatched</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
+                <span class="n">row</span> <span class="o">=</span> <span class="n">dfc</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dfc</span><span class="p">[</span><span class="n">id_col_r_i</span><span class="p">]</span> <span class="o">==</span> <span class="n">lot</span><span class="p">,</span> <span class="n">unmatched_cols</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">used_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">unmatched_cols</span> <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="n">unmatched_material_exclusions</span><span class="p">[</span><span class="n">lot</span><span class="p">][</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span> <span class="o">=</span> <span class="n">used_list</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[reconcile_rows_to_columns] </span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">: finished product lot(s) &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">lots_used_unmatched</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="si">}</span><span class="s2"> used one or more unmatched raw &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;materials and will be excluded from the analysis.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">lots_zero_valid</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">lot</span> <span class="ow">in</span> <span class="n">lots_zero_valid</span><span class="p">:</span>
+                <span class="n">material_problems</span><span class="p">[</span><span class="n">lot</span><span class="p">][</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="s2">&quot;zero usage of any characterized material of this type&quot;</span>
+                <span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[reconcile_rows_to_columns] </span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">: finished product lot(s) &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">lots_zero_valid</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="si">}</span><span class="s2"> show zero usage of any characterized &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;raw material of this type and will be excluded.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">lots_absent</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">lot</span> <span class="ow">in</span> <span class="n">lots_absent</span><span class="p">:</span>
+                <span class="n">material_problems</span><span class="p">[</span><span class="n">lot</span><span class="p">][</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="s2">&quot;no row present in R for this material type&quot;</span>
+                <span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[reconcile_rows_to_columns] </span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">: finished product lot(s) &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">lots_absent</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="si">}</span><span class="s2"> have no row at all in this material type&#39;s &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;R matrix and will be excluded.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="c1"># ================================================================</span>
+    <span class="c1"># Phase 2: Y_Z row-completeness check, same unconditional treatment.</span>
+    <span class="c1"># ================================================================</span>
+    <span class="n">yz_problems</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>   <span class="c1"># finished lot -&gt; {Y_Z name: reason}</span>
+
+    <span class="k">if</span> <span class="n">Y_Z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">dfyz</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Y_Z</span><span class="p">):</span>
+            <span class="n">idc</span> <span class="o">=</span> <span class="n">id_col_yz</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">data_cols</span> <span class="o">=</span> <span class="n">dfyz</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="n">present_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">dfyz</span><span class="p">[</span><span class="n">idc</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+            <span class="n">nan_mask</span> <span class="o">=</span> <span class="n">dfyz</span><span class="p">[</span><span class="n">data_cols</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">all_nan_lots</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">dfyz</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">nan_mask</span><span class="p">,</span> <span class="n">idc</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+            <span class="n">absent_lots</span> <span class="o">=</span> <span class="n">all_r_lots</span> <span class="o">-</span> <span class="n">present_ids</span>
+
+            <span class="k">for</span> <span class="n">lot</span> <span class="ow">in</span> <span class="n">absent_lots</span><span class="p">:</span>
+                <span class="n">yz_problems</span><span class="p">[</span><span class="n">lot</span><span class="p">][</span><span class="n">Y_Z_names</span><span class="p">[</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;no row present in this matrix&quot;</span>
+            <span class="k">for</span> <span class="n">lot</span> <span class="ow">in</span> <span class="p">(</span><span class="n">all_nan_lots</span> <span class="o">&amp;</span> <span class="n">all_r_lots</span><span class="p">):</span>
+                <span class="n">yz_problems</span><span class="p">[</span><span class="n">lot</span><span class="p">]</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">Y_Z_names</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="s2">&quot;all values are NaN (no data recorded)&quot;</span><span class="p">)</span>
+
+            <span class="n">newly_flagged</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><span class="n">absent_lots</span> <span class="o">|</span> <span class="p">(</span><span class="n">all_nan_lots</span> <span class="o">&amp;</span> <span class="n">all_r_lots</span><span class="p">)),</span> <span class="n">key</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">newly_flagged</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[reconcile_rows_to_columns] </span><span class="si">{</span><span class="n">Y_Z_names</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">}</span><span class="s2">: finished product lot(s) &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">newly_flagged</span><span class="si">}</span><span class="s2"> have no data recorded (row missing or all values NaN) &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;and will be excluded from the analysis.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="n">extra_in_yz</span> <span class="o">=</span> <span class="n">present_ids</span> <span class="o">-</span> <span class="n">all_r_lots</span>
+            <span class="k">if</span> <span class="n">extra_in_yz</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[reconcile_rows_to_columns] </span><span class="si">{</span><span class="n">Y_Z_names</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">extra_in_yz</span><span class="p">)</span><span class="si">}</span><span class="s2"> lot ID(s) &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;present in this matrix have no corresponding row in any R matrix and &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;will be ignored: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">extra_in_yz</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">n_types</span><span class="p">:</span>
+                <span class="n">x_r_id_dtype</span> <span class="o">=</span> <span class="n">R_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">id_col_r</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">dtype</span>
+                <span class="n">yz_id_dtype</span> <span class="o">=</span> <span class="n">dfyz</span><span class="p">[</span><span class="n">idc</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
+                <span class="k">if</span> <span class="n">yz_id_dtype</span> <span class="o">!=</span> <span class="n">x_r_id_dtype</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span>
+                    <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_numeric_dtype</span><span class="p">(</span><span class="n">x_r_id_dtype</span><span class="p">)</span> <span class="ow">and</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_numeric_dtype</span><span class="p">(</span><span class="n">yz_id_dtype</span><span class="p">)</span>
+                <span class="p">):</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;[reconcile_rows_to_columns] WARNING - </span><span class="si">{</span><span class="n">Y_Z_names</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">}</span><span class="s2">: dtype mismatch &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;between its finished product lot ID column (</span><span class="si">{</span><span class="n">yz_id_dtype</span><span class="si">}</span><span class="s2">) and R&#39;s &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;finished product lot ID column (</span><span class="si">{</span><span class="n">x_r_id_dtype</span><span class="si">}</span><span class="s2">). Lot ID matching may &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;silently fail if these represent the same values as different types.&quot;</span>
+                    <span class="p">)</span>
+
+    <span class="c1"># ================================================================</span>
+    <span class="c1"># Phase 3: final keep set + one canonical row order shared everywhere</span>
+    <span class="c1"># ================================================================</span>
+    <span class="n">excluded_lots</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">material_problems</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">unmatched_material_exclusions</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">yz_problems</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">keep_lots</span> <span class="o">=</span> <span class="n">all_r_lots</span> <span class="o">-</span> <span class="n">excluded_lots</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">keep_lots</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;reconcile_rows_to_columns: no finished product lots remain after reconciliation. &quot;</span>
+            <span class="s2">&quot;Check the printed messages above for the reasons lots were excluded.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">canonical_order</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">dfc</span><span class="p">,</span> <span class="n">idc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">R_list</span><span class="p">,</span> <span class="n">id_col_r</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dfc</span><span class="p">[</span><span class="n">idc</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">keep_lots</span> <span class="ow">and</span> <span class="n">v</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+                <span class="n">canonical_order</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">);</span> <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+    <span class="c1"># ================================================================</span>
+    <span class="c1"># Phase 4: reconciled (X_i, R_i) pairs, restricted + canonically ordered</span>
+    <span class="c1"># ================================================================</span>
+    <span class="n">df_list_r_o</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">df_list_c_o</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">dfr</span><span class="p">,</span> <span class="n">dfc</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">X_list</span><span class="p">,</span> <span class="n">R_list</span><span class="p">)):</span>
+        <span class="n">id_col_x_i</span> <span class="o">=</span> <span class="n">id_col_x</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">id_col_r_i</span> <span class="o">=</span> <span class="n">id_col_r</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="n">dfc_kept</span> <span class="o">=</span> <span class="n">dfc</span><span class="p">[</span><span class="n">dfc</span><span class="p">[</span><span class="n">id_col_r_i</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">keep_lots</span><span class="p">)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">missing_from_this_r</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">canonical_order</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">dfc_kept</span><span class="p">[</span><span class="n">id_col_r_i</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">missing_from_this_r</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Internal error in </span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">: expected finished product lot(s) &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">missing_from_this_r</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="si">}</span><span class="s2"> to be present after filtering, but &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;they are missing from R_list[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">]. This should not happen -- please report.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">dfc_kept</span> <span class="o">=</span> <span class="n">dfc_kept</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">id_col_r_i</span><span class="p">)</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">canonical_order</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">dfr</span><span class="p">[</span><span class="n">id_col_x_i</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="n">valid_cols_by_type</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="n">seen_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">all_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">rows</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">cols</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">i</span> <span class="ow">in</span> <span class="n">seen_ids</span> <span class="ow">or</span> <span class="n">seen_ids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">i</span><span class="p">))]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">all_ids</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;X_list[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">] (</span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">): no material lot IDs overlap between X&#39;s &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;first column and R&#39;s valid columns. Check for naming mismatches.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">only_in_x</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">cols</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">rows</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">only_in_x</span><span class="p">:</span>
+            <span class="n">unused_x_materials_detail</span><span class="p">[</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span> <span class="o">=</span> <span class="n">only_in_x</span>
+
         <span class="n">dfr_</span> <span class="o">=</span> <span class="n">isin_ordered_col0</span><span class="p">(</span><span class="n">dfr</span><span class="p">,</span> <span class="n">all_ids</span><span class="p">)</span>
-        <span class="n">dfc_</span> <span class="o">=</span> <span class="n">dfc</span><span class="p">[</span><span class="n">all_ids</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="n">dfc_</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dfc</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dfc</span><span class="p">[</span><span class="n">dfc</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
-        <span class="n">df_list_r_o</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dfr_</span><span class="p">);</span> <span class="n">df_list_c_o</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dfc_</span><span class="p">)</span>
+        <span class="n">dfc_</span> <span class="o">=</span> <span class="n">dfc_kept</span><span class="p">[</span><span class="n">all_ids</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">dfc_</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">id_col_r_i</span><span class="p">,</span> <span class="n">dfc_kept</span><span class="p">[</span><span class="n">id_col_r_i</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+        <span class="n">col_sums</span> <span class="o">=</span> <span class="n">dfc_</span><span class="p">[</span><span class="n">all_ids</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">zero_mask</span> <span class="o">=</span> <span class="n">col_sums</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="n">unused_ids</span> <span class="o">=</span> <span class="n">zero_mask</span><span class="p">[</span><span class="n">zero_mask</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="n">prop_cols</span> <span class="o">=</span> <span class="n">dfr_</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">nan_row_mask</span> <span class="o">=</span> <span class="n">dfr_</span><span class="p">[</span><span class="n">prop_cols</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">missing_prop_ids</span> <span class="o">=</span> <span class="n">dfr_</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">nan_row_mask</span><span class="p">,</span> <span class="n">id_col_x_i</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="n">drop_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">unused_ids</span><span class="p">)</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">missing_prop_ids</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">drop_ids</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">unused_ids</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[reconcile_rows_to_columns] </span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">: removing &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">unused_ids</span><span class="p">)</span><span class="si">}</span><span class="s2"> material lot(s) with a ratio/quantity column summing &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;to exactly zero among retained finished product lots: </span><span class="si">{</span><span class="n">unused_ids</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">missing_prop_ids</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[reconcile_rows_to_columns] </span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">: removing &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">missing_prop_ids</span><span class="p">)</span><span class="si">}</span><span class="s2"> material lot(s) with no properties &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;recorded in X (all-NaN row): </span><span class="si">{</span><span class="n">missing_prop_ids</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="n">kept_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">all_ids</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">drop_ids</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">kept_ids</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;X_list[</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">] (</span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">): all material lots were removed. &quot;</span>
+                    <span class="s2">&quot;Nothing left to return.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">dfc_</span> <span class="o">=</span> <span class="n">dfc_</span><span class="p">[[</span><span class="n">id_col_r_i</span><span class="p">]</span> <span class="o">+</span> <span class="n">kept_ids</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">dfr_</span> <span class="o">=</span> <span class="n">isin_ordered_col0</span><span class="p">(</span><span class="n">dfr_</span><span class="p">,</span> <span class="n">kept_ids</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">kept_ids</span> <span class="o">=</span> <span class="n">all_ids</span>
+
+        <span class="n">prop_cols</span> <span class="o">=</span> <span class="n">dfr_</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">allnan_mask</span> <span class="o">=</span> <span class="n">dfr_</span><span class="p">[</span><span class="n">prop_cols</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">allnan_props</span> <span class="o">=</span> <span class="n">prop_cols</span><span class="p">[</span><span class="n">allnan_mask</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">remaining_cols</span> <span class="o">=</span> <span class="n">prop_cols</span><span class="p">[</span><span class="o">~</span><span class="n">allnan_mask</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dfr_</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">const_props</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">remaining_cols</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;[reconcile_rows_to_columns] WARNING - </span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">: only &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">dfr_</span><span class="p">)</span><span class="si">}</span><span class="s2"> raw material lot(s) remain after reconciliation. Skipping &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;the constant-property check (variance is degenerate with fewer than 2 &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;lots); note this material type may have too little data for JRPLS/TPLS.&quot;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">var_mask</span> <span class="o">=</span> <span class="n">dfr_</span><span class="p">[</span><span class="n">remaining_cols</span><span class="p">]</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">skipna</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">const_var_tol</span>
+            <span class="n">const_props</span> <span class="o">=</span> <span class="n">remaining_cols</span><span class="p">[</span><span class="n">var_mask</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">allnan_props</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[reconcile_rows_to_columns] </span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">: removing &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">allnan_props</span><span class="p">)</span><span class="si">}</span><span class="s2"> property column(s) with no recorded values &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(all-NaN) across all materials: </span><span class="si">{</span><span class="n">allnan_props</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">const_props</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[reconcile_rows_to_columns] </span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">: removing &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">const_props</span><span class="p">)</span><span class="si">}</span><span class="s2"> property column(s) with variance below &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">const_var_tol</span><span class="si">}</span><span class="s2"> across all materials (no discriminating information): &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">const_props</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">drop_props</span> <span class="o">=</span> <span class="n">allnan_props</span> <span class="o">+</span> <span class="n">const_props</span>
+        <span class="k">if</span> <span class="n">drop_props</span><span class="p">:</span>
+            <span class="n">dfr_</span> <span class="o">=</span> <span class="n">dfr_</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">drop_props</span><span class="p">)</span>
+
+        <span class="n">final_ids_x</span> <span class="o">=</span> <span class="n">dfr_</span><span class="p">[</span><span class="n">id_col_x_i</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">final_ids_r</span> <span class="o">=</span> <span class="n">dfc_</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="n">final_ids_x</span> <span class="o">==</span> <span class="n">final_ids_r</span><span class="p">,</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Internal error in </span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">: X row order </span><span class="si">{</span><span class="n">final_ids_x</span><span class="si">}</span><span class="s2"> does not match &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;R column order </span><span class="si">{</span><span class="n">final_ids_r</span><span class="si">}</span><span class="s2"> after filtering.&quot;</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="n">dfc_</span><span class="p">[</span><span class="n">id_col_r_i</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">==</span> <span class="n">canonical_order</span><span class="p">,</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Internal error in </span><span class="si">{</span><span class="n">materials</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">: finished product lot order does not match &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;the canonical order shared across all outputs.&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">df_list_r_o</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dfr_</span><span class="p">)</span>
+        <span class="n">df_list_c_o</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dfc_</span><span class="p">)</span>
+
+    <span class="c1"># ================================================================</span>
+    <span class="c1"># Phase 5: reconciled Y_Z matrices, restricted + canonically ordered</span>
+    <span class="c1"># ================================================================</span>
+    <span class="n">df_list_yz_o</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">Y_Z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">df_list_yz_o</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">dfyz</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Y_Z</span><span class="p">):</span>
+            <span class="n">idc</span> <span class="o">=</span> <span class="n">id_col_yz</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">dfyz_</span> <span class="o">=</span> <span class="n">dfyz</span><span class="p">[</span><span class="n">dfyz</span><span class="p">[</span><span class="n">idc</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">keep_lots</span><span class="p">)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">missing_from_yz</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">canonical_order</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">dfyz_</span><span class="p">[</span><span class="n">idc</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">missing_from_yz</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Internal error in </span><span class="si">{</span><span class="n">Y_Z_names</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">}</span><span class="s2">: expected finished product lot(s) &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">missing_from_yz</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="si">}</span><span class="s2"> to be present after filtering, but &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;they are missing. This should not happen -- please report.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">dfyz_</span> <span class="o">=</span> <span class="n">dfyz_</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">idc</span><span class="p">)</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">canonical_order</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="n">dfyz_</span><span class="p">[</span><span class="n">idc</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">==</span> <span class="n">canonical_order</span><span class="p">,</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Internal error in </span><span class="si">{</span><span class="n">Y_Z_names</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">}</span><span class="s2">: finished product lot order does not match &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;the canonical order shared across all outputs.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">df_list_yz_o</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dfyz_</span><span class="p">)</span>
+
+    <span class="c1"># ================================================================</span>
+    <span class="c1"># Phase 6: consolidated summary</span>
+    <span class="c1"># ================================================================</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RECONCILE_ROWS_TO_COLUMNS -- SUMMARY&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Lots of raw materials missing physical properties:&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">material_missing_detail</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">mat_name</span><span class="p">,</span> <span class="n">lots</span> <span class="ow">in</span> <span class="n">material_missing_detail</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">mat_name</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">lot</span> <span class="ow">in</span> <span class="n">lots</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">lot</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  (none)&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Unused raw materials (present in X, never referenced in R):&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">unused_x_materials_detail</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">mat_name</span><span class="p">,</span> <span class="n">lots</span> <span class="ow">in</span> <span class="n">unused_x_materials_detail</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">mat_name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">lots</span><span class="p">)</span><span class="si">}</span><span class="s2"> lot(s)):&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">lot</span> <span class="ow">in</span> <span class="n">lots</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">lot</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  (none)&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Lots of finished product excluded (consumed a raw material lot missing physical properties):&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">unmatched_material_exclusions</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">lot</span><span class="p">,</span> <span class="n">mats</span> <span class="ow">in</span> <span class="n">unmatched_material_exclusions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">mat_name</span><span class="p">,</span> <span class="n">used_list</span> <span class="ow">in</span> <span class="n">mats</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">lot</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">mat_name</span><span class="si">}</span><span class="s2"> lot(s) </span><span class="si">{</span><span class="n">used_list</span><span class="si">}</span><span class="s2"> have no physical properties recorded&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  (none)&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Lots of finished product missing materials consumed:&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">material_problems</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">lot</span><span class="p">,</span> <span class="n">mats</span> <span class="ow">in</span> <span class="n">material_problems</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">mats</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="n">joined</span> <span class="o">=</span> <span class="s2">&quot; and &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2</span> <span class="k">else</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">names</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;, and </span><span class="si">{</span><span class="n">names</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">lot</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Missing </span><span class="si">{</span><span class="n">joined</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  (none)&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">Y_Z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Lots of finished product excluded due to missing quality/process data:&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">yz_problems</span><span class="p">:</span>
+            <span class="n">by_source</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">lot</span><span class="p">,</span> <span class="n">sources</span> <span class="ow">in</span> <span class="n">yz_problems</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">src</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
+                    <span class="n">by_source</span><span class="p">[</span><span class="n">src</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lot</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">src</span><span class="p">,</span> <span class="n">lots</span> <span class="ow">in</span> <span class="n">by_source</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">src</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">lot</span> <span class="ow">in</span> <span class="n">lots</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">lot</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  (none)&quot;</span><span class="p">)</span>
+
+    <span class="n">total_lots</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_r_lots</span><span class="p">)</span>
+    <span class="n">total_excluded</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">excluded_lots</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Total finished product lots: </span><span class="si">{</span><span class="n">total_lots</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Retained: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">keep_lots</span><span class="p">)</span><span class="si">}</span><span class="s2">   Excluded: </span><span class="si">{</span><span class="n">total_excluded</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">Y_Z</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">df_list_r_o</span><span class="p">,</span> <span class="n">df_list_c_o</span><span class="p">,</span> <span class="n">df_list_yz_o</span>
     <span class="k">return</span> <span class="n">df_list_r_o</span><span class="p">,</span> <span class="n">df_list_c_o</span></div>
+
+
 
 
 <span class="c1"># =============================================================================</span>
@@ -3575,10 +4258,10 @@
 <span class="sd">        Per Muteki et al., Chemom. Intell. Lab. Syst. 85 (2007) 186–194.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            X (pd.DataFrame or np.ndarray): Process data matrix (n_obs × n_x).</span>
+<span class="sd">            X (pd.DataFrame or np.ndarray): Material Property data matrix (n_obs × n_x).</span>
 <span class="sd">                First column is observation IDs if a DataFrame.</span>
-<span class="sd">            R (pd.DataFrame or np.ndarray): Raw material property matrix</span>
-<span class="sd">                (n_lots × n_r). Columns of X map to rows of R.</span>
+<span class="sd">            R (pd.DataFrame or np.ndarray): Blending Data matrix</span>
+<span class="sd">                (n_lots × n_r). Rows of X map to Columns of R.</span>
 <span class="sd">            Y (pd.DataFrame or np.ndarray): Quality/response matrix</span>
 <span class="sd">                (n_lots × n_y). Rows match rows of R.</span>
 <span class="sd">            A (int): Number of latent variables.</span>

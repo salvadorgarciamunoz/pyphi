@@ -426,7 +426,7 @@ to diagnose. For multi-block models, pass a dict of DataFrames.</p></li>
 <li><p><strong>cont_type</strong> (<em>str</em>) – Type of contribution to compute and plot.
 <code class="docutils literal notranslate"><span class="pre">'scores'</span></code>: contribution to each latent variable score.
 <code class="docutils literal notranslate"><span class="pre">'spe'</span></code>: contribution to SPE (X and, for PLS, Y).
-<code class="docutils literal notranslate"><span class="pre">'t2'</span></code>: contribution to Hotelling’s T².</p></li>
+<code class="docutils literal notranslate"><span class="pre">'ht2'</span></code>: contribution to Hotelling’s T².</p></li>
 <li><p><strong>Y</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – Y data. Required for
 <code class="docutils literal notranslate"><span class="pre">cont_type='spe'</span></code> with a PLS model. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>
 (not provided).</p></li>
@@ -437,8 +437,9 @@ absolutely for <code class="docutils literal notranslate"><span class="pre">to_o
 <li><p><strong>to_obs</strong> (<em>int</em><em>, </em><em>str</em><em>, or </em><em>list</em>) – The observation(s) to diagnose. Can be an
 integer index, observation ID string, or list thereof. This
 argument is required. Default <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
-<li><p><strong>lv_space</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, computes contributions in latent
-variable space. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><strong>lv_space</strong> (<em>int</em><em>, </em><em>list</em><em>[</em><em>int</em><em>]</em><em>, or </em><em>bool</em>) – 1-based component index or
+indices to include (<code class="docutils literal notranslate"><span class="pre">'scores'</span></code> and <code class="docutils literal notranslate"><span class="pre">'ht2'</span></code> only). If
+<code class="docutils literal notranslate"><span class="pre">False</span></code> (default), all components are summed.</p></li>
 <li><p><strong>plotwidth</strong> (<em>int</em>) – Width of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">800</span></code>.</p></li>
 <li><p><strong>plotheight</strong> (<em>int</em>) – Height of the plot in pixels. Default <code class="docutils literal notranslate"><span class="pre">600</span></code>.</p></li>
 <li><p><strong>xgrid</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, shows vertical grid lines. Default <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
