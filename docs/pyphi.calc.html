@@ -815,55 +815,52 @@ the score space for distance calculation.</p></li>
 <dt class="sig sig-object py" id="pyphi.calc.contributions">
 <span class="sig-prename descclassname"><span class="pre">pyphi.calc.</span></span><span class="sig-name descname"><span class="pre">contributions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvmobj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cont_type</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lv_space</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/calc.html#contributions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.calc.contributions" title="Link to this definition">¶</a></dt>
 <dd><p>Compute variable contributions to monitoring statistics.</p>
-<blockquote>
-<div><dl>
-<dt>Args:</dt><dd><p>mvmobj (dict): Fitted PCA or PLS model.
-X (pd.DataFrame or np.ndarray): Observations to diagnose. If a</p>
-<blockquote>
-<div><p>DataFrame, the first column is taken as the observation ID.</p>
-</div></blockquote>
-<p>cont_type (str): Type of contribution to compute.</p>
-<blockquote>
-<div><p><code class="docutils literal notranslate"><span class="pre">'scores'</span></code>: contribution to the scores (signed).
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mvmobj</strong> (<em>dict</em>) – Fitted PCA or PLS model.</p></li>
+<li><p><strong>X</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – Observations to diagnose. If a
+DataFrame, the first column is taken as the observation ID.</p></li>
+<li><p><strong>cont_type</strong> (<em>str</em>) – <p>Type of contribution to compute.</p>
+<p><code class="docutils literal notranslate"><span class="pre">'scores'</span></code>: contribution to the scores (signed).
 <code class="docutils literal notranslate"><span class="pre">'ht2'</span></code>: contribution to Hotelling’s T² (squared, positive).
 <code class="docutils literal notranslate"><span class="pre">'spe'</span></code>: contribution to SPE. Returns X-space contributions,
 or the tuple <code class="docutils literal notranslate"><span class="pre">(contsX,</span> <span class="pre">contsY)</span></code> when <code class="docutils literal notranslate"><span class="pre">Y</span></code> is supplied for a
 PLS model.</p>
 <p><code class="docutils literal notranslate"><span class="pre">'t2'</span></code> is accepted as an alias for <code class="docutils literal notranslate"><span class="pre">'ht2'</span></code>. Matching is
 case-insensitive.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>Y (pd.DataFrame or np.ndarray): Y observations. Only used when</dt><dd><p><code class="docutils literal notranslate"><span class="pre">cont_type='spe'</span></code> with a PLS model; adds Y-space SPE
-contributions to the output. Default <code class="docutils literal notranslate"><span class="pre">False</span></code> (X-space only).</p>
-</dd>
-<dt>to_obs (int or list[int]): Row index/indices of the observation(s)</dt><dd><p>to diagnose. Required. Multiple observations are averaged.</p>
-</dd>
-<dt>from_obs (int or list[int]): Row index/indices of the reference</dt><dd><p>observation(s) for difference contributions. Only used for
+</p></li>
+<li><p><strong>Y</strong> (<em>pd.DataFrame</em><em> or </em><em>np.ndarray</em>) – Y observations. Only used when
+<code class="docutils literal notranslate"><span class="pre">cont_type='spe'</span></code> with a PLS model; adds Y-space SPE
+contributions to the output. Default <code class="docutils literal notranslate"><span class="pre">False</span></code> (X-space only).</p></li>
+<li><p><strong>to_obs</strong> (<em>int</em><em> or </em><em>list</em><em>[</em><em>int</em><em>]</em>) – Row index/indices of the observation(s)
+to diagnose. Required. Multiple observations are averaged.</p></li>
+<li><p><strong>from_obs</strong> (<em>int</em><em> or </em><em>list</em><em>[</em><em>int</em><em>]</em>) – Row index/indices of the reference
+observation(s) for difference contributions. Only used for
 <code class="docutils literal notranslate"><span class="pre">'scores'</span></code> and <code class="docutils literal notranslate"><span class="pre">'ht2'</span></code>; ignored for <code class="docutils literal notranslate"><span class="pre">'spe'</span></code>. If <code class="docutils literal notranslate"><span class="pre">False</span></code>
-(default) the model origin is used as the reference.</p>
+(default) the model origin is used as the reference.</p></li>
+<li><p><strong>lv_space</strong> (<em>int</em><em> or </em><em>list</em><em>[</em><em>int</em><em>]</em>) – 1-based component index/indices to
+include. Only used for <code class="docutils literal notranslate"><span class="pre">'scores'</span></code> and <code class="docutils literal notranslate"><span class="pre">'ht2'</span></code>. If <code class="docutils literal notranslate"><span class="pre">False</span></code>
+(default) all components are summed.</p></li>
+</ul>
 </dd>
-<dt>lv_space (int or list[int]): 1-based component index/indices to</dt><dd><p>include. Only used for <code class="docutils literal notranslate"><span class="pre">'scores'</span></code> and <code class="docutils literal notranslate"><span class="pre">'ht2'</span></code>. If <code class="docutils literal notranslate"><span class="pre">False</span></code>
-(default) all components are summed.</p>
-</dd>
-</dl>
-</dd>
-<dt>Returns:</dt><dd><p>ndarray: Contribution values, shape <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">n_vars)</span></code>.
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Contribution values, shape <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">n_vars)</span></code>.
 tuple[ndarray, ndarray]: <code class="docutils literal notranslate"><span class="pre">(contsX,</span> <span class="pre">contsY)</span></code> for
 <code class="docutils literal notranslate"><span class="pre">cont_type='spe'</span></code> when <code class="docutils literal notranslate"><span class="pre">Y</span></code> is supplied for a PLS model.</p>
 </dd>
-<dt>Raises:</dt><dd><dl class="simple">
-<dt>ValueError: If <code class="docutils literal notranslate"><span class="pre">cont_type</span></code> is not one of the values above, if</dt><dd><p><code class="docutils literal notranslate"><span class="pre">to_obs</span></code> is not supplied, or if <code class="docutils literal notranslate"><span class="pre">Y</span></code> is supplied for a
-statistic or model that has no Y-space.</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">cont_type</span></code> is not one of the values above, if
+    <code class="docutils literal notranslate"><span class="pre">to_obs</span></code> is not supplied, or if <code class="docutils literal notranslate"><span class="pre">Y</span></code> is supplied for a
+    statistic or model that has no Y-space.</p>
 </dd>
 </dl>
-</dd>
-</dl>
-</div></blockquote>
-<dl class="simple">
-<dt>Ref: Miller, P., Swanson, R.E. and Heckler, C.E., 1998. Contribution plots: a missing link</dt><dd><p>in multivariate quality control.
-Applied mathematics and computer science, 8(4), pp.775-792.</p>
-</dd>
-</dl>
+<p>Ref: Miller, P., Swanson, R.E. and Heckler, C.E., 1998. Contribution plots: a
+missing link in multivariate quality control. Applied mathematics and computer
+science, 8(4), pp.775-792.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -1765,13 +1762,16 @@ Must match a key used when building the model with <a class="reference internal"
 <dt class="sig sig-object py" id="pyphi.calc.tpls_pred">
 <span class="sig-prename descclassname"><span class="pre">pyphi.calc.</span></span><span class="sig-name descname"><span class="pre">tpls_pred</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">znew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tplsobj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/calc.html#tpls_pred"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.calc.tpls_pred" title="Link to this definition">¶</a></dt>
 <dd><p>Predict Y for new observations using a fitted TPLS model.</p>
-<blockquote>
-<div><dl>
-<dt>Args:</dt><dd><p>rnew (np.ndarray or pd.DataFrame): New R-space (raw material) data.
-znew (np.ndarray or pd.DataFrame): New Z-space (trajectory) data.
-tpls_obj (dict): Fitted TPLS model from <a class="reference internal" href="#pyphi.calc.tpls" title="pyphi.calc.tpls"><code class="xref py py-func docutils literal notranslate"><span class="pre">tpls()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rnew</strong> (<em>np.ndarray</em><em> or </em><em>pd.DataFrame</em>) – New R-space (raw material) data.</p></li>
+<li><p><strong>znew</strong> (<em>np.ndarray</em><em> or </em><em>pd.DataFrame</em>) – New Z-space (trajectory) data.</p></li>
+<li><p><strong>tpls_obj</strong> (<em>dict</em>) – Fitted TPLS model from <a class="reference internal" href="#pyphi.calc.tpls" title="pyphi.calc.tpls"><code class="xref py py-func docutils literal notranslate"><span class="pre">tpls()</span></code></a>.</p></li>
+</ul>
 </dd>
-<dt>Returns:</dt><dd><p>dict: Prediction results with keys:</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>Prediction results with keys:</p>
 <blockquote>
 <div><ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">Tnew</span></code> (ndarray): Projected scores.</p></li>
@@ -1781,21 +1781,22 @@ tpls_obj (dict): Fitted TPLS model from <a class="reference internal" href="#pyp
 <li><p><code class="docutils literal notranslate"><span class="pre">T2</span></code> (ndarray): Hotelling’s T².</p></li>
 </ul>
 </div></blockquote>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
 </dd>
 </dl>
-</div></blockquote>
 <p>Example for rnew:</p>
-<blockquote>
-<div><dl class="simple">
-<dt>rnew={</dt><dd><p>‘MAT1’:        [(‘A0129’,0.557949425 ),(‘A0130’,0.442050575 )],
-‘MAT2’:    [(‘Lac0003’,1)],
-‘MAT3’:       [(‘TLC018’, 1) ],
-‘MAT4’:       [(‘M0012’,  1)  ],
-‘MAT5’:[(‘CS0017’, 1) ]
-}</p>
-</dd>
-</dl>
-</div></blockquote>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">rnew</span><span class="o">=</span><span class="p">{</span>
+      <span class="s1">&#39;MAT1&#39;</span><span class="p">:</span>        <span class="p">[(</span><span class="s1">&#39;A0129&#39;</span><span class="p">,</span><span class="mf">0.557949425</span> <span class="p">),(</span><span class="s1">&#39;A0130&#39;</span><span class="p">,</span><span class="mf">0.442050575</span> <span class="p">)],</span>
+      <span class="s1">&#39;MAT2&#39;</span><span class="p">:</span>    <span class="p">[(</span><span class="s1">&#39;Lac0003&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)],</span>
+      <span class="s1">&#39;MAT3&#39;</span><span class="p">:</span>       <span class="p">[(</span><span class="s1">&#39;TLC018&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="p">],</span>
+      <span class="s1">&#39;MAT4&#39;</span><span class="p">:</span>       <span class="p">[(</span><span class="s1">&#39;M0012&#39;</span><span class="p">,</span>  <span class="mi">1</span><span class="p">)</span>  <span class="p">],</span>
+      <span class="s1">&#39;MAT5&#39;</span><span class="p">:[(</span><span class="s1">&#39;CS0017&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="p">]</span>
+      <span class="p">}</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
