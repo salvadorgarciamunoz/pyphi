@@ -176,14 +176,44 @@
     <span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_add_ci_ellipse</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T_matrix</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">mvmobj</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">xd</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">yd</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="n">T1</span> <span class="o">=</span> <span class="n">T_matrix</span><span class="p">[:,</span> <span class="p">[</span><span class="n">xd</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]</span>
-    <span class="n">T2</span> <span class="o">=</span> <span class="n">T_matrix</span><span class="p">[:,</span> <span class="p">[</span><span class="n">yd</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_add_ci_ellipse</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T_matrix</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">mvmobj</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">xd</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">yd</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                    <span class="n">T_train</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Overlay 95% (gold) and 99% (red) Hotelling T2 confidence ellipses.</span>
+
+<span class="sd">        The ellipse describes the *model* (training set) score distribution, so</span>
+<span class="sd">        the score covariance and the sample size used to build it must always</span>
+<span class="sd">        come from the training scores. When new observations are projected onto</span>
+<span class="sd">        an existing model, their scores are what is being judged against the</span>
+<span class="sd">        limits -- they must never be used to compute the limits themselves.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            p: Bokeh figure to draw on.</span>
+<span class="sd">            T_matrix (np.ndarray): Scores being plotted (may be new-observation</span>
+<span class="sd">                scores). Only used as the covariance source when ``T_train`` is</span>
+<span class="sd">                not supplied, which preserves legacy behaviour for external</span>
+<span class="sd">                callers.</span>
+<span class="sd">            mvmobj (dict): Fitted model.</span>
+<span class="sd">            xd (int): Component plotted on the x-axis (1-indexed).</span>
+<span class="sd">            yd (int): Component plotted on the y-axis (1-indexed).</span>
+<span class="sd">            T_train (np.ndarray): Training scores defining the ellipse. Pass</span>
+<span class="sd">                ``mvmobj[&#39;T&#39;]`` for X-space scores, or the training R-scores</span>
+<span class="sd">                matrix when plotting r-scores. Default ``None``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">T_train</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">T_ref</span> <span class="o">=</span> <span class="n">T_matrix</span>
+        <span class="n">n_ref</span> <span class="o">=</span> <span class="n">mvmobj</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">T_ref</span> <span class="o">=</span> <span class="n">T_train</span>
+        <span class="n">n_ref</span> <span class="o">=</span> <span class="n">T_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">T1</span> <span class="o">=</span> <span class="n">T_ref</span><span class="p">[:,</span> <span class="p">[</span><span class="n">xd</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]</span>
+    <span class="n">T2</span> <span class="o">=</span> <span class="n">T_ref</span><span class="p">[:,</span> <span class="p">[</span><span class="n">yd</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]</span>
     <span class="n">T_aux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="p">))</span>
     <span class="n">st</span> <span class="o">=</span> <span class="p">(</span><span class="n">T_aux</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">T_aux</span><span class="p">)</span> <span class="o">/</span> <span class="n">T_aux</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">xd95</span><span class="p">,</span> <span class="n">xd99</span><span class="p">,</span> <span class="n">yd95p</span><span class="p">,</span> <span class="n">yd95n</span><span class="p">,</span> <span class="n">yd99p</span><span class="p">,</span> <span class="n">yd99n</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">scores_conf_int_calc</span><span class="p">(</span>
-        <span class="n">st</span><span class="p">,</span> <span class="n">mvmobj</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="p">)</span>
+    <span class="n">xd95</span><span class="p">,</span> <span class="n">xd99</span><span class="p">,</span> <span class="n">yd95p</span><span class="p">,</span> <span class="n">yd95n</span><span class="p">,</span> <span class="n">yd99p</span><span class="p">,</span> <span class="n">yd99n</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">scores_conf_int_calc</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">n_ref</span><span class="p">)</span>
     <span class="n">p</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">xd95</span><span class="p">,</span> <span class="n">yd95p</span><span class="p">,</span> <span class="n">line_color</span><span class="o">=</span><span class="s2">&quot;gold&quot;</span><span class="p">,</span> <span class="n">line_dash</span><span class="o">=</span><span class="s2">&quot;dashed&quot;</span><span class="p">)</span>
     <span class="n">p</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">xd95</span><span class="p">,</span> <span class="n">yd95n</span><span class="p">,</span> <span class="n">line_color</span><span class="o">=</span><span class="s2">&quot;gold&quot;</span><span class="p">,</span> <span class="n">line_dash</span><span class="o">=</span><span class="s2">&quot;dashed&quot;</span><span class="p">)</span>
     <span class="n">p</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">xd99</span><span class="p">,</span> <span class="n">yd99p</span><span class="p">,</span> <span class="n">line_color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span>  <span class="n">line_dash</span><span class="o">=</span><span class="s2">&quot;dashed&quot;</span><span class="p">)</span>
@@ -864,6 +894,13 @@
         <span class="n">pred</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">pls_pred</span><span class="p">(</span><span class="n">X_</span><span class="p">,</span> <span class="n">mvmobj</span><span class="p">)</span> <span class="k">if</span> <span class="s2">&quot;Q&quot;</span> <span class="ow">in</span> <span class="n">mvmobj</span> <span class="k">else</span> <span class="n">phi</span><span class="o">.</span><span class="n">pca_pred</span><span class="p">(</span><span class="n">X_</span><span class="p">,</span> <span class="n">mvmobj</span><span class="p">)</span>
         <span class="n">T_matrix</span> <span class="o">=</span> <span class="n">pred</span><span class="p">[</span><span class="s2">&quot;Tnew&quot;</span><span class="p">]</span>
 
+    <span class="c1"># Reference scores for the confidence ellipses. These must always be the</span>
+    <span class="c1"># TRAINING scores stored in the model -- never the scores of a projected</span>
+    <span class="c1"># Xnew set, and never the model+new stack built below for include_model.</span>
+    <span class="c1"># Captured here, before include_model can modify T_matrix. When Xnew is</span>
+    <span class="c1"># None, T_matrix already holds the training scores (X-space or R-space).</span>
+    <span class="n">T_train_ci</span> <span class="o">=</span> <span class="n">T_matrix</span> <span class="k">if</span> <span class="n">Xnew</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">mvmobj</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">]</span>
+
     <span class="k">if</span> <span class="n">include_model</span><span class="p">:</span>
         <span class="n">ObsID_model</span> <span class="o">=</span> <span class="n">_obs_ids_from_model</span><span class="p">(</span><span class="n">mvmobj</span><span class="p">)</span>
         <span class="n">T_model</span> <span class="o">=</span> <span class="n">mvmobj</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -956,7 +993,7 @@
                 <span class="n">offset</span> <span class="o">+=</span> <span class="n">chunk</span>
 
     <span class="k">if</span> <span class="n">add_ci</span><span class="p">:</span>
-        <span class="n">_add_ci_ellipse</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T_matrix</span><span class="p">,</span> <span class="n">mvmobj</span><span class="p">,</span> <span class="n">xydim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xydim</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">_add_ci_ellipse</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T_matrix</span><span class="p">,</span> <span class="n">mvmobj</span><span class="p">,</span> <span class="n">xydim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xydim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">T_train</span><span class="o">=</span><span class="n">T_train_ci</span><span class="p">)</span>
 
     <span class="n">p</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">axis_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ax_lbl</span><span class="si">}</span><span class="s2"> [</span><span class="si">{</span><span class="n">xydim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">]&quot;</span>
     <span class="n">p</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">axis_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ax_lbl</span><span class="si">}</span><span class="s2"> [</span><span class="si">{</span><span class="n">xydim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">]&quot;</span>
@@ -1252,7 +1289,8 @@
         <span class="n">p</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="n">tools</span><span class="o">=</span><span class="n">TOOLS</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">plotwidth</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Score Scatter&quot;</span><span class="p">)</span>
         <span class="n">_add_hover</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">TOOLTIPS</span><span class="p">)</span>
         <span class="n">p</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="s2">&quot;tx&quot;</span><span class="p">,</span> <span class="s2">&quot;ty&quot;</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-        <span class="n">_add_ci_ellipse</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">mvmobj</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">],</span> <span class="n">mvmobj</span><span class="p">,</span> <span class="n">score_plot_xydim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">score_plot_xydim</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">_add_ci_ellipse</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">mvmobj</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">],</span> <span class="n">mvmobj</span><span class="p">,</span> <span class="n">score_plot_xydim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">score_plot_xydim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                        <span class="n">T_train</span><span class="o">=</span><span class="n">mvmobj</span><span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">])</span>
         <span class="n">p</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">axis_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;t [</span><span class="si">{</span><span class="n">score_plot_xydim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">]&quot;</span>
         <span class="n">p</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">axis_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;t [</span><span class="si">{</span><span class="n">score_plot_xydim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">]&quot;</span>
         <span class="n">_add_origin_lines</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
