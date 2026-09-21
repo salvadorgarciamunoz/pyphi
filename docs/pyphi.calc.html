@@ -37,22 +37,21 @@
 <span id="pyphi-calc-module"></span><h1>pyphi.calc module<a class="headerlink" href="#module-pyphi.calc" title="Link to this heading">¶</a></h1>
 <p>Phi for Python (pyPhi)  —  Version 2.0</p>
 <p>By Sal Garcia (<a class="reference external" href="mailto:sgarciam&#37;&#52;&#48;ic&#46;ac&#46;uk">sgarciam<span>&#64;</span>ic<span>&#46;</span>ac<span>&#46;</span>uk</a> <a class="reference external" href="mailto:salvadorgarciamunoz&#37;&#52;&#48;gmail&#46;com">salvadorgarciamunoz<span>&#64;</span>gmail<span>&#46;</span>com</a>)
-AddedJukly 16 2026</p>
+Added July 16 2026</p>
 <blockquote>
 <div><ul class="simple">
 <li><p>Recoded the reconcile_rows_to_columns due to bugs found.</p></li>
 </ul>
 </div></blockquote>
-<dl>
-<dt>Added July 8 2026</dt><dd><ul>
+<p>Added July 8 2026</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Fixed a bug in reconcile_rows_to_columns and fixed
-docstrings in it and in LPLS</p>
-<p>Added cleaning code to reconcile_rows_to_columns to
-remove unused materials and low varying properties</p>
-</li>
+docstrings in it and in LPLS</p></li>
+<li><p>Added cleaning code to reconcile_rows_to_columns to
+remove unused materials and low varying properties</p></li>
 </ul>
-</dd>
-</dl>
+</div></blockquote>
 <p>Added March 13</p>
 <blockquote>
 <div><ul class="simple">
@@ -1454,17 +1453,17 @@ variance is degenerate with a single data point.</p></li>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><p>tuple (X_matched_list, R_matched_list).
 If Y_Z is provided: tuple (X_matched_list, R_matched_list, Y_Z_matched_list).</p>
-<dl class="simple">
-<dt>A finished product lot is excluded from every returned matrix if any of:</dt><dd><ol class="loweralpha simple">
+<p>A finished product lot is excluded from every returned matrix if any of:</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>it used a raw material lot with no matching physical-property row in the
 corresponding X_i,</p></li>
 <li><p>it has no row at all, or zero usage of every characterized material, for
 any one material type (a finished product lot must use at least one
 material of each kind),</p></li>
 <li><p>its row in any Y_Z matrix is missing entirely or entirely NaN.</p></li>
-</ol>
-</dd>
-</dl>
+</ul>
+</div></blockquote>
 <p>Every reason for every excluded lot is captured (a lot can be excluded for
 multiple simultaneous reasons, all reported).</p>
 <p>Within each retained (X_i, R_i) pair: a material lot is dropped from both if its

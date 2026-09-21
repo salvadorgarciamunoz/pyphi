@@ -35,15 +35,16 @@
 <span class="sd">Phi for Python (pyPhi)  —  Version 2.0</span>
 
 <span class="sd">By Sal Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)</span>
-<span class="sd">AddedJukly 16 2026</span>
+<span class="sd">Added July 16 2026</span>
+
 <span class="sd">        * Recoded the reconcile_rows_to_columns due to bugs found.</span>
-<span class="sd">        </span>
+
 <span class="sd">Added July 8 2026</span>
-<span class="sd">       * Fixed a bug in reconcile_rows_to_columns and fixed</span>
-<span class="sd">         docstrings in it and in LPLS</span>
-<span class="sd">         </span>
-<span class="sd">         Added cleaning code to reconcile_rows_to_columns to</span>
-<span class="sd">         remove unused materials and low varying properties</span>
+
+<span class="sd">        * Fixed a bug in reconcile_rows_to_columns and fixed</span>
+<span class="sd">          docstrings in it and in LPLS</span>
+<span class="sd">        * Added cleaning code to reconcile_rows_to_columns to</span>
+<span class="sd">          remove unused materials and low varying properties</span>
 
 <span class="sd">Added March 13</span>
 
@@ -3715,12 +3716,14 @@
 <span class="sd">            If Y_Z is provided: tuple (X_matched_list, R_matched_list, Y_Z_matched_list).</span>
 
 <span class="sd">            A finished product lot is excluded from every returned matrix if any of:</span>
-<span class="sd">              (a) it used a raw material lot with no matching physical-property row in the</span>
-<span class="sd">                  corresponding X_i,</span>
-<span class="sd">              (b) it has no row at all, or zero usage of every characterized material, for</span>
-<span class="sd">                  any one material type (a finished product lot must use at least one</span>
-<span class="sd">                  material of each kind),</span>
-<span class="sd">              (c) its row in any Y_Z matrix is missing entirely or entirely NaN.</span>
+
+<span class="sd">              * it used a raw material lot with no matching physical-property row in the</span>
+<span class="sd">                corresponding X_i,</span>
+<span class="sd">              * it has no row at all, or zero usage of every characterized material, for</span>
+<span class="sd">                any one material type (a finished product lot must use at least one</span>
+<span class="sd">                material of each kind),</span>
+<span class="sd">              * its row in any Y_Z matrix is missing entirely or entirely NaN.</span>
+
 <span class="sd">            Every reason for every excluded lot is captured (a lot can be excluded for</span>
 <span class="sd">            multiple simultaneous reasons, all reported).</span>
 
@@ -3731,6 +3734,7 @@
 <span class="sd">            const_var_tol.</span>
 
 <span class="sd">            All returned R_matched and Y_Z_matched matrices share one identical row order.</span>
+
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: duplicated or null lot IDs, duplicated property columns, non-numeric/</span>
 <span class="sd">                NaN/negative values in R, a Y_Z matrix with no data columns, or no finished</span>
