@@ -1353,7 +1353,7 @@ def contributions_plot(
             cont_type (str): Type of contribution to compute and plot.
                 ``'scores'``: contribution to each latent variable score.
                 ``'spe'``: contribution to SPE (X and, for PLS, Y).
-                ``'t2'``: contribution to Hotelling's T².
+                ``'ht2'``: contribution to Hotelling's T².
             Y (pd.DataFrame or np.ndarray): Y data. Required for
                 ``cont_type='spe'`` with a PLS model. Default ``False``
                 (not provided).
@@ -1364,8 +1364,9 @@ def contributions_plot(
             to_obs (int, str, or list): The observation(s) to diagnose. Can be an
                 integer index, observation ID string, or list thereof. This
                 argument is required. Default ``None``.
-            lv_space (bool): If ``True``, computes contributions in latent
-                variable space. Default ``False``.
+            lv_space (int, list[int], or bool): 1-based component index or
+                indices to include (``'scores'`` and ``'ht2'`` only). If
+                ``False`` (default), all components are summed.
             plotwidth (int): Width of the plot in pixels. Default ``800``.
             plotheight (int): Height of the plot in pixels. Default ``600``.
             xgrid (bool): If ``True``, shows vertical grid lines. Default ``False``.

@@ -2333,37 +2333,85 @@ def contributions(mvmobj, X, cont_type, *, Y=False, from_obs=False, to_obs=False
 
         Args:
             mvmobj (dict): Fitted PCA or PLS model.
-            Xnew (pd.DataFrame or np.ndarray): Observations to diagnose.
+            X (pd.DataFrame or np.ndarray): Observations to diagnose. If a
+                DataFrame, the first column is taken as the observation ID.
             cont_type (str): Type of contribution to compute.
-            
-                ``'scores'``: contribution to each score.
-                ``'spex'``: contribution to X-space SPE.
-                ``'spey'``: contribution to Y-space SPE (PLS only).
-                ``'t2'``: contribution to Hotelling's T².
-                
-            Ynew (pd.DataFrame or np.ndarray): Y observations (optional,
-                required for ``cont_type='spey'``).
+
+                ``'scores'``: contribution to the scores (signed).
+                ``'ht2'``: contribution to Hotelling's T² (squared, positive).
+                ``'spe'``: contribution to SPE. Returns X-space contributions,
+                or the tuple ``(contsX, contsY)`` when ``Y`` is supplied for a
+                PLS model.
+
+                ``'t2'`` is accepted as an alias for ``'ht2'``. Matching is
+                case-insensitive.
+
+            Y (pd.DataFrame or np.ndarray): Y observations. Only used when
+                ``cont_type='spe'`` with a PLS model; adds Y-space SPE
+                contributions to the output. Default ``False`` (X-space only).
+            to_obs (int or list[int]): Row index/indices of the observation(s)
+                to diagnose. Required. Multiple observations are averaged.
+            from_obs (int or list[int]): Row index/indices of the reference
+                observation(s) for difference contributions. Only used for
+                ``'scores'`` and ``'ht2'``; ignored for ``'spe'``. If ``False``
+                (default) the model origin is used as the reference.
+            lv_space (int or list[int]): 1-based component index/indices to
+                include. Only used for ``'scores'`` and ``'ht2'``. If ``False``
+                (default) all components are summed.
 
         Returns:
-            ndarray: Contribution values (n_obs × n_vars).
-            
+            ndarray: Contribution values, shape ``(1, n_vars)``.
+            tuple[ndarray, ndarray]: ``(contsX, contsY)`` for
+            ``cont_type='spe'`` when ``Y`` is supplied for a PLS model.
+
+        Raises:
+            ValueError: If ``cont_type`` is not one of the values above, if
+                ``to_obs`` is not supplied, or if ``Y`` is supplied for a
+                statistic or model that has no Y-space.
+
     Ref: Miller, P., Swanson, R.E. and Heckler, C.E., 1998. Contribution plots: a missing link
         in multivariate quality control. 
         Applied mathematics and computer science, 8(4), pp.775-792.
         
     """
+    cont_type_aliases = {'scores': 'scores',
+                         'ht2': 'ht2', 't2': 'ht2',
+                         'spe': 'spe'}
+    if not isinstance(cont_type, str):
+        raise TypeError("contributions: 'cont_type' must be a string, got "
+                        + type(cont_type).__name__ + '.')
+    cont_type_given = cont_type
+    cont_type_key   = cont_type.strip().lower()
+    if cont_type_key not in cont_type_aliases:
+        raise ValueError("contributions: unknown cont_type " + repr(cont_type_given)
+                         + ". Valid options are 'scores', 'ht2' and 'spe' "
+                         + "('t2' is accepted as an alias for 'ht2').")
+    cont_type = cont_type_aliases[cont_type_key]
+
+    if not isinstance(Y, bool):
+        if cont_type != 'spe':
+            raise ValueError("contributions: 'Y' is only used with cont_type='spe'; "
+                             + "got cont_type=" + repr(cont_type_given) + '.')
+        if 'Q' not in mvmobj:
+            raise ValueError("contributions: 'Y' requires a PLS model; "
+                             + 'the model supplied has no Y-space.')
+
+    if isinstance(to_obs, bool):
+        raise ValueError("contributions: the 'to_obs' argument is required "
+                         + '(row index or list of row indices to diagnose).')
+
     if isinstance(lv_space, bool):
         lv_space = list(range(mvmobj['T'].shape[1]))
-    elif isinstance(lv_space, int):
+    elif isinstance(lv_space, (int, np.integer)):
         lv_space = (np.array([lv_space]) - 1).tolist()
     elif isinstance(lv_space, list):
         lv_space = (np.array(lv_space) - 1).tolist()
     
-    if isinstance(to_obs, int):
-        to_obs = [to_obs]
+    if isinstance(to_obs, (int, np.integer)):
+        to_obs = [int(to_obs)]
     if not isinstance(from_obs, bool):    
-        if isinstance(from_obs, int):
-           from_obs = [from_obs]
+        if isinstance(from_obs, (int, np.integer)):
+           from_obs = [int(from_obs)]
         
     if isinstance(X, np.ndarray):
         X_ = X.copy()
