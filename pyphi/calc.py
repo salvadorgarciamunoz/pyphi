@@ -2,15 +2,16 @@
 Phi for Python (pyPhi)  —  Version 2.0
 
 By Sal Garcia (sgarciam@ic.ac.uk salvadorgarciamunoz@gmail.com)
-AddedJukly 16 2026
+Added July 16 2026
+
         * Recoded the reconcile_rows_to_columns due to bugs found.
-        
+
 Added July 8 2026
-       * Fixed a bug in reconcile_rows_to_columns and fixed
-         docstrings in it and in LPLS
-         
-         Added cleaning code to reconcile_rows_to_columns to
-         remove unused materials and low varying properties
+
+        * Fixed a bug in reconcile_rows_to_columns and fixed
+          docstrings in it and in LPLS
+        * Added cleaning code to reconcile_rows_to_columns to
+          remove unused materials and low varying properties
 
 Added March 13
 
@@ -3530,12 +3531,14 @@ def reconcile_rows_to_columns(X_list, R_list, Y_Z=None, materials=None, Y_Z_name
             If Y_Z is provided: tuple (X_matched_list, R_matched_list, Y_Z_matched_list).
 
             A finished product lot is excluded from every returned matrix if any of:
-              (a) it used a raw material lot with no matching physical-property row in the
-                  corresponding X_i,
-              (b) it has no row at all, or zero usage of every characterized material, for
-                  any one material type (a finished product lot must use at least one
-                  material of each kind),
-              (c) its row in any Y_Z matrix is missing entirely or entirely NaN.
+
+              * it used a raw material lot with no matching physical-property row in the
+                corresponding X_i,
+              * it has no row at all, or zero usage of every characterized material, for
+                any one material type (a finished product lot must use at least one
+                material of each kind),
+              * its row in any Y_Z matrix is missing entirely or entirely NaN.
+
             Every reason for every excluded lot is captured (a lot can be excluded for
             multiple simultaneous reasons, all reported).
 
@@ -3546,6 +3549,7 @@ def reconcile_rows_to_columns(X_list, R_list, Y_Z=None, materials=None, Y_Z_name
             const_var_tol.
 
             All returned R_matched and Y_Z_matched matrices share one identical row order.
+
         Raises:
             ValueError: duplicated or null lot IDs, duplicated property columns, non-numeric/
                 NaN/negative values in R, a Y_Z matrix with no data columns, or no finished
