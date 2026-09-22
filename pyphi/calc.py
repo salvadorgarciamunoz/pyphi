@@ -144,8 +144,6 @@ from shutil import which
 import os
 from numpy import eye, asarray, dot, diag
 from numpy.linalg import svd
-import matplotlib.pyplot as plt
-from statsmodels.distributions.empirical_distribution import ECDF
 from collections import defaultdict
 
 os.environ['NEOS_EMAIL'] = 'pyphisoftware@gmail.com' 
@@ -3219,6 +3217,11 @@ def mbpls(XMB, YMB, A, *, mcsX=True, mcsY=True, md_algorithm_='nipals',
     if isinstance(YMB, dict): pls_obj_['Yblocknames'] = YMB['blknames']
     return pls_obj_
 
+def _ecdf_xy(data):
+    x = np.sort(np.asarray(data, dtype=float))
+    x = np.concatenate(([-np.inf], x))
+    return x, np.linspace(0.0, 1.0, len(x))
+
 def replicate_data(mvm_obj, X, num_replicates, *, as_set=False, rep_Y=False, Y=False):
     """Augment a dataset by adding small noise replicates.
 
@@ -3259,9 +3262,8 @@ def replicate_data(mvm_obj, X, num_replicates, *, as_set=False, rep_Y=False, Y=F
                 
         uncertainty_matrix = np.empty((new_set.shape[0], 0))
         for i in range(data_residuals.shape[1]):
-            ecdf = ECDF(data_residuals[:, i])
+            x, y = _ecdf_xy(data_residuals[:, i])
             new_residual = np.random.uniform(0, 1, new_set.shape[0])
-            y = np.array(ecdf.y.tolist()); x = np.array(ecdf.x.tolist())
             new_residual = np.interp(new_residual, y[1:], x[1:])
             uncertainty_matrix = np.hstack((uncertainty_matrix, new_residual.reshape(-1, 1)))
         new_set = (new_set + uncertainty_matrix) * mvm_obj['sx'] + mvm_obj['mx']
@@ -3290,9 +3292,8 @@ def replicate_data(mvm_obj, X, num_replicates, *, as_set=False, rep_Y=False, Y=F
                 
         uncertainty_matrix = np.empty((new_set.shape[0], 0))
         for i in range(data_residuals.shape[1]):
-            ecdf = ECDF(data_residuals[:, i])
+            x, y = _ecdf_xy(data_residuals[:, i])
             new_residual = np.random.uniform(0, 1, new_set.shape[0])
-            y = np.array(ecdf.y.tolist()); x = np.array(ecdf.x.tolist())
             new_residual = np.interp(new_residual, y[1:], x[1:])
             uncertainty_matrix = np.hstack((uncertainty_matrix, new_residual.reshape(-1, 1)))
         new_set = (new_set + uncertainty_matrix) * mvm_obj['sy'] + mvm_obj['my']
@@ -5359,7 +5360,13 @@ def writeeq(beta_, features_):
             eq_str.append((str(b) if b < 0 or i == 0 else ' + '+str(b)) + ' * '+f)
     return ''.join(eq_str)
 
-def build_polynomial(data, factors, response, *, bias_term=True):
+def vip(mvmobj):
+    """Variable Importance in Projection for a PLS model."""
+    if 'Q' not in mvmobj:
+        raise ValueError("vip() requires a PLS model (no 'Q' key found; is this a PCA model?)")
+    return np.sum(np.abs(mvmobj['Ws'] * mvmobj['r2y']), axis=1).ravel()
+
+def build_polynomial(data, factors, response, *, bias_term=True, plot=True, return_diagnostics=False):
     '''Linear regression with variable selection assisted by PLS.'''
     for j, f in enumerate(factors):
         if f.find('*') > 0 or f.find('/') > 0:
@@ -5387,15 +5394,17 @@ def build_polynomial(data, factors, response, *, bias_term=True):
     Ypred = pls_pred(X_df, pls_obj)['Yhat']
     RMSE = [np.sqrt(np.mean((Y_df.values[:,1:].astype(float) - Ypred)**2))]
     
-    vip = np.sum(np.abs(pls_obj['Ws'] * pls_obj['r2y']), axis=1).ravel()
-    sort_indx = np.argsort(-vip)
-    sort_asc_indx = np.argsort(vip)
-    vip_sorted = vip[sort_indx]
+    vip_ = vip(pls_obj)
+    sort_indx = np.argsort(-vip_)
+    sort_asc_indx = np.argsort(vip_)
+    vip_sorted = vip_[sort_indx]
     sorted_factors = [factors[i] for i in sort_indx]
-    plt.figure()
-    plt.bar(np.arange(len(sorted_factors)), vip_sorted)
-    plt.xticks(np.arange(len(sorted_factors)), labels=sorted_factors, rotation=60)
-    plt.ylabel('VIP'); plt.xlabel('Factors'); plt.tight_layout()
+    if plot:
+        import matplotlib.pyplot as plt
+        plt.figure()
+        plt.bar(np.arange(len(sorted_factors)), vip_sorted)
+        plt.xticks(np.arange(len(sorted_factors)), labels=sorted_factors, rotation=60)
+        plt.ylabel('VIP'); plt.xlabel('Factors'); plt.tight_layout()
     
     sorted_asc_factors = [factors[i] for i in sort_asc_indx]
     X_df_m = X_df.copy()
@@ -5406,14 +5415,19 @@ def build_polynomial(data, factors, response, *, bias_term=True):
         RMSE.append(np.sqrt(np.mean((Y_df.values[:,1:].astype(float) - Ypred)**2)))
    
     sorted_asc_labels = ['Full'] + [factors[i] for i in sort_asc_indx[:-1]]
-    plt.figure()
-    plt.bar(np.arange(len(factors)), RMSE)
-    plt.xticks(np.arange(len(factors)), labels=sorted_asc_labels, rotation=60)
-    plt.ylabel('RMSE ('+response+')'); plt.xlabel('Factors removed from model'); plt.tight_layout()
+    if plot:
+        plt.figure()
+        plt.bar(np.arange(len(factors)), RMSE)
+        plt.xticks(np.arange(len(factors)), labels=sorted_asc_labels, rotation=60)
+        plt.ylabel('RMSE ('+response+')'); plt.xlabel('Factors removed from model'); plt.tight_layout()
     Xaug = np.hstack((X, np.ones((X.shape[0], 1))))
     factors_out = factors.copy(); factors_out.append('Bias')
     betasOLSlssq, r1, r2, r3 = np.linalg.lstsq(Xaug, Y_arr, rcond=None)
     eqstr = writeeq(betasOLSlssq, factors_out)
+    if return_diagnostics:
+        diagnostics = {'vip': vip_, 'sorted_factors': sorted_factors,
+                       'RMSE': RMSE, 'sorted_asc_labels': sorted_asc_labels}
+        return betasOLSlssq, factors_out, Xaug, Y_arr, eqstr, diagnostics
     return betasOLSlssq, factors_out, Xaug, Y_arr, eqstr
 
 # =============================================================================

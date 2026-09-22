@@ -28,6 +28,5 @@ setuptools.setup(
         "pandas",
         "pyomo",
         "scipy",
-        "statsmodels",
     ],
 )

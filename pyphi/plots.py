@@ -685,10 +685,7 @@ def vip(
         return
 
     XVar = _get_xvar_labels(mvmobj)
-    vip_vals = np.sum(
-        np.abs(mvmobj["Ws"] * np.tile(mvmobj["r2y"], (mvmobj["Ws"].shape[0], 1))),
-        axis=1,
-    )
+    vip_vals = phi.vip(mvmobj)
     sort_idx = np.argsort(-vip_vals)
     sorted_vars = [XVar[i] for i in sort_idx]
     sorted_vip  = vip_vals[sort_idx]
