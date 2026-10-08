@@ -3375,7 +3375,8 @@ def unique(df, colid):
     """
     return df.drop_duplicates(subset=colid, keep='first')[colid].values.tolist()
     
-def parse_materials(filename, sheetname):
+
+def parse_materials(filename, sheetname, return_flagged=False):
     """Build JR matrices for JRPLS from a linear materials table in Excel.
 
     Reads a structured Excel sheet describing the composition of finished
@@ -3406,6 +3407,10 @@ def parse_materials(filename, sheetname):
         filename (str): Path to the Excel workbook containing the materials
             table.
         sheetname (str): Name of the worksheet within the workbook to read.
+        
+        return_flagged (bool, optional): If True, also return a DataFrame
+       (columns ``Finished Product Lot`` and ``Reason``) listing the lots
+       that were removed and why. Default False.
 
     Returns:
         tuple: A two-element tuple ``(JR, materials_used)``:
@@ -3435,38 +3440,101 @@ def parse_materials(filename, sheetname):
         ['FPLot', 'MatLot_1', 'MatLot_2']
         >>> materials
         ['Excipient_A', 'Excipient_B', 'API']
+        
+    Finished product (FP) lots with incomplete records are flagged, reported,
+    and removed before the JR matrices are built, so no NaN can reach JR.
+
+    A FP lot is flagged if any of these hold:
+      - a row has a missing ``Material Lot``
+      - a row has a missing / non-numeric ``Ratio or Quantity``
+      - a row has a missing ``Material``
+      - the lot has no row at all for one of the materials found in the sheet
+
     """
     materials = pd.read_excel(filename, sheet_name=sheetname)
-    ok = True
-    for lot in unique(materials, 'Finished Product Lot'):
-        this_lot = materials[materials["Finished Product Lot"]==lot]
-        for mt, m in zip(this_lot['Material'].values, this_lot['Material Lot'].values):
-            try:
-               if np.isnan(m):
-                   print('Lot '+lot+' has no Material Lot for '+mt); ok = False; break
-            except:
-                pass
-        if not ok: break
-        print('Lot :'+lot+' ratio/qty adds to '+str(np.sum(this_lot['Ratio or Quantity'].values)))
-    if ok:    
-        JR = []
-        materials_used = unique(materials, 'Material')
-        fp_lots = unique(materials, 'Finished Product Lot')
-        for m in materials_used:
-            mat_lots = np.unique(materials['Material Lot'][materials['Material']==m]).tolist()
-            r_mat = []
-            for lot in fp_lots:
-                rvec = np.zeros(len(mat_lots))
-                this_lot_this_mat = materials[(materials["Finished Product Lot"]==lot) & (materials['Material']==m)]
-                for l, r in zip(this_lot_this_mat['Material Lot'].values, this_lot_this_mat['Ratio or Quantity'].values):
-                    rvec[mat_lots.index(l)] = r
-                r_mat.append(rvec)    
-            r_mat_pd = pd.DataFrame(np.array(r_mat), columns=mat_lots)
-            r_mat_pd.insert(0, 'FPLot', fp_lots)    
-            JR.append(r_mat_pd)
-        return JR, materials_used
-    else:
-        print('Data needs revision'); return False, False
+
+    fp_col, mat_col, lot_col, qty_col = ('Finished Product Lot', 'Material',
+                                         'Material Lot', 'Ratio or Quantity')
+
+    # Treat blank / whitespace-only strings as missing, and force qty numeric
+    for c in (fp_col, mat_col, lot_col):
+        materials[c] = materials[c].replace(r'^\s*$', np.nan, regex=True)
+    materials[qty_col] = pd.to_numeric(materials[qty_col], errors='coerce')
+
+    # ---- 1. Flag incomplete FP lots -------------------------------------
+    reasons = {}   # FP lot -> list of reason strings
+
+    def flag(lot, why):
+        reasons.setdefault(lot, [])
+        if why not in reasons[lot]:
+            reasons[lot].append(why)
+
+    all_fp_lots = unique(materials.dropna(subset=[fp_col]), fp_col)
+    if materials[fp_col].isna().any():
+        print('Warning: %d row(s) have no Finished Product Lot and are ignored.'
+              % materials[fp_col].isna().sum())
+    materials = materials.dropna(subset=[fp_col])
+
+    for _, row in materials.iterrows():
+        lot = row[fp_col]
+        mt = row[mat_col]
+        if pd.isna(mt):
+            flag(lot, 'row with missing Material')
+        if pd.isna(row[lot_col]):
+            flag(lot, 'no Material Lot for ' + str(mt))
+        if pd.isna(row[qty_col]):
+            flag(lot, 'no Ratio or Quantity for ' + str(mt))
+
+    all_materials = unique(materials.dropna(subset=[mat_col]), mat_col)
+    for lot in all_fp_lots:
+        present = set(materials.loc[materials[fp_col] == lot, mat_col].dropna())
+        for mt in all_materials:
+            if mt not in present:
+                flag(lot, 'no record for material ' + str(mt))
+
+    flagged = pd.DataFrame({
+        fp_col: list(reasons.keys()),
+        'Reason': ['; '.join(v) for v in reasons.values()]})
+
+    if len(flagged):
+        print('Flagged and REMOVED %d of %d finished product lots:'
+              % (len(flagged), len(all_fp_lots)))
+        for lot, why in reasons.items():
+            print('   Lot %s: %s' % (lot, '; '.join(why)))
+
+    # ---- 2. Remove them BEFORE building JR ------------------------------
+    materials = materials[~materials[fp_col].isin(reasons.keys())]
+
+    if materials.empty:
+        print('No complete finished product lots remain. Data needs revision.')
+        out = (False, False)
+        return out + (flagged,) if return_flagged else out
+
+    for lot in unique(materials, fp_col):
+        this_lot = materials[materials[fp_col] == lot]
+        print('Lot :' + str(lot) + ' ratio/qty adds to '
+              + str(np.sum(this_lot[qty_col].values)))
+
+    # ---- 3. Build JR (mat_lots computed AFTER filtering so that material
+    #         lots used only by removed FP lots do not appear as all-zero cols)
+    JR = []
+    materials_used = unique(materials, mat_col)
+    fp_lots = unique(materials, fp_col)
+    for m in materials_used:
+        mat_lots = np.unique(materials[lot_col][materials[mat_col] == m]).tolist()
+        r_mat = []
+        for lot in fp_lots:
+            rvec = np.zeros(len(mat_lots))
+            sel = materials[(materials[fp_col] == lot) & (materials[mat_col] == m)]
+            for l, r in zip(sel[lot_col].values, sel[qty_col].values):
+                rvec[mat_lots.index(l)] = r
+            r_mat.append(rvec)
+        r_mat_pd = pd.DataFrame(np.array(r_mat), columns=mat_lots)
+        r_mat_pd.insert(0, 'FPLot', fp_lots)
+        JR.append(r_mat_pd)
+
+    return (JR, materials_used, flagged) if return_flagged else (JR, materials_used)
+
     
 def isin_ordered_col0(df, alist):
     df_ = df[df[df.columns[0]].isin(alist)].set_index(df.columns[0]).reindex(alist).reset_index()

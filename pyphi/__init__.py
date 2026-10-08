@@ -1,7 +1,7 @@
 """
 pyphi: A Python package for advanced latent variable data analysis: PCA/PLS/JYPLS/JRPLS/TPLS/PLS-CCA (OPLS)
 """
-__version__ = "6.0.7"
+__version__ = "6.0.8"
 import importlib
 
 from pyphi import calc
