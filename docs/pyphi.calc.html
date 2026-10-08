@@ -1314,7 +1314,7 @@ replicated rows (same type as input).</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pyphi.calc.parse_materials">
-<span class="sig-prename descclassname"><span class="pre">pyphi.calc.</span></span><span class="sig-name descname"><span class="pre">parse_materials</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sheetname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/calc.html#parse_materials"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.calc.parse_materials" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyphi.calc.</span></span><span class="sig-name descname"><span class="pre">parse_materials</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sheetname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_flagged</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/calc.html#parse_materials"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.calc.parse_materials" title="Link to this definition">¶</a></dt>
 <dd><p>Build JR matrices for JRPLS from a linear materials table in Excel.</p>
 <p>Reads a structured Excel sheet describing the composition of finished
 product lots in terms of their constituent material lots and quantities
@@ -1345,6 +1345,7 @@ material lot assignment is missing.</p>
 <li><p><strong>filename</strong> (<em>str</em>) – Path to the Excel workbook containing the materials
 table.</p></li>
 <li><p><strong>sheetname</strong> (<em>str</em>) – Name of the worksheet within the workbook to read.</p></li>
+<li><p><strong>return_flagged</strong> – If True, also return a DataFrame</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1386,6 +1387,17 @@ entries in <code class="docutils literal notranslate"><span class="pre">JR</span
 <span class="go">[&#39;Excipient_A&#39;, &#39;Excipient_B&#39;, &#39;API&#39;]</span>
 </pre></div>
 </div>
+<p>Finished product (FP) lots with incomplete records are flagged, reported,
+and removed before the JR matrices are built, so no NaN can reach JR.</p>
+<dl class="simple">
+<dt>A FP lot is flagged if any of these hold:</dt><dd><ul class="simple">
+<li><p>a row has a missing <code class="docutils literal notranslate"><span class="pre">Material</span> <span class="pre">Lot</span></code></p></li>
+<li><p>a row has a missing / non-numeric <code class="docutils literal notranslate"><span class="pre">Ratio</span> <span class="pre">or</span> <span class="pre">Quantity</span></code></p></li>
+<li><p>a row has a missing <code class="docutils literal notranslate"><span class="pre">Material</span></code></p></li>
+<li><p>the lot has no row at all for one of the materials found in the sheet</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -1858,8 +1870,14 @@ scores after rotation.</p></li>
 <dd></dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="pyphi.calc.vip">
+<span class="sig-prename descclassname"><span class="pre">pyphi.calc.</span></span><span class="sig-name descname"><span class="pre">vip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mvmobj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/calc.html#vip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.calc.vip" title="Link to this definition">¶</a></dt>
+<dd><p>Variable Importance in Projection for a PLS model.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="pyphi.calc.build_polynomial">
-<span class="sig-prename descclassname"><span class="pre">pyphi.calc.</span></span><span class="sig-name descname"><span class="pre">build_polynomial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias_term</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/calc.html#build_polynomial"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.calc.build_polynomial" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pyphi.calc.</span></span><span class="sig-name descname"><span class="pre">build_polynomial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias_term</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_diagnostics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyphi/calc.html#build_polynomial"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pyphi.calc.build_polynomial" title="Link to this definition">¶</a></dt>
 <dd><p>Linear regression with variable selection assisted by PLS.</p>
 </dd></dl>
 
@@ -1996,6 +2014,7 @@ and response Y. Equivalent to computing the predictive component in OPLS.</p>
 <li class="toctree-l2"><a class="reference internal" href="#pyphi.calc.findstr"><code class="docutils literal notranslate"><span class="pre">findstr()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pyphi.calc.evalvar"><code class="docutils literal notranslate"><span class="pre">evalvar()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pyphi.calc.writeeq"><code class="docutils literal notranslate"><span class="pre">writeeq()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyphi.calc.vip"><code class="docutils literal notranslate"><span class="pre">vip()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pyphi.calc.build_polynomial"><code class="docutils literal notranslate"><span class="pre">build_polynomial()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pyphi.calc.cca"><code class="docutils literal notranslate"><span class="pre">cca()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pyphi.calc.cca_multi"><code class="docutils literal notranslate"><span class="pre">cca_multi()</span></code></a></li>
