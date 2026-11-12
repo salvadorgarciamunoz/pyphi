@@ -720,7 +720,7 @@ def _create_classid_(df: pd.DataFrame, column: str, *, nbins: int = 5) -> pd.Dat
     valid_counter = 0
     for is_nan in nan_mask:
         if is_nan:
-            membership.append("Missing Value")
+            membership.append("Missing Data")
         else:
             membership.append(range_list[membership_valid[valid_counter]])
             valid_counter += 1
@@ -893,22 +893,21 @@ def score_scatter(
             p.add_layout(LabelSet(x="x", y="y", text="ObsID", level="glyph",
                                    x_offset=5, y_offset=5, source=src))
     else:
-        Classes_ = phi.unique(CLASSID, colorby)
-        if nbins is not None:
-            non_mv = [c for c in Classes_ if c != "Missing Value"]
-            order = np.argsort([float(c.split()[0]) for c in non_mv])
-            Classes_ = (["Missing Value"] if "Missing Value" in Classes_ else []) + \
-                        [non_mv[i] for i in order]
-
-        cmap_name = "viridis" if nbins is not None else "rainbow"
-        if Classes_ and Classes_[0] in ("Model", "Missing Value"):
-            inner = _make_bokeh_palette(len(Classes_) - 1, cmap_name)
-            palette = ["#e1e1e1"] + inner
-        else:
-            palette = _make_bokeh_palette(len(Classes_), cmap_name)
-
         classid_ = list(CLASSID[colorby])[:len(ObsID_)]
         Classes_ = phi.unique(CLASSID.iloc[:len(ObsID_)], colorby)
+        if nbins is not None:
+            # Numeric bins ordered by lower edge; "Missing Data" goes last.
+            non_mv = [c for c in Classes_ if c != "Missing Data"]
+            non_mv = sorted(non_mv, key=lambda c: float(c.split(" to ")[0]))
+            Classes_ = non_mv + (["Missing Data"] if "Missing Data" in Classes_ else [])
+
+        cmap_name = "viridis" if nbins is not None else "rainbow"
+        # "Model" and "Missing Data" are light gray; the rest share the colormap.
+        gray_classes = ("Model", "Missing Data")
+        n_colored = sum(1 for c in Classes_ if c not in gray_classes)
+        inner = iter(_make_bokeh_palette(n_colored, cmap_name)) if n_colored else iter([])
+        palette = ["#e1e1e1" if c in gray_classes else next(inner) for c in Classes_]
+
         legend_it = []
 
         for cls_val, color_ in zip(Classes_, palette):
